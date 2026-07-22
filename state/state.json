@@ -1,0 +1,26 @@
+{
+  "cash_usd": 100000.0,
+  "circuit_breakers": {
+    "consecutive_losses": 0,
+    "cooldown_until": null,
+    "daily_loss_freeze_until": null,
+    "dd_half_size_active": false,
+    "equity_window_24h": [
+      {
+        "equity": 100000.0,
+        "ts": "2026-07-22T15:37:16.540398+00:00"
+      }
+    ],
+    "flatten_mode": false,
+    "manual_review_required": false
+  },
+  "equity_peak_ts": null,
+  "equity_peak_usd": 100000.0,
+  "last_run_completed_at": "2026-07-22T15:37:16.540398+00:00",
+  "last_run_id": "2026-07-22T15",
+  "positions": {},
+  "realized_pnl_cumulative_usd": 0.0,
+  "schema_version": 1,
+  "state_hash_prev": "566ee4111f3d06b4443eb056ed7703e3ec144fda9a654aa9c67de1187b13f7ab",
+  "trade_history_for_breakers": []
+}
