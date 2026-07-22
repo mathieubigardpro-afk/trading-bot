@@ -1,0 +1,84 @@
+{
+  "univers": {
+    "crypto": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "DOGE",
+      "LINK",
+      "AVAX"
+    ],
+    "crypto_pair_binance": {
+      "BTC": "BTCUSDT",
+      "ETH": "ETHUSDT",
+      "SOL": "SOLUSDT",
+      "DOGE": "DOGEUSDT",
+      "LINK": "LINKUSDT",
+      "AVAX": "AVAXUSDT"
+    },
+    "crypto_pair_coinbase": {
+      "BTC": "BTC-USD",
+      "ETH": "ETH-USD",
+      "SOL": "SOL-USD",
+      "DOGE": "DOGE-USD",
+      "LINK": "LINK-USD",
+      "AVAX": "AVAX-USD"
+    },
+    "equity": [
+      "AAPL",
+      "MSFT",
+      "GOOGL",
+      "AMZN",
+      "NVDA",
+      "META"
+    ]
+  },
+  "capital": {
+    "initial_cash_usd": 100000.0
+  },
+  "couts": {
+    "fee_taker_bps": 10,
+    "slippage_penalty_bps": 5,
+    "min_notional_usd": 10.0,
+    "max_quote_age_seconds": 120.0
+  },
+  "fraicheur_prix": {
+    "staleness_max_seconds_crypto": 300,
+    "staleness_max_seconds_equity": 300
+  },
+  "equity_synthetic_spread_enabled": false,
+  "risque": {
+    "profil": "AGRESSIF",
+    "vol_target_annualized_min": 0.25,
+    "vol_target_annualized_max": 0.3,
+    "vol_target_annualized": 0.275,
+    "vol_ewma_halflife_hours": 60,
+    "vol_coldstart_min_points": 30,
+    "vol_coldstart_scalar": 0.5,
+    "cap_per_asset_crypto": 0.25,
+    "cap_per_asset_equity": 0.15,
+    "gross_exposure_max": 0.8,
+    "no_trade_band": 0.05
+  },
+  "circuit_breakers_agressifs": {
+    "cb_daily_loss_freeze_pct": 0.04,
+    "cb_daily_loss_freeze_hours": 24,
+    "cb_consecutive_losses_trigger": 5,
+    "cb_cooldown_hours": 24,
+    "cb_dd_half_size_pct": 0.2,
+    "cb_dd_flatten_pct": 0.3
+  },
+  "filtres_regime": {
+    "regime_sma_days": 200,
+    "regime_atr_percentile_window_days": 90,
+    "regime_atr_percentile_max": 0.9
+  },
+  "chemins": {
+    "state_dir": "state",
+    "state_json": "state/state.json",
+    "trades_jsonl": "state/trades.jsonl",
+    "equity_jsonl": "state/equity.jsonl",
+    "decisions_jsonl": "state/decisions.jsonl"
+  },
+  "_note": "Snapshot JSON lisible (dashboard/audit humain) de bot/config.py, qui reste la SEULE source de verite importee par le code (bot.config). Ce fichier est informatif; le modifier n a aucun effet sur le comportement du bot."
+}
