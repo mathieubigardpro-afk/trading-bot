@@ -30,6 +30,14 @@ import sys
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
+# Permet `python3 /chemin/vers/repo/bot/runner.py` (invocation directe par chemin, cas du
+# scheduler horaire réel) sans dépendre d'un `pip install -e .` ni de `python3 -m bot.runner` :
+# la racine du dépôt (parent de ce paquet `bot/`) doit être sur sys.path pour que
+# `from bot import config` etc. fonctionnent, quel que soit le répertoire d'appel.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 from bot import config
 from bot.feeds import get_history, get_prices, is_us_market_open
 from bot.feeds.types import HistoryUnavailableError, Quote
@@ -467,6 +475,18 @@ def main() -> int:
         append_journal(config.DECISIONS_JSONL, record)
 
     save_state(new_state)
+
+    # `git_sync` (bot/persist/git_sync.py) fait `git add` sur les 4 fichiers d'état
+    # inconditionnellement (voir son propre jeu de tests, `_write_state_files` dans
+    # `test_persist_git_sync.py`, qui crée explicitement les .jsonl vides s'ils n'existent
+    # pas) : `git add` échoue sur un chemin totalement absent (pathspec ne correspond à
+    # aucun fichier), donc `trades.jsonl` doit exister même quand aucun fill n'a eu lieu ce
+    # cycle (cas normal du tout premier run, ou d'un cycle "aucune stratégie active").
+    for path in (config.TRADES_JSONL, config.EQUITY_JSONL, config.DECISIONS_JSONL):
+        if not os.path.exists(path):
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+            with open(path, "a", encoding="utf-8"):
+                pass
 
     # --- 15) git_sync — dernière étape du programme ---
     n_trades = len(fills_this_cycle)
