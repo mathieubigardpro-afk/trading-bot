@@ -43,11 +43,14 @@ from bot.feeds import get_history, get_prices, is_us_market_open
 from bot.feeds.types import HistoryUnavailableError, Quote
 from bot.persist import (
     append_journal,
+    append_journal_many,
     compute_state_hash,
     git_sync,
+    has_uncommitted_state_changes,
     is_run_already_done,
     load_state,
     pull_rebase,
+    records_for_run,
     save_state,
 )
 from bot.risk import RiskManager
@@ -160,8 +163,11 @@ def _cb_snapshot(cb_state: dict, now: datetime) -> dict:
     }
 
 
-def main() -> int:
-    now = datetime.now(timezone.utc)
+def main(now: Optional[datetime] = None) -> int:
+    """Point d'entrée du cycle horaire. `now` est optionnel (défaut : horloge système réelle,
+    cas d'invocation normale par le scheduler) — exposé explicitement pour permettre aux tests
+    d'intégration de contrôler le `run_id` calculé sans dépendre de l'horloge système."""
+    now = now or datetime.now(timezone.utc)
     repo = repo_dir()
 
     # --- 1) pull_rebase : repartir de l'état le plus récent poussé, AVANT toute lecture ---
@@ -177,11 +183,62 @@ def main() -> int:
     state = load_state()
     run_id = compute_run_id(now)
     if is_run_already_done(state, run_id):
+        # Défense en profondeur (audit adversarial, finding MAJEUR n°3) : `state.json` local
+        # peut déjà porter `last_run_id = run_id` alors que ce cycle n'a JAMAIS été poussé sur
+        # `origin` (crash entre `save_state()` et `git_sync()`). Sortir en silence ici
+        # laisserait ce cycle engagé localement pour toujours, invisible sur le remote. On
+        # vérifie donc s'il reste des changements non commités sur `state/*` avant de conclure
+        # à un doublon : si oui, on tente de REPRENDRE `git_sync` plutôt que d'abandonner.
+        if has_uncommitted_state_changes(repo):
+            logger.warning(
+                "run déjà marqué comme traité localement (last_run_id=%s) MAIS des "
+                "changements non commités subsistent sur state/* — reprise de git_sync avant "
+                "de conclure à un doublon (crash probable entre save_state() et git_sync() "
+                "d'une invocation précédente pour ce même run_id).",
+                run_id,
+            )
+            message = f"Cycle {run_id} : reprise de git_sync après interruption pré-push"
+            result = git_sync(repo, message, run_id=run_id)
+            if result in ("SUCCESS", "ABORTED_DUPLICATE"):
+                logger.info(
+                    "Reprise de git_sync terminée (%s) pour run_id=%s.", result, run_id,
+                )
+                return 0
+            logger.error(
+                "Reprise de git_sync a échoué (FAILED) pour run_id=%s — état local toujours "
+                "non poussé, intervention manuelle requise.", run_id,
+            )
+            return 1
+
         logger.info(
             "run déjà traité pour run_id=%s (last_run_id=%s) — abandon silencieux propre.",
             run_id, state.get("last_run_id"),
         )
         return 0
+
+    # --- garde-fou anti-doublon post-crash (audit adversarial, finding MAJEUR n°2) ---
+    # Un crash (kill -9) entre deux écritures de journaux au sein d'un cycle précédent pour ce
+    # MÊME run_id peut avoir laissé des enregistrements orphelins dans trades.jsonl/
+    # equity.jsonl/decisions.jsonl SANS que state.json (dernier fichier écrit) n'ait jamais été
+    # sauvegardé — donc `is_run_already_done` ci-dessus ne peut pas le voir. Rejouer le cycle
+    # depuis zéro dans ce cas produirait des fills en double (désynchronisation permanente
+    # entre le grand livre d'audit trades.jsonl et le ledger réel state.json). Principe
+    # pessimiste : on refuse de deviner comment réconcilier, on arrête net et on alerte.
+    orphaned = {
+        path: records_for_run(path, run_id)
+        for path in (config.TRADES_JSONL, config.EQUITY_JSONL, config.DECISIONS_JSONL)
+    }
+    orphaned = {path: recs for path, recs in orphaned.items() if recs}
+    if orphaned:
+        logger.error(
+            "ANOMALIE CRITIQUE : des enregistrements pour run_id=%s existent déjà dans %s "
+            "alors que state.json ne le connaît pas comme last_run_id — signe d'un cycle "
+            "précédent interrompu en cours de journalisation (crash entre écritures). Rejouer "
+            "ce cycle produirait des fills en double. Arrêt immédiat, AUCUNE écriture, AUCUN "
+            "appel réseau — revue manuelle requise avant de retenter ce run_id.",
+            run_id, sorted(orphaned.keys()),
+        )
+        return 1
 
     prev_hash = compute_state_hash(state)
     logger.info("Démarrage du cycle run_id=%s (prev_hash=%s...)", run_id, prev_hash[:12])
@@ -449,6 +506,15 @@ def main() -> int:
     }
 
     # --- 14) écritures disque, dans l'ordre : trades -> equity -> decisions -> state ---
+    #
+    # Correctif post-audit (finding MAJEUR n°2) : tous les fills du cycle sont désormais écrits
+    # en UN SEUL appel `append_journal_many()` (un seul write()+fsync()) plutôt qu'un
+    # `append_journal()` séparé par fill dans une boucle. Un `kill -9` ne peut plus laisser un
+    # sous-ensemble de fills orphelin sur disque : soit aucun fill du cycle n'est écrit, soit
+    # ils le sont tous. Combiné au garde-fou `records_for_run()` en tout début de cycle (qui
+    # refuse de rejouer un run_id déjà partiellement journalisé), la fenêtre de désynchronisation
+    # trades.jsonl / state.json observée par l'audit est fermée.
+    trade_records = []
     for fill in fills_this_cycle:
         record = dataclasses.asdict(fill)
         record["cash_after_usd"] = ledger.cash_usd  # note : cash final du cycle (simplification
@@ -457,7 +523,8 @@ def main() -> int:
         # fills sont peu nombreux et strictement séquentiels ici, cash_after_usd du dernier
         # fill est exact, les fills intermédiaires portent une valeur légèrement en avance
         # (le cash après TOUS les fills du cycle) plutôt qu'après CE fill isolé.
-        append_journal(config.TRADES_JSONL, record)
+        trade_records.append(record)
+    append_journal_many(config.TRADES_JSONL, trade_records)
 
     append_journal(config.EQUITY_JSONL, {
         "run_id": run_id,
@@ -471,8 +538,7 @@ def main() -> int:
         "circuit_breakers_active": circuit_breakers_active,
     })
 
-    for record in decisions:
-        append_journal(config.DECISIONS_JSONL, record)
+    append_journal_many(config.DECISIONS_JSONL, decisions)
 
     save_state(new_state)
 

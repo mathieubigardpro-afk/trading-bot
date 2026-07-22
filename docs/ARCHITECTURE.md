@@ -692,3 +692,45 @@ def combine_strategies(
   disponibilité réelle des champs bid/ask Yahoo Finance en conditions de marché ouvert.
 - Panel exact des megacaps actions (`SYMBOLS_EQUITY`) proposé ici à titre de valeur par défaut,
   modifiable dans `bot/config.py` sans impact sur le reste de l'architecture.
+
+---
+
+## 9. Addendum post-audit adversarial (2026-07-22) — correctifs d'intégrité
+
+Un audit adversarial (exécution réelle sur copie isolée, réseau mocké déterministe, vrai code
+`bot.risk`/`bot.sim`/`bot.persist`/`bot.runner`) a confirmé le réalisme pessimiste du
+simulateur (fills, quotes périmées, panne API totale, double exécution concurrente, 4 circuit
+breakers) mais a mis en évidence 3 failles corrigées ici :
+
+1. **`verify_chain()` (finding CRITIQUE)** — `state_hash_prev` est un sha256 public : un
+   attaquant (ou un bug de commit) peut fabriquer un nouveau commit avec un `state.json`
+   arbitraire tout en recopiant correctement le hash réel précédent, ce qui passait `ok=True`.
+   Correctif : `verify_chain()` vérifie désormais en plus un **invariant de conservation**
+   entre chaque paire de commits successifs — toute variation de `cash_usd` et de
+   `positions[symbole].qty` doit être exactement justifiée par les fills apparus dans
+   `trades.jsonl` entre ces deux commits (aucun fill ⇒ aucune variation tolérée), et
+   `trades.jsonl` doit rester un strict ajout (préfixe inchangé) d'un commit à l'autre. Voir
+   `bot/persist/audit.py`.
+2. **Fill fantôme après crash (finding MAJEUR)** — un `kill -9` entre deux `append_journal()`
+   individuels au sein de la boucle de fills d'un cycle pouvait laisser une ligne orpheline
+   dans `trades.jsonl` sans que `state.json` (écrit en dernier) ne l'intègre jamais ; le cycle
+   suivant, ignorant tout du run_id, rejouait alors le cycle en entier et doublait le fill.
+   Correctif double : (a) tous les fills d'un cycle sont désormais écrits en un seul appel
+   `append_journal_many()` (un seul `write()`+`fsync()`, jamais un sous-ensemble sur crash) ;
+   (b) `bot/runner.py` vérifie en tout début de cycle, via `records_for_run()`, qu'aucun
+   enregistrement n'existe déjà pour le `run_id` visé dans `trades.jsonl`/`equity.jsonl`/
+   `decisions.jsonl` alors que `state.json` l'ignore — signe d'un crash précédent — et
+   s'arrête net (code non nul, aucune écriture) plutôt que de deviner une réconciliation.
+3. **Idempotence aveugle à l'état distant (finding MAJEUR)** — si un crash survient après
+   `save_state()` mais avant `git_sync()`, `state.json` local porte déjà `last_run_id = run_id`
+   ; une invocation suivante pour le même run_id sortait alors en silence (code 0) sans jamais
+   retenter la synchronisation, laissant le cycle réel engagé localement mais invisible sur
+   `origin`. Correctif : avant de conclure à un doublon, `bot/runner.py` appelle
+   `has_uncommitted_state_changes()` — si `state/*` porte des modifications non commitées, il
+   reprend `git_sync()` au lieu d'abandonner en silence.
+
+Tests de non-régression : `bot/tests/test_persist_audit.py` (invariant de conservation),
+`bot/tests/test_persist_journal.py` (écriture groupée + détection d'orphelins),
+`bot/tests/test_persist_git_sync.py` (détection de changements non commités),
+`bot/tests/test_runner_crash_recovery.py` (scénarios de bout en bout : orphelin post-crash,
+reprise de git_sync, cycle réel, idempotence).

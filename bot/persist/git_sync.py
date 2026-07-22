@@ -5,12 +5,21 @@ l'URL du clone fourni à l'environnement d'exécution (token dans l'URL HTTPS du
 On n'exécute jamais `git remote -v` ni on n'affiche/loggue son contenu ici ; on ne le modifie
 jamais (`git remote set-url` interdit) ; on ne le copie jamais dans un fichier du dépôt.
 
-Deux fonctions publiques :
+Fonctions publiques :
   - `pull_rebase(repo_dir)` : à appeler en tout DÉBUT de cycle, avant la moindre lecture de
     `state.json`, pour repartir de l'état le plus récent poussé par un run précédent.
   - `git_sync(repo_dir, message, ...)` : à appeler en TOUTE FIN de cycle (après toutes les
     écritures de journaux + `save_state`), commit + push, avec gestion du conflit de push
     concurrent et re-vérification d'idempotence via `last_run_id` distant.
+  - `has_uncommitted_state_changes(repo_dir)` : défense en profondeur (finding MAJEUR n°3 de
+    l'audit) — si un crash survient APRÈS `save_state()` mais AVANT `git_sync()`, `state.json`
+    local porte déjà `last_run_id = run_id` alors que rien n'a été poussé sur `origin`. Une
+    invocation suivante dans le MÊME répertoire (violation externe du principe de conteneur
+    éphémère, mais à défendre en profondeur) verrait `is_run_already_done()` répondre `True`
+    et sortirait silencieusement sans jamais retenter la synchronisation. `runner.py` appelle
+    cette fonction AVANT de conclure à un doublon : si le working tree porte des changements
+    non commités sur `state/*`, il tente de reprendre `git_sync()` plutôt que d'abandonner en
+    silence.
 """
 
 from __future__ import annotations
@@ -53,6 +62,22 @@ def pull_rebase(repo_dir: str, branch: str = "main") -> str:
     # repartir d'un working tree propre plutôt que de continuer un cycle sur un état ambigu.
     _run(repo_dir, "rebase", "--abort")
     return "FAILED"
+
+
+def has_uncommitted_state_changes(repo_dir: str, paths: list[str] | None = None) -> bool:
+    """True si `paths` (par défaut `STATE_FILES`) portent des modifications non commitées
+    (modifiées, ajoutées, ou pas encore suivies) dans le working tree de `repo_dir`.
+
+    Ne lève jamais d'exception : si `git status` lui-même échoue (dépôt corrompu, chemin
+    invalide), on retourne prudemment `True` — mieux vaut tenter une reprise de `git_sync`
+    superflue (idempotente par construction via le conflit `state.json`/`last_run_id`) que de
+    conclure à tort à un "run déjà proprement synchronisé".
+    """
+    paths = paths if paths is not None else STATE_FILES
+    result = _run(repo_dir, "status", "--porcelain", "--", *paths)
+    if result.returncode != 0:
+        return True
+    return bool(result.stdout.strip())
 
 
 def _remote_last_run_id(repo_dir: str, state_path: str, branch: str = "main") -> str | None:

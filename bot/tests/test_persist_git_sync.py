@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from bot.persist.git_sync import git_sync, pull_rebase
+from bot.persist.git_sync import git_sync, has_uncommitted_state_changes, pull_rebase
 from bot.persist.state import init_state, save_state
 
 
@@ -209,3 +209,49 @@ def test_pull_rebase_fails_without_remote(tmp_path):
     # Le working tree doit rester propre (pas de rebase laissé en suspens).
     status = _git_ok(repo, "status", "--porcelain")
     assert status.strip() == ""
+
+
+# --- has_uncommitted_state_changes() : défense en profondeur, finding MAJEUR n°3 -----------
+
+
+def test_has_uncommitted_state_changes_false_on_clean_tree(tmp_path):
+    repo = tmp_path / "clean"
+    repo.mkdir()
+    _git_ok(repo, "init", "-b", "main")
+    _write_state_files(repo, init_state())
+    _git_ok(repo, "add", "state")
+    _git_ok(repo, "commit", "-m", "Etat initial")
+
+    assert has_uncommitted_state_changes(str(repo)) is False
+
+
+def test_has_uncommitted_state_changes_true_after_save_state_without_commit(tmp_path):
+    """Reproduit le scénario du finding MAJEUR n°3 : `save_state()` a réécrit `state.json`
+    localement (le cycle a réussi), mais un crash survient AVANT `git_sync()` — le working
+    tree porte donc des changements non commités sur `state/state.json`."""
+    repo = tmp_path / "crashed"
+    repo.mkdir()
+    _git_ok(repo, "init", "-b", "main")
+    _write_state_files(repo, init_state())
+    _git_ok(repo, "add", "state")
+    _git_ok(repo, "commit", "-m", "Etat initial")
+
+    state = init_state()
+    state["last_run_id"] = "2026-07-22T14"
+    state["cash_usd"] = 95000.0
+    _write_state_files(repo, state)  # save_state() a eu lieu, git commit/push jamais tenté
+
+    assert has_uncommitted_state_changes(str(repo)) is True
+
+
+def test_has_uncommitted_state_changes_ignores_files_outside_state_dir(tmp_path):
+    repo = tmp_path / "unrelated_change"
+    repo.mkdir()
+    _git_ok(repo, "init", "-b", "main")
+    _write_state_files(repo, init_state())
+    _git_ok(repo, "add", "state")
+    _git_ok(repo, "commit", "-m", "Etat initial")
+
+    (repo / "README.md").write_text("changement hors state/\n", encoding="utf-8")
+
+    assert has_uncommitted_state_changes(str(repo)) is False

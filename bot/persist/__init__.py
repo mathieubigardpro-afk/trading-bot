@@ -3,14 +3,17 @@
 Façade publique du module (ARCHITECTURE.md §5.4). Voir chaque sous-module pour le détail :
   - `state.py` : `init_state`, `load_state`, `save_state`, `compute_state_hash`,
     `is_run_already_done`, `validate_schema`, `StateValidationError`.
-  - `journal.py` : `append_journal`.
-  - `git_sync.py` : `git_sync`, `pull_rebase`.
-  - `audit.py` : `verify_chain` (audit rétroactif de la chaîne de hash via l'historique git).
+  - `journal.py` : `append_journal`, `append_journal_many` (écriture groupée atomique),
+    `records_for_run` (garde-fou anti-doublon post-crash).
+  - `git_sync.py` : `git_sync`, `pull_rebase`, `has_uncommitted_state_changes` (défense en
+    profondeur pour reprendre un `git_sync` interrompu au lieu de conclure à un doublon).
+  - `audit.py` : `verify_chain` (audit rétroactif de la chaîne de hash + invariant de
+    conservation cash/positions vs `trades.jsonl` via l'historique git).
 """
 
 from .audit import ChainAuditResult, verify_chain
-from .git_sync import git_sync, pull_rebase
-from .journal import append_journal
+from .git_sync import git_sync, has_uncommitted_state_changes, pull_rebase
+from .journal import append_journal, append_journal_many, records_for_run
 from .state import (
     GENESIS_HASH,
     StateValidationError,
@@ -26,8 +29,11 @@ __all__ = [
     "ChainAuditResult",
     "verify_chain",
     "git_sync",
+    "has_uncommitted_state_changes",
     "pull_rebase",
     "append_journal",
+    "append_journal_many",
+    "records_for_run",
     "GENESIS_HASH",
     "StateValidationError",
     "compute_state_hash",
