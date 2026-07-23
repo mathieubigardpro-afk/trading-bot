@@ -320,7 +320,111 @@ CRYPTO_SYMBOLS_AGRESSIF_12 = [
 ]
 
 # ======================================================================================
-# --- WALLETS : les 3 portefeuilles indépendants (cœur pédagogique du produit) ---
+# --- LABO 🧪 : incubateur de stratégies candidates (auto-amélioration continue, 2026-07-23) ---
+# ======================================================================================
+# Le bot va s'auto-améliorer en continu : de nouvelles stratégies candidates seront incubées
+# dans un 4e wallet "labo" AVANT toute promotion vers un des 3 wallets réels, selon des règles
+# chiffrées pré-enregistrées (règles de promotion elles-mêmes hors périmètre de cette étape —
+# ce bloc ne construit que l'incubateur, cf. docs/ARCHITECTURE.md § Labo pour le raisonnement
+# complet). Ennemi désigné du dispositif : le SUR-APPRENTISSAGE (tester assez de stratégies
+# fait toujours émerger de faux gagnants) — chaque brique doit le combattre :
+#   - capital d'incubation STRICTEMENT isolé du capital réel (jamais un euro des 3 wallets réels
+#     engagé sur une candidate non promue -- le labo est un wallet à part entière, à côté des 3
+#     autres, jamais un sous-compte de l'un d'eux) ;
+#   - mêmes règles du jeu que les wallets réels : même `bot.risk.RiskManager`, même
+#     `bot.sim.ExchangeSim` (mêmes coûts/slippage/breakers), mêmes principes pessimistes (§0) --
+#     une candidate ne doit JAMAIS être avantagée par un simulateur complaisant ;
+#   - traçabilité non falsifiable de la date ET du run_id d'ENTRÉE en incubation (nécessaire à
+#     toute règle de promotion future fondée sur une fenêtre d'observation minimale -- interdit
+#     tout "cherry-picking" a posteriori de la période évaluée) ;
+#   - paramètres GELÉS dès l'entrée en incubation (`params`, jamais réoptimisés en cours de
+#     route -- combattre le sur-apprentissage exige qu'une candidate ne soit jamais retouchée
+#     pour "mieux coller" aux données observées pendant qu'elle est jugée) ;
+#   - suivi de confrontation backtest-vs-vécu (`bot/reporting/tracking.py:compute_live_metrics`)
+#     pour que toute promotion future se fonde sur des métriques VÉCUES, jamais uniquement sur
+#     le backtest qui a justifié l'entrée en incubation.
+#
+# INCUBATING_STRATEGIES : les candidates ACTUELLEMENT en incubation dans le wallet labo. VIDE
+# pour l'instant — aucune candidate n'a encore été proposée par une session de recherche ; le
+# wallet labo reste donc intégralement en cash jusqu'à la première incubation (état ATTENDU,
+# pas un bug, cf. docs/ARCHITECTURE.md § Labo). Schéma de CHAQUE entrée, une fois peuplée :
+#   {
+#       "id": str,                  # identifiant stable == StrategyBase.name de la candidate,
+#                                    # résolu par bot.strategies.load_strategies() -- EXACTEMENT
+#                                    # comme les 3 stratégies de production, aucun mécanisme de
+#                                    # chargement dynamique séparé n'est introduit ici.
+#       "module": str,               # chemin du module bot.strategies.<...> qui la définit
+#                                    # (documentaire/audit humain -- le chargement réel reste
+#                                    # géré par bot.strategies.load_strategies(), par scan).
+#       "params": dict,              # hyperparamètres GELÉS de la candidate (cf. bandeau ci-dessus).
+#       "asset_class": str,          # "crypto" | "equities" | "etf" (une poche par candidate)
+#       "univers": list[str],        # symboles suivis par cette candidate
+#       "capital_alloc_pct": float,  # part du capital DU WALLET LABO (jamais des wallets réels)
+#       "entered_at": str,           # date ISO8601 d'entrée en incubation (horodatage humain)
+#       "entry_run_id": str,         # run_id (§4.1) du cycle qui a vu la candidate trader pour
+#                                    # la première fois -- ancre non ambiguë et non falsifiable
+#                                    # a posteriori pour toute fenêtre d'observation future.
+#   }
+# La somme des `capital_alloc_pct` des candidates DOIT rester <= 1.0 (le reliquat est la
+# réserve cash du labo) -- vérifié par bot/tests/test_config_strategies_sync.py, comme pour les
+# `pockets` des 3 wallets réels.
+INCUBATING_STRATEGIES: list[dict] = []
+
+LABO_WALLET_ID = "labo"
+
+
+def labo_pockets() -> list[dict]:
+    """Poches du wallet labo, dérivées DYNAMIQUEMENT de `INCUBATING_STRATEGIES` ci-dessus.
+
+    À la différence des 3 wallets réels (poches figées dans `WALLETS[*]["pockets"]`), le labo
+    n'a AUCUNE poche en dur : elles apparaissent/disparaissent au gré des entrées/sorties
+    d'incubation, source de vérité UNIQUE = `INCUBATING_STRATEGIES`. Retourne une liste vide
+    tant qu'aucune candidate n'est incubée (état actuel) — le wallet labo reste alors
+    intégralement en cash, comme n'importe quel wallet dont toutes les poches seraient "cash".
+
+    Forme retournée compatible avec `bot/runner.py:_combine_pockets()`/
+    `_no_trade_band_scale_by_symbol()` (mêmes clés `asset_class`/`capital_alloc_pct`/
+    `strategy_ref` que les poches des 3 wallets réels), plus une clé `univers` supplémentaire
+    (liste des symboles de la candidate) que `bot/runner.py` utilise en repli générique pour
+    toute candidate dont le `strategy_ref` n'est pas déjà connu de
+    `POCKET_STRATEGY_TRADABLE_SYMBOLS`/`POCKET_STRATEGY_DATA_SYMBOLS` (poches actions/ETF des 3
+    stratégies de production) -- ce qui permet au runner de "charger [les candidates] comme les
+    autres" (mission) sans modification supplémentaire à chaque nouvelle incubation crypto.
+    """
+    return [
+        {
+            "asset_class": c["asset_class"],
+            "capital_alloc_pct": float(c["capital_alloc_pct"]),
+            "strategy_ref": c["id"],
+            "univers": list(c.get("univers", [])),
+        }
+        for c in INCUBATING_STRATEGIES
+    ]
+
+
+def labo_crypto_universe() -> list[str]:
+    """Union des univers des candidates de classe `crypto` actuellement en incubation (liste
+    vide tant qu'aucune candidate crypto n'est incubée, cf. `labo_pockets()`)."""
+    universe: set[str] = set()
+    for c in INCUBATING_STRATEGIES:
+        if c.get("asset_class") == "crypto":
+            universe |= set(c.get("univers", []))
+    return sorted(universe)
+
+
+def incubating_strategy(strategy_id: str) -> dict | None:
+    """Fiche d'incubation (dict, cf. schéma `INCUBATING_STRATEGIES` ci-dessus) de `strategy_id`,
+    ou `None` si elle n'est pas (ou plus) en incubation. Utilisé par le suivi de confrontation
+    backtest-vs-vécu (`bot/reporting/tracking.py`) pour retrouver `entered_at`/`entry_run_id`
+    sans dupliquer cette information ailleurs."""
+    for c in INCUBATING_STRATEGIES:
+        if c["id"] == strategy_id:
+            return c
+    return None
+
+
+# ======================================================================================
+# --- WALLETS : les 3 portefeuilles indépendants (cœur pédagogique du produit) + le labo ---
 # ======================================================================================
 WALLETS = [
     {
@@ -415,9 +519,49 @@ WALLETS = [
             "cb_dd_flatten_pct": 0.35,
         },
     },
+    {
+        "id": LABO_WALLET_ID,
+        "emoji": "🧪",
+        "label": "Labo — incubateur",
+        "capital_initial_eur": 1000.0,
+        # Univers/poches DYNAMIQUES (cf. INCUBATING_STRATEGIES/labo_pockets() ci-dessus) --
+        # vides tant qu'aucune candidate n'est en incubation (état actuel). Le wallet labo naît
+        # NON INITIALISÉ comme les 3 autres à leur naissance (docs/ARCHITECTURE.md §10.2), et
+        # s'initialisera au prochain cycle avec le taux FX du marché -- puis restera
+        # intégralement en cash faute de poche à trader tant que `INCUBATING_STRATEGIES` reste
+        # vide : comportement ATTENDU (§ Labo), pas un bug.
+        "univers_crypto": labo_crypto_universe(),
+        "pockets": labo_pockets(),
+        # Profil de risque "équilibré-strict" (les candidates s'affrontent à armes égales et
+        # encadrées, jamais avantagées par un risque plus permissif qu'un wallet réel) : repris
+        # à l'identique du profil équilibré pour vol/expo/breakers, cap par actif RESSERRÉ à
+        # 20% (vs 25% équilibré) pour qu'une candidate seule ne puisse jamais concentrer une
+        # part disproportionnée du capital labo pendant sa période de jugement.
+        "risque": {
+            "vol_target_annualized": 0.20,
+            "gross_exposure_max": 0.70,
+            "cap_per_asset": 0.20,
+            "vol_ewma_halflife_hours": VOL_EWMA_HALFLIFE_HOURS,
+            "vol_coldstart_min_points": VOL_COLDSTART_MIN_POINTS,
+            "vol_coldstart_scalar": VOL_COLDSTART_SCALAR,
+            "no_trade_band": NO_TRADE_BAND,
+            "cb_daily_loss_freeze_pct": 0.03,
+            "cb_daily_loss_freeze_hours": 24,
+            "cb_consecutive_losses_trigger": CB_CONSECUTIVE_LOSSES_TRIGGER,
+            "cb_cooldown_hours": CB_COOLDOWN_HOURS,
+            "cb_dd_half_size_pct": 0.15,
+            "cb_dd_flatten_pct": 0.25,
+        },
+    },
 ]
 
 WALLET_IDS = [w["id"] for w in WALLETS]
+
+# Les 3 wallets réels (capital "en jeu" pédagogique), à l'exclusion du labo -- utile à toute
+# logique qui doit explicitement NE JAMAIS toucher le labo (ex. dashboard actuel, §10.1) ou au
+# contraire itérer uniquement sur les wallets réels sans avoir à filtrer `LABO_WALLET_ID` à
+# chaque fois.
+PRODUCTION_WALLET_IDS = [w["id"] for w in WALLETS if w["id"] != LABO_WALLET_ID]
 
 
 def wallet_config(wallet_id: str) -> dict:

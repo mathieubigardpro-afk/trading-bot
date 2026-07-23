@@ -10,10 +10,13 @@ Deux effets, tous deux IDEMPOTENTS (sûr de relancer ce script plusieurs fois) :
      suppression). Ne fait rien si `state/state.json` n'existe pas (déjà migré, ou dépôt qui
      n'a jamais eu de portefeuille unique).
   2. Crée `state/wallets/<id>/{state.json,trades.jsonl,equity.jsonl,decisions.jsonl}` pour
-     chaque wallet de `bot.config.WALLETS`, NON INITIALISÉ (`fx.initial_rate=None`,
-     `cash_usd=0.0` — jamais de taux EUR/USD inventé ici), et `state/cycle.json` initial. Ne
-     touche jamais un wallet déjà présent (idempotence : un wallet déjà initialisé par un
-     cycle réel ne doit jamais être réinitialisé par une relance accidentelle de ce script).
+     chaque wallet de `bot.config.WALLETS` (les 3 wallets réels + le labo 🧪 depuis
+     docs/ARCHITECTURE.md § Labo — ce script est générique sur `bot.config.WALLETS`, aucune
+     modification n'a été nécessaire pour couvrir le 4e wallet), NON INITIALISÉ
+     (`fx.initial_rate=None`, `cash_usd=0.0` — jamais de taux EUR/USD inventé ici), et
+     `state/cycle.json` initial. Ne touche jamais un wallet déjà présent (idempotence : un
+     wallet déjà initialisé par un cycle réel ne doit jamais être réinitialisé par une relance
+     accidentelle de ce script).
 """
 
 from __future__ import annotations

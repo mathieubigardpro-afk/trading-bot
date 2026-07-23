@@ -90,6 +90,30 @@
         "cb_dd_half_size_pct": 0.20,
         "cb_dd_flatten_pct": 0.35
       }
+    },
+    {
+      "id": "labo",
+      "emoji": "🧪",
+      "label": "Labo — incubateur",
+      "capital_initial_eur": 1000.0,
+      "note": "4e wallet, incubateur de stratégies candidates (docs/ARCHITECTURE.md § Labo, mission auto-amélioration continue). univers_crypto/pockets DYNAMIQUES, dérivés de bot.config.INCUBATING_STRATEGIES (vide aujourd'hui -> wallet intégralement en cash, état attendu) -- ce snapshot JSON reflète donc l'état VIDE actuel, jamais recalculé automatiquement (source de vérité réelle : bot.config.labo_pockets()/labo_crypto_universe()).",
+      "univers_crypto": [],
+      "pockets": [],
+      "risque": {
+        "vol_target_annualized": 0.20,
+        "gross_exposure_max": 0.70,
+        "cap_per_asset": 0.20,
+        "vol_ewma_halflife_hours": 60,
+        "vol_coldstart_min_points": 30,
+        "vol_coldstart_scalar": 0.5,
+        "no_trade_band": 0.05,
+        "cb_daily_loss_freeze_pct": 0.03,
+        "cb_daily_loss_freeze_hours": 24,
+        "cb_consecutive_losses_trigger": 5,
+        "cb_cooldown_hours": 24,
+        "cb_dd_half_size_pct": 0.15,
+        "cb_dd_flatten_pct": 0.25
+      }
     }
   ],
   "univers_actions_etf": {

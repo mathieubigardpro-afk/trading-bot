@@ -4,14 +4,24 @@
 Évolution multi-wallets (docs/ARCHITECTURE.md §9) : un seul cycle horaire traite désormais
 TROIS wallets indépendants (`bot.config.WALLETS` : prudent 🛡️, équilibré ⚖️, agressif 🔥),
 séquentiellement, avec les MÊMES prix récupérés UNE SEULE FOIS et partagés entre eux.
+
+Évolution labo (docs/ARCHITECTURE.md § Labo) : `bot.config.WALLETS` porte désormais un 4e
+wallet, `labo` 🧪 (incubateur de stratégies candidates, `bot.config.INCUBATING_STRATEGIES`), qui
+suit EXACTEMENT le même chemin de code que les 3 wallets réels dans tout ce module — aucune
+branche spéciale "labo" n'existe ici, ce qui garantit structurellement qu'une candidate incubée
+ne peut jamais trader ailleurs que dans le wallet labo (ses cibles ne sont produites que par
+`_combine_pockets(wallet_cfg=labo, ...)`, jamais par celui des 3 autres wallets, dont les
+poches ne référencent jamais son `strategy_ref`). Tout ce qui suit ("les 3 wallets") reste
+valable à l'identique pour le 4e, `bot.config.WALLET_IDS`/`bot.config.WALLETS` étant désormais
+la source de vérité UNIQUE du nombre réel de wallets traités par cycle.
 Idempotence et intégrité :
-  - un `run_id` couvre les 3 wallets à la fois (`state/cycle.json`, `bot.persist.cycle`) ;
+  - un `run_id` couvre TOUS les wallets à la fois (`state/cycle.json`, `bot.persist.cycle`) ;
   - chaque wallet garde SA PROPRE chaîne d'intégrité (`state_hash_prev`) indépendante des
-    deux autres, dans son propre `state/wallets/<id>/state.json` ;
-  - le cycle est TOUT-OU-RIEN : tout est calculé EN MÉMOIRE pour les 3 wallets avant la
+    autres, dans son propre `state/wallets/<id>/state.json` ;
+  - le cycle est TOUT-OU-RIEN : tout est calculé EN MÉMOIRE pour tous les wallets avant la
     moindre écriture disque ; si un wallet lève une exception, RIEN n'est écrit pour AUCUN
     wallet et le cycle échoue proprement (code retour non nul), sans commit partiel ;
-  - UN SEUL commit git par cycle réussi, couvrant les 12 fichiers de wallet + `cycle.json`.
+  - UN SEUL commit git par cycle réussi, couvrant tous les fichiers de wallet + `cycle.json`.
 
 Séquence :
   1. `pull_rebase`.
@@ -248,12 +258,25 @@ def _cb_snapshot(cb_state: dict, now: datetime) -> dict:
 
 def _noncrypto_tradable_symbols(wallet_cfg: dict) -> List[str]:
     """Symboles actions/ETF TRADABLES (hors filtre de régime seul, ex. SPY sans poche ETF) pour
-    les poches de CE wallet, dérivés de `wallet_cfg["pockets"]` (docs/ARCHITECTURE.md §11)."""
+    les poches de CE wallet, dérivés de `wallet_cfg["pockets"]` (docs/ARCHITECTURE.md §11).
+
+    Repli générique (§ Labo, docs/ARCHITECTURE.md) : une poche dont le `strategy_ref` n'est PAS
+    l'une des 3 stratégies de production câblées ci-dessus (ex. une candidate en incubation dans
+    le wallet labo, `bot.config.INCUBATING_STRATEGIES`) utilise l'univers déclaré par la poche
+    elle-même (`pocket["univers"]`, cf. `bot.config.labo_pockets()`) plutôt qu'un mapping en dur
+    — c'est ce qui permet au runner de "charger [les candidates] comme les autres" (mission
+    labo) sans modification de ce module à chaque nouvelle incubation actions/ETF.
+    """
     out: List[str] = []
     for pocket in wallet_cfg.get("pockets", []) or []:
         ref = pocket.get("strategy_ref")
+        asset_class = pocket.get("asset_class")
+        if not ref or asset_class in ("crypto", "cash"):
+            continue
         if ref in POCKET_STRATEGY_TRADABLE_SYMBOLS:
             out.extend(POCKET_STRATEGY_TRADABLE_SYMBOLS[ref])
+        else:
+            out.extend(pocket.get("univers", []) or [])
     return sorted(set(out))
 
 
@@ -291,8 +314,12 @@ def _no_trade_band_scale_by_symbol(wallet_cfg: dict) -> Dict[str, float]:
             continue
         if asset_class == "crypto":
             symbols = wallet_cfg.get("univers_crypto") or []
-        else:
+        elif ref in POCKET_STRATEGY_TRADABLE_SYMBOLS:
             symbols = POCKET_STRATEGY_TRADABLE_SYMBOLS.get(ref, [])
+        else:
+            # Repli générique candidate en incubation (§ Labo) : cf. docstring de
+            # `_noncrypto_tradable_symbols` ci-dessus, même raisonnement.
+            symbols = pocket.get("univers", []) or []
         for sym in symbols:
             prev = scale.get(sym)
             scale[sym] = alloc if prev is None else min(prev, alloc)
@@ -1032,9 +1059,19 @@ def main(now: Optional[datetime] = None) -> int:
     for w in config.WALLETS:
         for pocket in w.get("pockets", []) or []:
             ref = pocket.get("strategy_ref")
+            asset_class = pocket.get("asset_class")
+            if not ref or asset_class in ("crypto", "cash"):
+                continue
             if ref in POCKET_STRATEGY_DATA_SYMBOLS:
                 daily_symbols_all |= set(POCKET_STRATEGY_DATA_SYMBOLS[ref])
                 noncrypto_tradable_all |= set(POCKET_STRATEGY_TRADABLE_SYMBOLS[ref])
+            else:
+                # Repli générique candidate en incubation (§ Labo, docs/ARCHITECTURE.md) :
+                # univers déclaré directement par la poche (`pocket["univers"]`), cf.
+                # `_noncrypto_tradable_symbols()` pour le même raisonnement détaillé.
+                symbols = set(pocket.get("univers", []) or [])
+                daily_symbols_all |= symbols
+                noncrypto_tradable_all |= symbols
 
     all_price_symbols: List[str] = sorted(set(crypto_symbols_all) | noncrypto_tradable_all)
     # `get_prices()` (façade bot.feeds) route automatiquement chaque symbole vers l'adaptateur

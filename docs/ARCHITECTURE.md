@@ -1305,3 +1305,196 @@ IEF/bogey manquant, un titre isolé manquant), `bot/tests/test_missing_data_runn
 retour à la normale au cycle suivant, liquidation au Nème cycle avec raison distincte dans
 `decisions.jsonl`). Non-régression des cas 1/2 vérifiée sur les 3 suites de tests existantes
 (sortie de tendance confirmée, régime baissier SPY confirmé, momentum absolu vs IEF) — inchangés.
+
+---
+
+## 13. Addendum § Labo (2026-07-23) — le wallet labo 🧪, incubateur de stratégies candidates
+
+Première brique de la capacité d'auto-amélioration continue du bot : de nouvelles stratégies
+candidates seront désormais **incubées** dans un 4e wallet, `labo` 🧪, **avant** toute promotion
+vers un des 3 wallets réels, selon des règles chiffrées pré-enregistrées (règles de promotion
+elles-mêmes **hors périmètre** de cette étape — cette section ne construit que l'incubateur).
+
+**Ennemi désigné, explicite dès la conception** : le SUR-APPRENTISSAGE. Tester suffisamment de
+stratégies fait toujours émerger de faux gagnants par pur hasard statistique — un backtest
+flatteur ne prouve jamais qu'une stratégie candidate est réellement bonne, seulement qu'elle a
+bien collé aux données qu'on lui a montrées. Chaque décision de conception ci-dessous répond
+explicitement à cette menace :
+
+| Risque de sur-apprentissage | Contre-mesure |
+|---|---|
+| Une candidate "empruntant" du capital réel avant d'avoir fait ses preuves | Wallet labo **à part entière**, capital strictement isolé (§13.1) |
+| Une candidate avantagée par un simulateur complaisant (moins de frais, moins de breakers) | **Mêmes** `bot.risk.RiskManager`/`bot.sim.ExchangeSim` que les wallets réels, profil "équilibré-strict" (§13.2) |
+| Fenêtre d'observation choisie a posteriori pour flatter une candidate | `entered_at`/`entry_run_id` non falsifiables, fixés à l'entrée (§13.3) |
+| Paramètres réoptimisés en cours de route pour "mieux coller" au marché observé pendant le jugement | `params` **gelés** dès l'entrée en incubation (§13.3) |
+| Décision de promotion fondée uniquement sur le backtest qui a justifié l'incubation | Suivi de confrontation backtest-vs-vécu, métriques **vécues** uniquement (§13.4) |
+
+### 13.1 Le wallet labo — isolation stricte du capital
+
+`bot.config.WALLETS` porte désormais 4 entrées : les 3 wallets réels (§10) + `labo`
+(`bot.config.LABO_WALLET_ID = "labo"`), 1 000 € de capital nominal comme les autres, **jamais**
+un sous-compte de l'un d'eux. `bot.config.PRODUCTION_WALLET_IDS` liste les 3 wallets réels à
+l'exclusion du labo, pour tout code qui doit explicitement les distinguer (aujourd'hui : rien
+dans `bot/runner.py`, qui ne fait AUCUNE différence de traitement — voir §13.5).
+
+Comme les 3 autres à leur naissance (§10.2/§10.8), le labo naît **NON INITIALISÉ**
+(`fx.initial_rate=None`, `cash_usd=0.0`, `positions={}`) et s'initialise au premier cycle où un
+taux EUR/USD est disponible — `tools/migrate_to_wallets.py` est générique sur
+`bot.config.WALLETS` : aucune modification n'a été nécessaire pour créer son
+`state/wallets/labo/{state.json,trades.jsonl,equity.jsonl,decisions.jsonl}`, non initialisé,
+lors d'une migration (bot/tests/test_labo.py::test_migration_creates_labo_wallet_uninitialized).
+
+### 13.2 Profil de risque "équilibré-strict"
+
+```
+vol_target_annualized = 0.20   gross_exposure_max = 0.70   cap_per_asset = 0.20
+cb_daily_loss_freeze_pct = 0.03   cb_dd_half_size_pct = 0.15   cb_dd_flatten_pct = 0.25
+```
+
+Repris à l'identique du profil `equilibre` (§10.1) pour vol/expo/breakers — les candidates
+s'affrontent à armes égales avec un wallet réel de référence, jamais dans un cadre plus
+permissif qui gonflerait artificiellement leurs résultats vécus. Seul le cap par actif est
+resserré (20% au lieu de 25%) : une candidate seule en incubation ne doit jamais pouvoir
+concentrer une part disproportionnée du capital labo pendant sa période de jugement — plusieurs
+candidates cohabitant, chacune reste bornée individuellement.
+
+### 13.3 Mécanisme d'incubation — `bot.config.INCUBATING_STRATEGIES`
+
+`bot/config.py` gagne une section `INCUBATING_STRATEGIES: list[dict]`, **vide aujourd'hui**
+(aucune candidate proposée par une session de recherche pour l'instant — le labo reste donc
+intégralement en cash, état ATTENDU, pas un bug, vérifié par
+`bot/tests/test_config_strategies_sync.py::test_incubating_strategies_empty_and_labo_pockets_dynamic_and_empty`).
+Schéma de chaque entrée, une fois peuplée :
+
+```python
+{
+    "id": "candidate_x",              # == StrategyBase.name, résolu par load_strategies()
+    "module": "bot.strategies.candidate_x",  # documentaire/audit humain uniquement
+    "params": {...},                   # hyperparamètres GELÉS dès l'entrée (jamais réoptimisés)
+    "asset_class": "crypto",           # "crypto" | "equities" | "etf" -- une poche par candidate
+    "univers": ["BTC", "ETH"],
+    "capital_alloc_pct": 0.4,          # part du capital DU LABO (jamais des wallets réels)
+    "entered_at": "2026-07-23T00:00:00+00:00",
+    "entry_run_id": "2026-07-23T10",   # ancre non falsifiable a posteriori (contrairement à
+                                        # entered_at) pour toute fenêtre d'observation future
+}
+```
+
+La somme des `capital_alloc_pct` DOIT rester `<= 1.0` (réserve cash implicite), même invariant
+que les `pockets` des 3 wallets réels (`bot/tests/test_config_strategies_sync.py::
+test_pockets_capital_alloc_pct_sums_to_at_most_one_per_wallet`, assoupli à `0 <= x <= 1.0` pour
+le labo spécifiquement, puisque ses poches sont dynamiques et vides aujourd'hui).
+
+`bot.config.labo_pockets()` transforme dynamiquement `INCUBATING_STRATEGIES` en une liste au
+même format que `WALLETS[*]["pockets"]` des 3 wallets réels
+(`{asset_class, capital_alloc_pct, strategy_ref}`), plus une clé `univers` supplémentaire
+(liste des symboles de la candidate) consommée par le repli générique de `bot/runner.py` décrit
+au §13.5. `bot.config.labo_crypto_universe()` calcule l'union des univers des candidates crypto,
+utilisée comme `WALLETS[labo]["univers_crypto"]`. `bot.config.incubating_strategy(id)` retrouve
+la fiche complète d'une candidate (utile au suivi §13.4 pour `entered_at`/`entry_run_id`).
+
+### 13.4 Suivi de confrontation backtest-vs-vécu — `bot/reporting/tracking.py`
+
+`compute_live_metrics(wallet_state, journaux, strategy_id) -> dict` : fonction **pure**
+(aucun appel réseau, aucune lecture disque — l'appelant fournit les journaux déjà chargés) qui
+calcule, pour une stratégie donnée (incubée OU active), ses métriques **vécues** :
+`n_trades`, `realized_pnl_cumulative_usd` (somme des PnL réalisés des ventes), `avg_exposure_pct`
+(exposition moyenne, cycles observés), plus `first_run_id`/`last_run_id`/`n_cycles_observed`
+pour le contexte. Aucune hypothèse d'univers statique par stratégie : l'attribution "ce symbole,
+ce cycle, appartient à `strategy_id`" est relue directement dans
+`decisions.jsonl["strategy_signals"]` (déjà rempli par `bot/runner.py:_combine_pockets()` pour
+les 3 stratégies de production ET pour toute candidate incubée, cf. §13.5), puis jointe à
+`trades.jsonl`/`equity.jsonl` par `(run_id, symbole)` — jamais par un mapping symbole→stratégie
+recopié en dur, qui se désynchroniserait silencieusement si l'univers d'une candidate change en
+cours d'incubation.
+
+`update_strategy_state_live_metrics(state, journaux, strategy_id)` calcule ces métriques et les
+persiste en place dans `state["strategy_state"][strategy_id]["live_metrics"]`, même convention
+que le reste de `strategy_state` (§11.5/§12.4).
+
+Réutilisable tel quel, sans modification, par les deux consommateurs futurs visés par la
+mission : un **moniteur de dérive** (compare le vécu au comportement backtesté attendu, alerte
+sur écart significatif) et les **sessions de recherche** (jugent une candidate avant une
+éventuelle promotion). Aucun des deux n'existe encore — hors périmètre de cette étape.
+
+**Décision assumée, documentée** : ce module N'EST PAS câblé dans le cycle horaire de
+production (`bot/runner.py:process_wallet`), qui reste une fonction quasi pure sans lecture
+disque au-delà de ce que `main()` lui transmet déjà (contrat documenté en tête de
+`bot/runner.py`, §10.6 point 4). Calculer des métriques vécues exige de relire l'historique
+COMPLET des journaux d'un wallet — un besoin d'outillage d'observabilité, pas celui du cycle
+horaire lui-même (trader). Câbler cela dans `process_wallet` romprait ce contrat de pureté pour
+un gain nul côté trading, et risquerait de ralentir/fragiliser le chemin critique qui committe
+toutes les heures. Un futur script d'observabilité (moniteur de dérive/sessions de recherche)
+appellera `compute_live_metrics()`/`update_strategy_state_live_metrics()` directement sur les
+journaux lus depuis le dépôt, hors du cycle horaire.
+
+### 13.5 Câblage runner — "chargées comme les autres", isolation structurelle
+
+`bot/runner.py` ne contient **aucune branche spéciale "labo"** : le wallet labo suit exactement
+le même chemin que les 3 wallets réels dans `main()`/`process_wallet()`
+(`bot.config.WALLETS`/`bot.config.WALLET_IDS` pilotent déjà génériquement l'univers agrégé, le
+traitement séquentiel tout-ou-rien, les écritures disque et le commit unique, §10.6). Une
+candidate en incubation est chargée par `bot.strategies.load_strategies()` **exactement comme**
+`quasi_passif_crypto`/`xs_momentum_sp100`/`dual_momentum_etf` (même découverte par scan de
+`bot/strategies/`, même interface `StrategyBase`, même `RiskManager`/`ExchangeSim` construits
+par profil de wallet) — mission point 2 ("le runner les charge comme les autres").
+
+Deux fonctions généralisées pour que ce chargement fonctionne sans modification supplémentaire
+à chaque nouvelle incubation actions/ETF (les poches crypto étaient déjà génériques via
+`wallet_cfg["univers_crypto"]`) :
+- `bot/runner.py:_noncrypto_tradable_symbols()` et la boucle d'agrégation de
+  `bot/runner.py:main()` (univers actions/ETF partagé entre wallets) retombent sur
+  `pocket["univers"]` (fourni par `bot.config.labo_pockets()`) quand le `strategy_ref` d'une
+  poche n'est PAS l'une des 3 stratégies de production câblées en dur
+  (`POCKET_STRATEGY_TRADABLE_SYMBOLS`/`POCKET_STRATEGY_DATA_SYMBOLS`).
+- `bot/runner.py:_no_trade_band_scale_by_symbol()` applique le même repli.
+
+**Garantie structurelle d'isolation (mission point 5, test négatif)** :
+`bot/runner.py:_combine_pockets(wallet_cfg, ...)` n'appelle `strategy.target_weights()` que pour
+les poches de **CE** `wallet_cfg` — une candidate référencée uniquement par une poche du labo
+n'est donc **jamais** invoquée lors du traitement d'un wallet réel, même si
+`strategies_by_name` (le dict partagé construit une seule fois par cycle pour tous les wallets,
+§10.6 point 4) la contient. Ce n'est pas une vérification ad hoc mais une conséquence directe et
+non contournable de la structure "une poche référence un `strategy_ref`, une poche appartient à
+un wallet unique" — vérifié explicitement par des tests négatifs :
+`bot/tests/test_labo.py::test_incubating_strategy_never_emits_targets_for_a_production_wallet`
+et `::test_incubating_strategy_never_emits_targets_for_any_production_wallet_full_cycle` (une
+candidate factice instrumentée, `_FakeCandidateStrategy`, prouve qu'elle n'est **jamais** appelée
+pour un wallet réel, et que `decisions.jsonl` ne porte jamais son nom hors du labo), avec la
+contrepartie positive `::test_labo_pockets_do_call_the_incubating_strategy_and_scale_by_capital_alloc_pct`
+(elle EST bien appelée pour le labo, poids mis à l'échelle par `capital_alloc_pct`, exactement
+comme `_combine_pockets` le fait pour les 3 wallets réels).
+
+### 13.6 Tests
+
+`bot/tests/test_config_strategies_sync.py` (identité/capital/profil de risque du labo,
+`INCUBATING_STRATEGIES` vide et poches/univers dynamiques dérivés correctement, invariant de
+somme des `capital_alloc_pct` assoupli pour le labo, `strategy_ref` d'une candidate reconnu
+comme "connu"), `bot/tests/test_labo.py` (migration non-initialisée, cycle "vide" sans crash en
+cash pur, breakers/isolation identiques aux wallets réels via `process_wallet`, tests négatifs
+et positif d'isolation ci-dessus §13.5, repli générique `pocket["univers"]`),
+`bot/tests/test_tracking.py` (`compute_live_metrics`/`update_strategy_state_live_metrics` :
+attribution trades/exposition par `(run_id, symbole)` via `strategy_signals`, PnL net sommé
+uniquement sur les ventes, tolérance aux journaux absents/incomplets, réutilisabilité pour un
+`id` de candidate quelconque, mutation en place de `strategy_state` sans écraser les clés
+existantes d'une autre brique — ex. `missing_data_cycles`, §12.4).
+
+### 13.7 Explicitement laissé ouvert (hors périmètre de cette étape)
+
+- **Règles de promotion chiffrées** (fenêtre d'observation minimale, seuils de PnL/Sharpe vécu,
+  procédure de sortie d'incubation en échec) : mentionnées par la mission comme
+  "pré-enregistrées" mais non définies ni implémentées ici — prochaine étape logique de cette
+  capacité, à documenter dans une future section de ce document avant toute première
+  incubation réelle.
+- **Chargement effectif d'une première candidate** : `INCUBATING_STRATEGIES` reste vide ; le
+  mécanisme est construit et testé, jamais encore exercé en conditions réelles (pas de module
+  `bot/strategies/<candidate>.py` livré par cette étape).
+- **Moniteur de dérive et sessions de recherche** : consommateurs prévus de
+  `bot/reporting/tracking.py`, non construits (§13.4).
+- **Dashboard** (`dashboard/index.html`) : reste câblé en dur sur les 3 wallets réels
+  (`REPO_RAW_BASE + "wallets/" + id`, liste `id: "prudent"/"equilibre"/"agressif"` en JS) — ne
+  montre pas encore le labo. Décision assumée : hors périmètre de cette mission (portait
+  explicitement sur `bot/config.py` + le mécanisme d'incubation + la migration + le suivi de
+  tracking, pas sur le dashboard), aucune régression introduite (le labo committe ses propres
+  fichiers `state/wallets/labo/*` comme les 3 autres, simplement pas encore lus par le
+  dashboard) — à traiter dans une prochaine phase.
