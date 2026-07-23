@@ -18,6 +18,7 @@ from bot.feeds._config_fallback import cfg
 from bot.feeds.calendar import is_us_market_open  # noqa: F401  (réexport de confort)
 from bot.feeds.crypto import get_history_crypto, get_prices_crypto
 from bot.feeds.equities import get_history_equity, get_prices_equity
+from bot.feeds.fx import FxRate, get_fx_rate  # noqa: F401  (réexport, multi-wallets)
 from bot.feeds.types import HistoryUnavailableError, Quote  # noqa: F401  (réexport)
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,8 @@ __all__ = [
     "get_prices",
     "get_history",
     "is_us_market_open",
+    "FxRate",
+    "get_fx_rate",
 ]
 
 

@@ -1,84 +1,105 @@
 {
-  "univers": {
-    "crypto": [
-      "BTC",
-      "ETH",
-      "SOL",
-      "DOGE",
-      "LINK",
-      "AVAX"
-    ],
-    "crypto_pair_binance": {
-      "BTC": "BTCUSDT",
-      "ETH": "ETHUSDT",
-      "SOL": "SOLUSDT",
-      "DOGE": "DOGEUSDT",
-      "LINK": "LINKUSDT",
-      "AVAX": "AVAXUSDT"
+  "wallets": [
+    {
+      "id": "prudent",
+      "emoji": "🛡️",
+      "label": "Prudent",
+      "capital_initial_eur": 1000.0,
+      "univers_crypto": ["BTC", "ETH"],
+      "risque": {
+        "vol_target_annualized": 0.10,
+        "gross_exposure_max": 0.40,
+        "cap_per_asset": 0.20,
+        "vol_ewma_halflife_hours": 60,
+        "vol_coldstart_min_points": 30,
+        "vol_coldstart_scalar": 0.5,
+        "no_trade_band": 0.05,
+        "cb_daily_loss_freeze_pct": 0.02,
+        "cb_daily_loss_freeze_hours": 24,
+        "cb_consecutive_losses_trigger": 5,
+        "cb_cooldown_hours": 24,
+        "cb_dd_half_size_pct": 0.10,
+        "cb_dd_flatten_pct": 0.15
+      }
     },
-    "crypto_pair_coinbase": {
-      "BTC": "BTC-USD",
-      "ETH": "ETH-USD",
-      "SOL": "SOL-USD",
-      "DOGE": "DOGE-USD",
-      "LINK": "LINK-USD",
-      "AVAX": "AVAX-USD"
+    {
+      "id": "equilibre",
+      "emoji": "⚖️",
+      "label": "Équilibré",
+      "capital_initial_eur": 1000.0,
+      "univers_crypto": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "risque": {
+        "vol_target_annualized": 0.20,
+        "gross_exposure_max": 0.70,
+        "cap_per_asset": 0.25,
+        "vol_ewma_halflife_hours": 60,
+        "vol_coldstart_min_points": 30,
+        "vol_coldstart_scalar": 0.5,
+        "no_trade_band": 0.05,
+        "cb_daily_loss_freeze_pct": 0.03,
+        "cb_daily_loss_freeze_hours": 24,
+        "cb_consecutive_losses_trigger": 5,
+        "cb_cooldown_hours": 24,
+        "cb_dd_half_size_pct": 0.15,
+        "cb_dd_flatten_pct": 0.25
+      }
     },
-    "equity": [
-      "AAPL",
-      "MSFT",
-      "GOOGL",
-      "AMZN",
-      "NVDA",
-      "META"
-    ]
-  },
-  "capital": {
-    "initial_cash_usd": 100000.0
+    {
+      "id": "agressif",
+      "emoji": "🔥",
+      "label": "Agressif",
+      "capital_initial_eur": 1000.0,
+      "univers_crypto": [
+        "BTC", "ETH", "BNB", "SOL", "XRP", "ADA", "DOGE", "AVAX", "DOT", "LINK",
+        "LTC", "TRX", "BCH", "ETC", "UNI", "ATOM", "NEAR", "FIL", "APT", "ARB",
+        "OP", "INJ", "ICP", "HBAR", "AAVE", "ALGO", "SAND", "MANA", "XLM", "VET"
+      ],
+      "cost_tiers": {
+        "majors": {"symbols": ["BTC", "ETH", "BNB", "SOL", "XRP"], "fee_taker_bps": 10, "slippage_penalty_bps": 5},
+        "mids": {"symbols": ["ADA", "DOGE", "AVAX", "DOT", "LINK", "LTC", "TRX", "BCH", "ETC", "UNI", "ATOM"], "fee_taker_bps": 15, "slippage_penalty_bps": 10},
+        "smalls": {"symbols": ["NEAR", "FIL", "APT", "ARB", "OP", "INJ", "ICP", "HBAR", "AAVE", "ALGO", "SAND", "MANA", "XLM", "VET"], "fee_taker_bps": 25, "slippage_penalty_bps": 20}
+      },
+      "risque": {
+        "vol_target_annualized": 0.35,
+        "gross_exposure_max": 0.90,
+        "cap_per_asset": 0.30,
+        "vol_ewma_halflife_hours": 60,
+        "vol_coldstart_min_points": 30,
+        "vol_coldstart_scalar": 0.5,
+        "no_trade_band": 0.05,
+        "cb_daily_loss_freeze_pct": 0.05,
+        "cb_daily_loss_freeze_hours": 24,
+        "cb_consecutive_losses_trigger": 5,
+        "cb_cooldown_hours": 24,
+        "cb_dd_half_size_pct": 0.20,
+        "cb_dd_flatten_pct": 0.35
+      }
+    }
+  ],
+  "devise": {
+    "comptabilite_interne": "USD",
+    "affichage": "EUR",
+    "capital_initial_eur_par_wallet": 1000.0,
+    "sources_taux_eurusd": ["api.frankfurter.app", "open.er-api.com"],
+    "repli": "dernier taux EUR/USD connu, persiste dans state/wallets/<id>/state.json (fx.last_rate), marque stale=true"
   },
   "couts": {
-    "fee_taker_bps": 10,
-    "slippage_penalty_bps": 5,
-    "min_notional_usd": 10.0,
+    "fee_taker_bps_defaut": 10,
+    "slippage_penalty_bps_defaut": 5,
+    "min_notional_usd": 5.0,
+    "min_notional_usd_note": "ajuste de 10$ a 5$ pour rester praticable avec des positions de 50-300$ sur des wallets de 1000e (voir docs/ARCHITECTURE.md section multi-wallets)",
     "max_quote_age_seconds": 120.0
   },
   "fraicheur_prix": {
     "staleness_max_seconds_crypto": 300,
     "staleness_max_seconds_equity": 300
   },
-  "equity_synthetic_spread_enabled": false,
-  "risque": {
-    "profil": "AGRESSIF",
-    "vol_target_annualized_min": 0.25,
-    "vol_target_annualized_max": 0.3,
-    "vol_target_annualized": 0.275,
-    "vol_ewma_halflife_hours": 60,
-    "vol_coldstart_min_points": 30,
-    "vol_coldstart_scalar": 0.5,
-    "cap_per_asset_crypto": 0.25,
-    "cap_per_asset_equity": 0.15,
-    "gross_exposure_max": 0.8,
-    "no_trade_band": 0.05
-  },
-  "circuit_breakers_agressifs": {
-    "cb_daily_loss_freeze_pct": 0.04,
-    "cb_daily_loss_freeze_hours": 24,
-    "cb_consecutive_losses_trigger": 5,
-    "cb_cooldown_hours": 24,
-    "cb_dd_half_size_pct": 0.2,
-    "cb_dd_flatten_pct": 0.3
-  },
-  "filtres_regime": {
-    "regime_sma_days": 200,
-    "regime_atr_percentile_window_days": 90,
-    "regime_atr_percentile_max": 0.9
-  },
   "chemins": {
     "state_dir": "state",
-    "state_json": "state/state.json",
-    "trades_jsonl": "state/trades.jsonl",
-    "equity_jsonl": "state/equity.jsonl",
-    "decisions_jsonl": "state/decisions.jsonl"
+    "cycle_json": "state/cycle.json",
+    "wallets_dir": "state/wallets",
+    "wallet_files": ["state.json", "trades.jsonl", "equity.jsonl", "decisions.jsonl"],
+    "archive_100k_dir": "state/archive-100k"
   },
-  "_note": "Snapshot JSON lisible (dashboard/audit humain) de bot/config.py, qui reste la SEULE source de verite importee par le code (bot.config). Ce fichier est informatif; le modifier n a aucun effet sur le comportement du bot."
+  "_note": "Snapshot JSON lisible (dashboard/audit humain) de bot/config.py, qui reste la SEULE source de verite importee par le code (bot.config, bot.config.WALLETS). Ce fichier est informatif; le modifier n a aucun effet sur le comportement du bot."
 }

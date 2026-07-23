@@ -29,16 +29,35 @@ from bot.persist.state import (
 def test_init_state_shape():
     state = init_state()
     validate_schema(state)  # ne doit jamais lever
-    assert state["cash_usd"] == 100_000.0
+    # Multi-wallets : un wallet naît NON INITIALISÉ (cash_usd=0.0, fx.initial_rate=None) —
+    # le capital réel n'est fixé qu'au premier cycle où un taux EUR/USD est disponible
+    # (jamais inventé ici), voir docs/ARCHITECTURE.md §9.1.
+    assert state["cash_usd"] == 0.0
     assert state["positions"] == {}
     assert state["last_run_id"] is None
-    assert state["equity_peak_usd"] == 100_000.0
+    assert state["equity_peak_usd"] == 0.0
     assert state["state_hash_prev"] == GENESIS_HASH
+    assert state["wallet_id"] == "default"
+    assert state["initial_eur"] == 1000.0
+    assert state["fx"]["initial_rate"] is None
+    assert state["fx"]["last_rate"] is None
     cb = state["circuit_breakers"]
     assert cb["flatten_mode"] is False
     assert cb["manual_review_required"] is False
     assert cb["consecutive_losses"] == 0
     assert state["trade_history_for_breakers"] == []
+
+
+def test_init_state_with_wallet_id_and_capital():
+    state = init_state("prudent", 1000.0)
+    validate_schema(state)
+    assert state["wallet_id"] == "prudent"
+    assert state["initial_eur"] == 1000.0
+    assert state["cash_usd"] == 0.0
+    assert state["fx"] == {
+        "initial_rate": None, "last_rate": None, "last_rate_ts": None,
+        "last_rate_source": None, "last_rate_stale": False,
+    }
 
 
 def test_load_state_absent_file_returns_init_state(tmp_path):
@@ -175,8 +194,22 @@ def _valid_state() -> dict:
         lambda s: s.update(positions={"BTC": {"qty": -1.0, "prix_moyen": 100.0}}),
         lambda s: s.update(positions={"BTC": "not_a_dict"}),
         lambda s: s.update(positions="not_a_dict"),
-        lambda s: s.update(equity_peak_usd=0.0),
+        # equity_peak_usd=0.0 N'EST PLUS rejeté (multi-wallets : légitime tant que le wallet
+        # n'est pas initialisé, cf. test_validate_schema_accepts_equity_peak_zero ci-dessous) —
+        # seule une valeur négative reste invalide.
         lambda s: s.update(equity_peak_usd=-5.0),
+        lambda s: s.pop("wallet_id"),
+        lambda s: s.update(wallet_id=""),
+        lambda s: s.update(wallet_id=123),
+        lambda s: s.pop("initial_eur"),
+        lambda s: s.update(initial_eur=0.0),
+        lambda s: s.update(initial_eur=-1000.0),
+        lambda s: s.pop("fx"),
+        lambda s: s.update(fx={"initial_rate": None, "last_rate": None, "last_rate_ts": None, "last_rate_source": None}),  # last_rate_stale manquant
+        lambda s: s.update(fx={"initial_rate": 0.0, "last_rate": None, "last_rate_ts": None, "last_rate_source": None, "last_rate_stale": False}),
+        lambda s: s.update(fx={"initial_rate": -1.1, "last_rate": None, "last_rate_ts": None, "last_rate_source": None, "last_rate_stale": False}),
+        lambda s: s.update(fx={"initial_rate": None, "last_rate": None, "last_rate_ts": None, "last_rate_source": None, "last_rate_stale": "false"}),
+        lambda s: s.update(fx={"initial_rate": None, "last_rate": None, "last_rate_ts": None, "last_rate_source": None, "last_rate_stale": False, "extra": 1}),
         lambda s: s.update(state_hash_prev="not_a_valid_hash"),
         lambda s: s.update(state_hash_prev=123),
         lambda s: s.update(last_run_id=20260722),
@@ -211,6 +244,23 @@ def test_validate_schema_rejects_corrupted_states(mutate):
 
 def test_validate_schema_accepts_well_formed_state():
     validate_schema(_valid_state())  # ne doit pas lever
+
+
+def test_validate_schema_accepts_equity_peak_zero_when_uninitialized():
+    """Multi-wallets : un wallet non initialisé (aucun taux EUR/USD résolu encore) a
+    legitimement equity_peak_usd=0.0 — ce n'est plus une anomalie de schéma."""
+    state = init_state("prudent", 1000.0)
+    validate_schema(state)  # ne doit pas lever
+    assert state["equity_peak_usd"] == 0.0
+
+
+def test_validate_schema_accepts_wallet_fx_fully_populated():
+    state = init_state("agressif", 1000.0)
+    state["fx"] = {
+        "initial_rate": 1.08, "last_rate": 1.081, "last_rate_ts": "2026-07-23T10:00:00+00:00",
+        "last_rate_source": "frankfurter", "last_rate_stale": False,
+    }
+    validate_schema(state)  # ne doit pas lever
 
 
 def test_load_state_rejects_invalid_json(tmp_path):

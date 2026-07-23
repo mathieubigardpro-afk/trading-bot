@@ -12,6 +12,14 @@ Façade publique du module (ARCHITECTURE.md §5.4). Voir chaque sous-module pour
 """
 
 from .audit import ChainAuditResult, verify_chain
+from .cycle import (
+    CycleStateValidationError,
+    init_cycle_state,
+    is_cycle_already_done,
+    load_cycle_state,
+    save_cycle_state,
+    validate_cycle_schema,
+)
 from .git_sync import git_sync, has_uncommitted_state_changes, pull_rebase
 from .journal import append_journal, append_journal_many, records_for_run
 from .state import (
@@ -42,4 +50,10 @@ __all__ = [
     "load_state",
     "save_state",
     "validate_schema",
+    "CycleStateValidationError",
+    "init_cycle_state",
+    "is_cycle_already_done",
+    "load_cycle_state",
+    "save_cycle_state",
+    "validate_cycle_schema",
 ]

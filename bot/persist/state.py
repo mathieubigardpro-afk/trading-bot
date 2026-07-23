@@ -57,23 +57,39 @@ def _fail(msg: str) -> None:
     raise StateValidationError(msg)
 
 
-def init_state() -> dict:
+def init_state(wallet_id: str = "default", capital_initial_eur: float = 1000.0) -> dict:
     """Construit l'état initial en mémoire (aucune écriture disque, fonction pure).
 
     Utilisé automatiquement par `load_state()` quand `state.json` n'existe pas encore (tout
-    premier run de l'histoire du dépôt), et disponible en appel direct (scripts d'audit,
-    tests, initialisation manuelle explicite).
+    premier run pour ce wallet), et disponible en appel direct (scripts d'audit, tests,
+    initialisation manuelle explicite).
+
+    Multi-wallets (voir docs/ARCHITECTURE.md §9) : un wallet naît toujours NON INITIALISÉ
+    (`cash_usd=0.0`, `fx.initial_rate=None`) — le capital USD réel (`capital_initial_eur`
+    converti au taux EUR/USD du tout premier cycle où un taux est disponible) n'est fixé que
+    par `bot/runner.py`, jamais inventé ici. `wallet_id="default"` et
+    `capital_initial_eur=1000.0` restent les valeurs par défaut pour les appels génériques
+    (tests bas niveau de `bot.persist` qui ne portent pas sur la logique multi-wallets).
     """
     return {
         "schema_version": SCHEMA_VERSION,
+        "wallet_id": str(wallet_id),
+        "initial_eur": float(capital_initial_eur),
         "last_run_id": None,
         "last_run_completed_at": None,
         "state_hash_prev": GENESIS_HASH,
-        "cash_usd": float(cfg.INITIAL_CASH_USD),
+        "cash_usd": 0.0,
         "positions": {},
-        "equity_peak_usd": float(cfg.INITIAL_CASH_USD),
+        "equity_peak_usd": 0.0,
         "equity_peak_ts": None,
         "realized_pnl_cumulative_usd": 0.0,
+        "fx": {
+            "initial_rate": None,     # EUR/USD figé au tout premier cycle initialisé, jamais réécrit ensuite
+            "last_rate": None,        # dernier taux EUR/USD connu (frais ou stale), pour repli
+            "last_rate_ts": None,
+            "last_rate_source": None,  # "frankfurter" | "open_er_api" | "dernier_taux_connu" | None
+            "last_rate_stale": False,
+        },
         "circuit_breakers": {
             "flatten_mode": False,
             "manual_review_required": False,
@@ -125,6 +141,12 @@ def validate_schema(state: Any) -> None:
     if schema_version != SCHEMA_VERSION:
         _fail(f"schema_version non supporté : {schema_version!r} (attendu {SCHEMA_VERSION})")
 
+    wallet_id = _require(state, "wallet_id", str)
+    if not wallet_id:
+        _fail("champ 'wallet_id' : ne doit pas être vide")
+
+    _require_finite_number(state, "initial_eur", strictly_positive=True)
+
     _require(state, "last_run_id", (str, type(None)))
     _require(state, "last_run_completed_at", (str, type(None)))
 
@@ -155,9 +177,30 @@ def validate_schema(state: Any) -> None:
                     "zéro doit être retirée de l'objet 'positions', pas mise à qty=0)"
                 )
 
-    _require_finite_number(state, "equity_peak_usd", strictly_positive=True)
+    # Multi-wallets : un wallet non encore initialisé (fx.initial_rate=None, en attente d'un
+    # taux EUR/USD) a légitimement equity_peak_usd=0.0 (aucun capital converti pour l'instant)
+    # — assoupli de "strictement positif" à "positif ou nul" par rapport au schéma pré-wallets
+    # (voir docs/ARCHITECTURE.md §9.1).
+    _require_finite_number(state, "equity_peak_usd", positive=True)
     _require(state, "equity_peak_ts", (str, type(None)))
     _require_finite_number(state, "realized_pnl_cumulative_usd")
+
+    fx = _require(state, "fx", dict)
+    fx_rate = _require(fx, "initial_rate", (int, float, type(None)))
+    if fx_rate is not None:
+        if isinstance(fx_rate, bool) or not math.isfinite(fx_rate) or fx_rate <= 0:
+            _fail("fx.initial_rate : doit être un nombre fini strictement positif, ou null")
+    fx_last_rate = _require(fx, "last_rate", (int, float, type(None)))
+    if fx_last_rate is not None:
+        if isinstance(fx_last_rate, bool) or not math.isfinite(fx_last_rate) or fx_last_rate <= 0:
+            _fail("fx.last_rate : doit être un nombre fini strictement positif, ou null")
+    _require(fx, "last_rate_ts", (str, type(None)))
+    _require(fx, "last_rate_source", (str, type(None)))
+    fx_stale = _require(fx, "last_rate_stale", bool)
+    extra_fx_keys = set(fx) - {"initial_rate", "last_rate", "last_rate_ts", "last_rate_source", "last_rate_stale"}
+    if extra_fx_keys:
+        _fail(f"fx : champ(s) inattendu(s) {sorted(extra_fx_keys)}")
+    del fx_stale  # déjà validé par _require, juste pour lisibilité (pas de contrainte de valeur)
 
     cb = _require(state, "circuit_breakers", dict)
     for f in _CB_BOOL_FIELDS:

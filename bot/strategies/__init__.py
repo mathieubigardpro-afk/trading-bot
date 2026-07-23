@@ -30,7 +30,7 @@ __all__ = ["StrategyBase", "combine_strategies", "load_strategies"]
 
 
 class StrategyBase(ABC):
-    """Interface commune de toute stratégie concrète (ARCHITECTURE.md §5.5).
+    """Interface commune de toute stratégie concrète (ARCHITECTURE.md §5.5, §9 multi-wallets).
 
     `name` : identifiant stable utilisé comme clé dans `strategy_signals` (decisions.jsonl)
     et comme préfixe éventuel de `client_order_id`/`strategy` dans trades.jsonl.
@@ -39,10 +39,24 @@ class StrategyBase(ABC):
     name: str = "strategy_base"
 
     @abstractmethod
-    def target_weights(self, history: Dict[str, pd.DataFrame], state: dict) -> Dict[str, float]:
+    def target_weights(
+        self,
+        history: Dict[str, pd.DataFrame],
+        state: dict,
+        profile: dict | None = None,
+    ) -> Dict[str, float]:
         """Retourne un poids cible BRUT par symbole (0..1, long-only ; 0 = flat), calculé
-        exclusivement à partir de `history` (bougies clôturées) et de `state` (positions
-        actuelles). Pure fonction : aucun appel réseau, aucune écriture disque.
+        exclusivement à partir de `history` (bougies clôturées), de `state` (positions
+        actuelles du wallet) et de `profile` (config du wallet courant, cf.
+        `bot.config.wallet_config()` — `id`, `emoji`, `label`, `univers_crypto`, `risque`
+        entre autres). Pure fonction : aucun appel réseau, aucune écriture disque.
+
+        Multi-wallets (docs/ARCHITECTURE.md §9) : une MÊME classe de stratégie peut être
+        instanciée pour plusieurs wallets simultanément, avec des réglages différents selon
+        `profile` (ex. lookback plus court pour le wallet agressif) — `profile` est donc
+        REÇU ici plutôt que fixé à la construction de la stratégie, pour permettre une seule
+        instance réutilisable si son implémentation le souhaite, ou pour simplement ignorer
+        ce paramètre (défaut `None`) si la stratégie n'en a pas besoin.
         """
         raise NotImplementedError
 
@@ -51,6 +65,7 @@ def combine_strategies(
     strategies: List[StrategyBase],
     history: Dict[str, pd.DataFrame],
     state: dict,
+    profile: dict | None = None,
 ) -> Tuple[Dict[str, float], Dict[str, Dict[str, float]]]:
     """Combine plusieurs stratégies par MOYENNE ÉQUI-PONDÉRÉE de leurs poids par symbole
     (placeholder documenté — cf. ARCHITECTURE.md §5.5 et §8, à remplacer par une allocation
@@ -60,6 +75,9 @@ def combine_strategies(
     alimente `strategy_signals` dans `decisions.jsonl`. Si `strategies` est vide, retourne
     `({}, {})` — aucun signal, équivalent à 100% cash / positions inchangées (c'est au
     runner de décider du repli exact, cf. `bot/runner.py`).
+
+    `profile` (multi-wallets) : transmis tel quel à chaque `target_weights()` — c'est le
+    wallet courant qui est évalué, cf. `bot/runner.py`.
     """
     signals_par_strategie: Dict[str, Dict[str, float]] = {}
     if not strategies:
@@ -68,7 +86,7 @@ def combine_strategies(
     sums: Dict[str, float] = {}
     counts: Dict[str, int] = {}
     for strat in strategies:
-        weights = strat.target_weights(history, state) or {}
+        weights = strat.target_weights(history, state, profile) or {}
         signals_par_strategie[strat.name] = dict(weights)
         for symbol, w in weights.items():
             sums[symbol] = sums.get(symbol, 0.0) + float(w)

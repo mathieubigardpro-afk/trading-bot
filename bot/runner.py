@@ -1,24 +1,39 @@
 #!/usr/bin/env python3
-"""bot/runner.py — point d'entrée du bot, orchestre le cycle horaire complet.
+"""bot/runner.py — point d'entrée du bot, orchestre le cycle horaire MULTI-WALLETS.
 
-Séquence exacte (voir `docs/ARCHITECTURE.md` §6) :
-  1. `pull_rebase` (repartir de l'état le plus récent poussé par un run précédent).
-  2. Idempotence : `load_state()` + `compute_run_id()` ; sortie propre (code 0) si déjà traité.
-  3. Détermination de l'univers actif (crypto toujours, actions si marché US ouvert).
-  4. Récupération des prix réels (`get_prices`) — jamais de prix stocké arrangé.
-  5. Récupération de l'historique (`get_history`) pour les symboles à prix disponible.
-  6. Signaux bruts (`combine_strategies` / repli "aucune stratégie -> cibles = positions
-     actuelles" si `bot/strategies/` ne contient encore aucune stratégie concrète).
-  7. `RiskManager.apply()`.
-  8. Génération des ordres via `ExchangeSim` + application au `Ledger`.
-  9-11. Journalisation (`trades.jsonl`, `equity.jsonl`, `decisions.jsonl`), mise à jour des
-     compteurs de circuit breakers stateful, calcul de l'équity de fin de cycle.
-  12-14. Construction et écriture du nouveau `state.json` (dernier fichier écrit).
-  15. `git_sync` — dernière étape du programme.
+Évolution multi-wallets (docs/ARCHITECTURE.md §9) : un seul cycle horaire traite désormais
+TROIS wallets indépendants (`bot.config.WALLETS` : prudent 🛡️, équilibré ⚖️, agressif 🔥),
+séquentiellement, avec les MÊMES prix récupérés UNE SEULE FOIS et partagés entre eux.
+Idempotence et intégrité :
+  - un `run_id` couvre les 3 wallets à la fois (`state/cycle.json`, `bot.persist.cycle`) ;
+  - chaque wallet garde SA PROPRE chaîne d'intégrité (`state_hash_prev`) indépendante des
+    deux autres, dans son propre `state/wallets/<id>/state.json` ;
+  - le cycle est TOUT-OU-RIEN : tout est calculé EN MÉMOIRE pour les 3 wallets avant la
+    moindre écriture disque ; si un wallet lève une exception, RIEN n'est écrit pour AUCUN
+    wallet et le cycle échoue proprement (code retour non nul), sans commit partiel ;
+  - UN SEUL commit git par cycle réussi, couvrant les 12 fichiers de wallet + `cycle.json`.
 
-Principe cardinal pessimiste (ARCHITECTURE.md §0) : un symbole sans prix frais et valide ce
-cycle (échec réseau, quote périmée, bid/ask invalide) NE TRADE JAMAIS ce cycle — son poids est
-figé, jamais mis à zéro, jamais estimé depuis une source de repli non autorisée.
+Séquence :
+  1. `pull_rebase`.
+  2. Idempotence globale : `load_cycle_state()` + `compute_run_id()` ; sortie propre (code 0)
+     si `run_id` déjà traité par CE cycle (les 3 wallets à la fois).
+  3. Garde-fou anti-doublon post-crash (identique en principe à l'ancien portefeuille unique,
+     étendu aux 12 fichiers des 3 wallets).
+  4. Univers actif = UNION des univers crypto des 3 wallets ; `get_prices()` UNE fois,
+     `get_history()` UNE fois par symbole avec prix disponible ; `get_fx_rate('EURUSD')` UNE
+     fois (taux EUR/USD partagé, cf. `bot.feeds.fx`).
+  5. Pour chaque wallet (séquentiel) : initialisation FX/capital si besoin (jamais de taux
+     inventé — un wallet sans taux disponible reste NON INITIALISÉ, réessaie au cycle
+     suivant), stratégies (`combine_strategies` avec le `profile` du wallet), `RiskManager`
+     paramétré par le profil du wallet, `ExchangeSim` paramétré par les paliers de coûts du
+     wallet, ordres, journalisation — TOUT calculé en mémoire (`WalletCycleResult`).
+  6. Si les 3 wallets ont été traités sans exception : écritures disque (dans l'ordre
+     trades -> equity -> decisions -> state, par wallet), puis `state/cycle.json`, puis
+     `git_sync` — dernière étape du programme, UN SEUL commit.
+
+Principe cardinal pessimiste (ARCHITECTURE.md §0) inchangé : un symbole sans prix frais et
+valide ce cycle ne trade jamais ; un wallet sans taux EUR/USD ne s'initialise jamais sur un
+taux halluciné.
 """
 
 from __future__ import annotations
@@ -27,8 +42,9 @@ import dataclasses
 import logging
 import os
 import sys
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 # Permet `python3 /chemin/vers/repo/bot/runner.py` (invocation directe par chemin, cas du
 # scheduler horaire réel) sans dépendre d'un `pip install -e .` ni de `python3 -m bot.runner` :
@@ -39,23 +55,25 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 from bot import config
-from bot.feeds import get_history, get_prices, is_us_market_open
+from bot.feeds import get_fx_rate, get_history, get_prices
 from bot.feeds.types import HistoryUnavailableError, Quote
 from bot.persist import (
-    append_journal,
     append_journal_many,
     compute_state_hash,
     git_sync,
     has_uncommitted_state_changes,
-    is_run_already_done,
+    init_state,
+    is_cycle_already_done,
+    load_cycle_state,
     load_state,
     pull_rebase,
     records_for_run,
+    save_cycle_state,
     save_state,
 )
 from bot.risk import RiskManager
 from bot.sim.exchange import ExchangeSim
-from bot.sim.fills import Fill, Reject
+from bot.sim.fills import Fill
 from bot.sim.ledger import Ledger
 from bot.strategies import combine_strategies, load_strategies
 
@@ -66,6 +84,29 @@ logging.basicConfig(
 logger = logging.getLogger("bot.runner")
 
 EPSILON_WEIGHT = 1e-9
+
+
+class WalletCycleError(Exception):
+    """Levée quand le traitement d'UN wallet échoue de façon inattendue — capturée par
+    `main()` pour garantir le comportement tout-ou-rien (aucune écriture pour AUCUN wallet)."""
+
+    def __init__(self, wallet_id: str, original: Exception):
+        self.wallet_id = wallet_id
+        self.original = original
+        super().__init__(f"échec du traitement du wallet {wallet_id!r}: {original}")
+
+
+@dataclass
+class WalletCycleResult:
+    wallet_id: str
+    new_state: dict
+    trade_records: List[dict] = field(default_factory=list)
+    equity_record: Optional[dict] = None
+    decision_records: List[dict] = field(default_factory=list)
+    n_trades: int = 0
+    equity_usd: float = 0.0
+    initialized: bool = False
+    fx_rate_used: Optional[float] = None
 
 
 def compute_run_id(now: Optional[datetime] = None) -> str:
@@ -120,10 +161,6 @@ def _mark_price(symbol: str, quote: Optional[Quote], positions: dict) -> Optiona
 def _estimate_equity_and_weights(
     cash_usd: float, positions: dict, prices: Dict[str, Optional[Quote]]
 ) -> Tuple[float, Dict[str, float]]:
-    """Réplique la logique de `bot.risk.RiskManager._estimate_equity_and_weights` (équity
-    mark-to-market + poids actuels par symbole) pour que le runner décide des ordres de façon
-    cohérente avec ce que `RiskManager.apply()` a utilisé en interne pour son propre calcul de
-    drawdown / circuit breakers (même state, mêmes prices en entrée -> même résultat)."""
     marks: Dict[str, float] = {}
     total = float(cash_usd)
     for symbol, pos in positions.items():
@@ -156,207 +193,258 @@ def _cb_snapshot(cb_state: dict, now: datetime) -> dict:
         "daily_loss_freeze": _is_future("daily_loss_freeze_until"),
         "cooldown": _is_future("cooldown_until"),
         "dd_half_size": bool(cb_state.get("dd_half_size_active", False)),
-        # Filtre de régime SMA200/ATR14 non implémenté dans bot/risk (voir sa docstring) —
-        # toujours False, documenté explicitement pour ne jamais laisser croire à une gate
-        # silencieuse.
         "regime_gate_blocked": False,
     }
 
 
-def main(now: Optional[datetime] = None) -> int:
-    """Point d'entrée du cycle horaire. `now` est optionnel (défaut : horloge système réelle,
-    cas d'invocation normale par le scheduler) — exposé explicitement pour permettre aux tests
-    d'intégration de contrôler le `run_id` calculé sans dépendre de l'horloge système."""
-    now = now or datetime.now(timezone.utc)
-    repo = repo_dir()
+def load_wallet_state(wallet_cfg: dict) -> dict:
+    """Charge l'état du wallet, ou construit son état initial NON INITIALISÉ (fx.initial_rate
+    = None, cash_usd = 0.0) si c'est son tout premier cycle."""
+    path = config.wallet_state_json(wallet_cfg["id"])
+    if not os.path.exists(path):
+        return init_state(wallet_cfg["id"], wallet_cfg["capital_initial_eur"])
+    return load_state(path)
 
-    # --- 1) pull_rebase : repartir de l'état le plus récent poussé, AVANT toute lecture ---
-    pull_result = pull_rebase(repo)
-    if pull_result != "SUCCESS":
-        logger.warning(
-            "pull_rebase a échoué (%s) — poursuite avec l'état local du clone tel quel "
-            "(peut être légèrement en retard, jamais corrompu).",
-            pull_result,
-        )
 
-    # --- 2) idempotence ---
-    state = load_state()
-    run_id = compute_run_id(now)
-    if is_run_already_done(state, run_id):
-        # Défense en profondeur (audit adversarial, finding MAJEUR n°3) : `state.json` local
-        # peut déjà porter `last_run_id = run_id` alors que ce cycle n'a JAMAIS été poussé sur
-        # `origin` (crash entre `save_state()` et `git_sync()`). Sortir en silence ici
-        # laisserait ce cycle engagé localement pour toujours, invisible sur le remote. On
-        # vérifie donc s'il reste des changements non commités sur `state/*` avant de conclure
-        # à un doublon : si oui, on tente de REPRENDRE `git_sync` plutôt que d'abandonner.
-        if has_uncommitted_state_changes(repo):
-            logger.warning(
-                "run déjà marqué comme traité localement (last_run_id=%s) MAIS des "
-                "changements non commités subsistent sur state/* — reprise de git_sync avant "
-                "de conclure à un doublon (crash probable entre save_state() et git_sync() "
-                "d'une invocation précédente pour ce même run_id).",
-                run_id,
-            )
-            message = f"Cycle {run_id} : reprise de git_sync après interruption pré-push"
-            result = git_sync(repo, message, run_id=run_id)
-            if result in ("SUCCESS", "ABORTED_DUPLICATE"):
-                logger.info(
-                    "Reprise de git_sync terminée (%s) pour run_id=%s.", result, run_id,
-                )
-                return 0
-            logger.error(
-                "Reprise de git_sync a échoué (FAILED) pour run_id=%s — état local toujours "
-                "non poussé, intervention manuelle requise.", run_id,
-            )
-            return 1
+def wallet_journal_paths(wallet_id: str) -> List[str]:
+    return [
+        config.wallet_state_json(wallet_id),
+        config.wallet_trades_jsonl(wallet_id),
+        config.wallet_equity_jsonl(wallet_id),
+        config.wallet_decisions_jsonl(wallet_id),
+    ]
 
-        logger.info(
-            "run déjà traité pour run_id=%s (last_run_id=%s) — abandon silencieux propre.",
-            run_id, state.get("last_run_id"),
-        )
-        return 0
 
-    # --- garde-fou anti-doublon post-crash (audit adversarial, finding MAJEUR n°2) ---
-    # Un crash (kill -9) entre deux écritures de journaux au sein d'un cycle précédent pour ce
-    # MÊME run_id peut avoir laissé des enregistrements orphelins dans trades.jsonl/
-    # equity.jsonl/decisions.jsonl SANS que state.json (dernier fichier écrit) n'ait jamais été
-    # sauvegardé — donc `is_run_already_done` ci-dessus ne peut pas le voir. Rejouer le cycle
-    # depuis zéro dans ce cas produirait des fills en double (désynchronisation permanente
-    # entre le grand livre d'audit trades.jsonl et le ledger réel state.json). Principe
-    # pessimiste : on refuse de deviner comment réconcilier, on arrête net et on alerte.
-    orphaned = {
-        path: records_for_run(path, run_id)
-        for path in (config.TRADES_JSONL, config.EQUITY_JSONL, config.DECISIONS_JSONL)
+def all_wallet_paths() -> List[str]:
+    paths: List[str] = [config.CYCLE_JSON]
+    for wallet_id in config.WALLET_IDS:
+        paths.extend(wallet_journal_paths(wallet_id))
+    return paths
+
+
+def _exchange_for_wallet(wallet_cfg: dict) -> ExchangeSim:
+    universe = wallet_cfg["univers_crypto"]
+    fee_by_symbol = {
+        sym: config.COST_TIER_FEE_TAKER_BPS[config.cost_tier_of(sym)] for sym in universe
     }
-    orphaned = {path: recs for path, recs in orphaned.items() if recs}
-    if orphaned:
-        logger.error(
-            "ANOMALIE CRITIQUE : des enregistrements pour run_id=%s existent déjà dans %s "
-            "alors que state.json ne le connaît pas comme last_run_id — signe d'un cycle "
-            "précédent interrompu en cours de journalisation (crash entre écritures). Rejouer "
-            "ce cycle produirait des fills en double. Arrêt immédiat, AUCUNE écriture, AUCUN "
-            "appel réseau — revue manuelle requise avant de retenter ce run_id.",
-            run_id, sorted(orphaned.keys()),
-        )
-        return 1
-
-    prev_hash = compute_state_hash(state)
-    logger.info("Démarrage du cycle run_id=%s (prev_hash=%s...)", run_id, prev_hash[:12])
-
-    # --- 3) univers actif ce cycle ---
-    market_open = is_us_market_open(now)
-    crypto_symbols = list(config.SYMBOLS_CRYPTO)
-    equity_symbols = list(config.SYMBOLS_EQUITY)
-    full_universe = crypto_symbols + equity_symbols
-    active_symbols = crypto_symbols + (equity_symbols if market_open else [])
-    logger.info(
-        "Univers actif ce cycle : %d crypto + %d action(s) (market_open=%s)",
-        len(crypto_symbols), len(equity_symbols) if market_open else 0, market_open,
-    )
-
-    # --- 4) prix réels ---
-    prices: Dict[str, Optional[Quote]] = get_prices(active_symbols) if active_symbols else {}
-    for sym in full_universe:
-        prices.setdefault(sym, None)
-
-    # --- 5) historique (uniquement pour les symboles à prix disponible) ---
-    history: Dict[str, "object"] = {}
-    history_failed: set = set()
-    for sym in active_symbols:
-        if prices.get(sym) is None:
-            continue
-        try:
-            history[sym] = get_history(sym, config.HISTORY_N_HOURS)
-        except HistoryUnavailableError as exc:
-            logger.warning("historique indisponible pour %s: %s", sym, exc)
-            history_failed.add(sym)
-
-    # --- équity / poids AVANT ce cycle (avant tout fill), utilisé pour le sizing des ordres ---
-    equity_avant_cycle, poids_actuel = _estimate_equity_and_weights(
-        state.get("cash_usd", 0.0), state.get("positions", {}) or {}, prices
-    )
-
-    # --- 6) signaux bruts ---
-    strategies_actives = load_strategies()
-    if strategies_actives:
-        cibles_brutes, strategy_signals = combine_strategies(strategies_actives, history, state)
-        logger.info("%d stratégie(s) active(s) : %s", len(strategies_actives), [s.name for s in strategies_actives])
-    else:
-        # Aucune stratégie concrète déposée dans bot/strategies/ (V1) : cibles brutes =
-        # positions actuelles -> le bot tourne, évalue, journalise, ne trade jamais.
-        cibles_brutes = dict(poids_actuel)
-        strategy_signals = {}
-        logger.info("Aucune stratégie active — cibles brutes = positions actuelles (no-op).")
-
-    # --- 7) RiskManager (mute `state` en place : equity_peak_*, circuit_breakers) ---
-    cibles_finales, reasons = RiskManager().apply(cibles_brutes, state, prices, history, now=now)
-
-    # --- 8) génération des ordres ---
-    ledger = Ledger(cash_usd=state.get("cash_usd", 0.0), positions=state.get("positions", {}) or {})
-    exchange = ExchangeSim(
+    slippage_by_symbol = {
+        sym: config.COST_TIER_SLIPPAGE_PENALTY_BPS[config.cost_tier_of(sym)] for sym in universe
+    }
+    return ExchangeSim(
         fee_taker_bps=config.FEE_TAKER_BPS,
         slippage_penalty_bps=config.SLIPPAGE_PENALTY_BPS,
         max_quote_age_seconds=config.MAX_QUOTE_AGE_SECONDS,
         min_notional_usd=config.MIN_NOTIONAL_USD,
+        fee_taker_bps_by_symbol=fee_by_symbol,
+        slippage_penalty_bps_by_symbol=slippage_by_symbol,
     )
 
+
+def _risk_manager_for_wallet(wallet_cfg: dict) -> RiskManager:
+    r = wallet_cfg["risque"]
+    universe = wallet_cfg["univers_crypto"]
+    return RiskManager(
+        vol_target_annualized=r["vol_target_annualized"],
+        vol_ewma_halflife_hours=r["vol_ewma_halflife_hours"],
+        vol_coldstart_min_points=r["vol_coldstart_min_points"],
+        vol_coldstart_scalar=r["vol_coldstart_scalar"],
+        cap_per_asset_crypto=r["cap_per_asset"],
+        cap_per_asset_equity=r["cap_per_asset"],  # wallets 100% crypto : même cap (non utilisé)
+        gross_exposure_max=r["gross_exposure_max"],
+        no_trade_band=r["no_trade_band"],
+        cb_daily_loss_freeze_pct=r["cb_daily_loss_freeze_pct"],
+        cb_daily_loss_freeze_hours=r["cb_daily_loss_freeze_hours"],
+        cb_consecutive_losses_trigger=r["cb_consecutive_losses_trigger"],
+        cb_cooldown_hours=r["cb_cooldown_hours"],
+        cb_dd_half_size_pct=r["cb_dd_half_size_pct"],
+        cb_dd_flatten_pct=r["cb_dd_flatten_pct"],
+        symbols_crypto=universe,
+        symbols_equity=[],
+    )
+
+
+def _empty_journals_touch(paths: List[str]) -> None:
+    """Garantit l'existence des fichiers `.jsonl` (même vides) : `git add` échoue sur un
+    chemin totalement absent (pathspec ne correspond à aucun fichier)."""
+    for path in paths:
+        if not os.path.exists(path):
+            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+            with open(path, "a", encoding="utf-8"):
+                pass
+
+
+def process_wallet(
+    wallet_cfg: dict,
+    state: dict,
+    run_id: str,
+    now: datetime,
+    prices_all: Dict[str, Optional[Quote]],
+    history_all: Dict[str, "object"],
+    history_failed_all: Set[str],
+    fx_resolved,
+) -> WalletCycleResult:
+    """Traite un cycle complet pour UN wallet, EN MÉMOIRE (aucune écriture disque ici — c'est
+    à `main()` de le faire, uniquement si les 3 wallets ont réussi, cf. docstring module)."""
+    wallet_id = wallet_cfg["id"]
+    universe = list(wallet_cfg["univers_crypto"])
+    prices = {sym: prices_all.get(sym) for sym in universe}
+    history = {sym: history_all[sym] for sym in universe if sym in history_all}
+    history_failed = {sym for sym in universe if sym in history_failed_all}
+
+    prev_hash = compute_state_hash(state)
+
+    # --- initialisation FX / capital (jamais de taux inventé) ---
+    fx_state = dict(state.get("fx") or {})
+    for k, v in (
+        ("initial_rate", None), ("last_rate", None), ("last_rate_ts", None),
+        ("last_rate_source", None), ("last_rate_stale", False),
+    ):
+        fx_state.setdefault(k, v)
+
+    already_initialized = fx_state.get("initial_rate") is not None
+    fx_note: str
+
+    if fx_resolved is not None:
+        fx_state["last_rate"] = fx_resolved.rate
+        fx_state["last_rate_ts"] = fx_resolved.ts
+        fx_state["last_rate_source"] = fx_resolved.source
+        fx_state["last_rate_stale"] = fx_resolved.stale
+
+    cash_usd = float(state.get("cash_usd", 0.0) or 0.0)
+    positions_in = dict(state.get("positions", {}) or {})
+    initialized_now = already_initialized
+
+    if not already_initialized:
+        if fx_resolved is not None:
+            fx_state["initial_rate"] = fx_resolved.rate
+            capital_usd = float(state["initial_eur"]) * fx_resolved.rate
+            cash_usd = capital_usd
+            positions_in = {}
+            initialized_now = True
+            fx_note = (
+                f"wallet initialisé ce cycle : {state['initial_eur']:.2f}€ x "
+                f"{fx_resolved.rate:.4f} (EUR/USD, source={fx_resolved.source}"
+                f"{', STALE' if fx_resolved.stale else ''}) = {capital_usd:.2f}$"
+            )
+        else:
+            initialized_now = False
+            fx_note = (
+                "wallet NON INITIALISÉ : aucun taux EUR/USD disponible ce cycle (frankfurter, "
+                "open.er-api, et aucun dernier taux connu ont tous échoué) — jamais de taux "
+                "inventé, capital non converti, aucun trade possible ; nouvelle tentative au "
+                "prochain cycle horaire"
+            )
+    else:
+        fx_note = "wallet déjà initialisé (taux EUR/USD figé lors d'un cycle précédent)"
+
+    if not initialized_now:
+        # --- wallet en attente de taux FX : cycle "à plat", propre et intégralement journalisé ---
+        decision_records = [{
+            "run_id": run_id,
+            "ts": now.isoformat(),
+            "wallet_id": wallet_id,
+            "symbol": sym,
+            "asset_class": "crypto",
+            "market_open": True,
+            "quote_available": False,
+            "quote_source": None,
+            "price_mid_ideal": None,
+            "quote_ts": None,
+            "quote_age_seconds": None,
+            "strategy_signals": {},
+            "poids_cible_brut": None,
+            "poids_cible_apres_risk": None,
+            "poids_actuel": 0.0,
+            "decision": "NO_TRADE",
+            "reason": fx_note,
+            "circuit_breakers_snapshot": None,
+        } for sym in universe]
+
+        equity_record = {
+            "run_id": run_id,
+            "ts": now.isoformat(),
+            "wallet_id": wallet_id,
+            "equity_usd": 0.0,
+            "equity_eur": 0.0,
+            "cash_usd": 0.0,
+            "exposures": {},
+            "gross_exposure_pct": 0.0,
+            "drawdown_pct": 0.0,
+            "equity_peak_usd": 0.0,
+            "circuit_breakers_active": [],
+            "fx_rate_used": None,
+            "note": fx_note,
+        }
+
+        new_state = {
+            "schema_version": state["schema_version"],
+            "wallet_id": wallet_id,
+            "initial_eur": state["initial_eur"],
+            "last_run_id": run_id,
+            "last_run_completed_at": now.isoformat(),
+            "state_hash_prev": prev_hash,
+            "cash_usd": 0.0,
+            "positions": {},
+            "equity_peak_usd": 0.0,
+            "equity_peak_ts": state.get("equity_peak_ts"),
+            "realized_pnl_cumulative_usd": float(state.get("realized_pnl_cumulative_usd", 0.0) or 0.0),
+            "fx": fx_state,
+            "circuit_breakers": state.get("circuit_breakers") or {
+                "flatten_mode": False, "manual_review_required": False,
+                "daily_loss_freeze_until": None, "cooldown_until": None,
+                "consecutive_losses": 0, "dd_half_size_active": False,
+            },
+            "trade_history_for_breakers": list(state.get("trade_history_for_breakers", []) or []),
+        }
+
+        return WalletCycleResult(
+            wallet_id=wallet_id, new_state=new_state, trade_records=[],
+            equity_record=equity_record, decision_records=decision_records,
+            n_trades=0, equity_usd=0.0, initialized=False, fx_rate_used=None,
+        )
+
+    # --- wallet initialisé (ce cycle ou un précédent) : cycle de trading normal ---
+    working_state = dict(state)
+    working_state["cash_usd"] = cash_usd
+    working_state["positions"] = positions_in
+
+    equity_avant_cycle, poids_actuel = _estimate_equity_and_weights(cash_usd, positions_in, prices)
+
+    strategies_actives = load_strategies()
+    if strategies_actives:
+        cibles_brutes, strategy_signals = combine_strategies(
+            strategies_actives, history, working_state, profile=wallet_cfg
+        )
+    else:
+        cibles_brutes = dict(poids_actuel)
+        strategy_signals = {}
+
+    risk_manager = _risk_manager_for_wallet(wallet_cfg)
+    cibles_finales, reasons = risk_manager.apply(cibles_brutes, working_state, prices, history, now=now)
+
+    ledger = Ledger(cash_usd=cash_usd, positions=positions_in)
+    exchange = _exchange_for_wallet(wallet_cfg)
+
     fills_this_cycle: List[Fill] = []
-    rejects_this_cycle: List[Reject] = []
     decisions: List[dict] = []
 
-    for symbol in full_universe:
-        asset_class = "crypto" if symbol in crypto_symbols else "equity"
+    for symbol in universe:
         current_w = poids_actuel.get(symbol, 0.0)
-
-        # --- action hors heures de marché : jamais évaluée, position conservée telle quelle ---
-        if asset_class == "equity" and not market_open:
-            decisions.append({
-                "run_id": run_id,
-                "ts": now.isoformat(),
-                "symbol": symbol,
-                "asset_class": asset_class,
-                "market_open": False,
-                "quote_available": False,
-                "quote_source": None,
-                "price_mid_ideal": None,
-                "quote_ts": None,
-                "quote_age_seconds": None,
-                "strategy_signals": {},
-                "poids_cible_brut": None,
-                "poids_cible_apres_risk": None,
-                "poids_actuel": current_w,
-                "decision": "NO_TRADE",
-                "reason": (
-                    "marché US fermé (hors 09:30-16:00 America/New_York, jour ouvré NYSE) — "
-                    "position conservée, aucune évaluation de signal"
-                ),
-                "circuit_breakers_snapshot": None,
-            })
-            continue
-
         quote = prices.get(symbol)
         quote_available = quote is not None
         signals_for_symbol = {
             strat_name: sigs[symbol] for strat_name, sigs in strategy_signals.items() if symbol in sigs
         }
-        cb_snapshot = _cb_snapshot(state.get("circuit_breakers") or {}, now)
+        cb_snapshot = _cb_snapshot(working_state.get("circuit_breakers") or {}, now)
 
         if not quote_available:
             decisions.append({
-                "run_id": run_id,
-                "ts": now.isoformat(),
-                "symbol": symbol,
-                "asset_class": asset_class,
-                "market_open": True,
-                "quote_available": False,
-                "quote_source": None,
-                "price_mid_ideal": None,
-                "quote_ts": None,
-                "quote_age_seconds": None,
-                "strategy_signals": signals_for_symbol,
-                "poids_cible_brut": None,
-                "poids_cible_apres_risk": None,
-                "poids_actuel": current_w,
+                "run_id": run_id, "ts": now.isoformat(), "wallet_id": wallet_id,
+                "symbol": symbol, "asset_class": "crypto", "market_open": True,
+                "quote_available": False, "quote_source": None, "price_mid_ideal": None,
+                "quote_ts": None, "quote_age_seconds": None,
+                "strategy_signals": signals_for_symbol, "poids_cible_brut": None,
+                "poids_cible_apres_risk": None, "poids_actuel": current_w,
                 "decision": "NO_TRADE",
                 "reason": (
                     "prix indisponible/périmé ce cycle (échec ou expiration des sources "
@@ -394,32 +482,21 @@ def main(now: Optional[datetime] = None) -> int:
                 decision = side
                 reason = f"{base_reason} ; ordre exécuté ({side} qty={result.qty:.8f}, notional={result.notional_usd:.2f}$)"
             else:
-                rejects_this_cycle.append(result)
                 decision = "NO_TRADE"
                 reason = f"{base_reason} ; ordre {side} rejeté par ExchangeSim : {result.reason}"
 
         decisions.append({
-            "run_id": run_id,
-            "ts": now.isoformat(),
-            "symbol": symbol,
-            "asset_class": asset_class,
-            "market_open": True,
-            "quote_available": True,
-            "quote_source": quote.source,
-            "price_mid_ideal": quote.mid,
-            "quote_ts": quote.ts,
-            "quote_age_seconds": quote_age_seconds,
-            "strategy_signals": signals_for_symbol,
-            "poids_cible_brut": raw,
-            "poids_cible_apres_risk": final,
-            "poids_actuel": current_w,
-            "decision": decision,
-            "reason": reason,
-            "circuit_breakers_snapshot": cb_snapshot,
+            "run_id": run_id, "ts": now.isoformat(), "wallet_id": wallet_id,
+            "symbol": symbol, "asset_class": "crypto", "market_open": True,
+            "quote_available": True, "quote_source": quote.source,
+            "price_mid_ideal": quote.mid, "quote_ts": quote.ts,
+            "quote_age_seconds": quote_age_seconds, "strategy_signals": signals_for_symbol,
+            "poids_cible_brut": raw, "poids_cible_apres_risk": final, "poids_actuel": current_w,
+            "decision": decision, "reason": reason, "circuit_breakers_snapshot": cb_snapshot,
         })
 
-    # --- 10) mise à jour des compteurs de circuit breakers stateful (§5.3.1) ---
-    cb_state = state.setdefault("circuit_breakers", {})
+    # --- circuit breakers stateful (§5.3.1) ---
+    cb_state = dict(working_state.get("circuit_breakers") or {})
     consecutive_losses = int(cb_state.get("consecutive_losses", 0) or 0)
     trade_history = list(state.get("trade_history_for_breakers", []) or [])
     realized_pnl_cycle = 0.0
@@ -437,30 +514,29 @@ def main(now: Optional[datetime] = None) -> int:
 
     trade_history = trade_history[-20:]
     cb_state["consecutive_losses"] = consecutive_losses
-    if consecutive_losses >= config.CB_CONSECUTIVE_LOSSES_TRIGGER:
-        cooldown_until = now + timedelta(hours=config.CB_COOLDOWN_HOURS)
+    risk_cfg = wallet_cfg["risque"]
+    if consecutive_losses >= risk_cfg["cb_consecutive_losses_trigger"]:
+        cooldown_until = now + timedelta(hours=risk_cfg["cb_cooldown_hours"])
         existing_cd = _parse_ts(cb_state.get("cooldown_until"))
         if existing_cd is None or cooldown_until > existing_cd:
             cb_state["cooldown_until"] = cooldown_until.isoformat()
 
-    # --- 11) équity de fin de cycle (après fills) ---
+    # --- équity de fin de cycle ---
     final_positions = ledger.positions
     mark_prices_final: Dict[str, float] = {}
     for symbol in final_positions:
         mark = _mark_price(symbol, prices.get(symbol), final_positions)
         if mark is None:
-            # Ne devrait jamais arriver : toute position détenue a nécessairement un
-            # prix_moyen > 0 (invariant du Ledger) — filet de sécurité explicite plutôt
-            # qu'un crash silencieux d'equity().
             raise RuntimeError(
-                f"impossible de marquer {symbol} en fin de cycle (ni mid frais ni prix_moyen)"
+                f"[{wallet_id}] impossible de marquer {symbol} en fin de cycle "
+                "(ni mid frais ni prix_moyen)"
             )
         mark_prices_final[symbol] = mark
 
     equity_fin_cycle = ledger.equity(mark_prices_final)
 
-    equity_peak = float(state.get("equity_peak_usd") or 0.0)
-    equity_peak_ts = state.get("equity_peak_ts")
+    equity_peak = float(working_state.get("equity_peak_usd") or 0.0)
+    equity_peak_ts = working_state.get("equity_peak_ts")
     if equity_fin_cycle > equity_peak:
         equity_peak = equity_fin_cycle
         equity_peak_ts = now.isoformat()
@@ -489,9 +565,13 @@ def main(now: Optional[datetime] = None) -> int:
     if snap["cooldown"]:
         circuit_breakers_active.append("cooldown")
 
-    # --- 13) construction du nouveau state ---
+    fx_rate_used = fx_state.get("last_rate")
+    equity_eur = (equity_fin_cycle / fx_rate_used) if fx_rate_used else None
+
     new_state = {
-        "schema_version": 1,
+        "schema_version": state["schema_version"],
+        "wallet_id": wallet_id,
+        "initial_eur": state["initial_eur"],
         "last_run_id": run_id,
         "last_run_completed_at": now.isoformat(),
         "state_hash_prev": prev_hash,
@@ -501,74 +581,222 @@ def main(now: Optional[datetime] = None) -> int:
         "equity_peak_ts": equity_peak_ts,
         "realized_pnl_cumulative_usd": float(state.get("realized_pnl_cumulative_usd", 0.0) or 0.0)
         + realized_pnl_cycle,
+        "fx": fx_state,
         "circuit_breakers": cb_state,
         "trade_history_for_breakers": trade_history,
     }
 
-    # --- 14) écritures disque, dans l'ordre : trades -> equity -> decisions -> state ---
-    #
-    # Correctif post-audit (finding MAJEUR n°2) : tous les fills du cycle sont désormais écrits
-    # en UN SEUL appel `append_journal_many()` (un seul write()+fsync()) plutôt qu'un
-    # `append_journal()` séparé par fill dans une boucle. Un `kill -9` ne peut plus laisser un
-    # sous-ensemble de fills orphelin sur disque : soit aucun fill du cycle n'est écrit, soit
-    # ils le sont tous. Combiné au garde-fou `records_for_run()` en tout début de cycle (qui
-    # refuse de rejouer un run_id déjà partiellement journalisé), la fenêtre de désynchronisation
-    # trades.jsonl / state.json observée par l'audit est fermée.
     trade_records = []
     for fill in fills_this_cycle:
         record = dataclasses.asdict(fill)
-        record["cash_after_usd"] = ledger.cash_usd  # note : cash final du cycle (simplification
-        # documentée — reconstruire le cash exact immédiatement après CE fill précis
-        # nécessiterait de journaliser au fil de l'eau pendant la boucle d'ordres ; comme les
-        # fills sont peu nombreux et strictement séquentiels ici, cash_after_usd du dernier
-        # fill est exact, les fills intermédiaires portent une valeur légèrement en avance
-        # (le cash après TOUS les fills du cycle) plutôt qu'après CE fill isolé.
+        record["wallet_id"] = wallet_id
+        record["cash_after_usd"] = ledger.cash_usd
         trade_records.append(record)
-    append_journal_many(config.TRADES_JSONL, trade_records)
 
-    append_journal(config.EQUITY_JSONL, {
+    equity_record = {
         "run_id": run_id,
         "ts": now.isoformat(),
+        "wallet_id": wallet_id,
         "equity_usd": equity_fin_cycle,
+        "equity_eur": equity_eur,
         "cash_usd": ledger.cash_usd,
         "exposures": exposures,
         "gross_exposure_pct": gross_exposure_pct,
         "drawdown_pct": drawdown_pct,
         "equity_peak_usd": equity_peak,
         "circuit_breakers_active": circuit_breakers_active,
-    })
+        "fx_rate_used": fx_rate_used,
+        "note": fx_note,
+    }
 
-    append_journal_many(config.DECISIONS_JSONL, decisions)
-
-    save_state(new_state)
-
-    # `git_sync` (bot/persist/git_sync.py) fait `git add` sur les 4 fichiers d'état
-    # inconditionnellement (voir son propre jeu de tests, `_write_state_files` dans
-    # `test_persist_git_sync.py`, qui crée explicitement les .jsonl vides s'ils n'existent
-    # pas) : `git add` échoue sur un chemin totalement absent (pathspec ne correspond à
-    # aucun fichier), donc `trades.jsonl` doit exister même quand aucun fill n'a eu lieu ce
-    # cycle (cas normal du tout premier run, ou d'un cycle "aucune stratégie active").
-    for path in (config.TRADES_JSONL, config.EQUITY_JSONL, config.DECISIONS_JSONL):
-        if not os.path.exists(path):
-            os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-            with open(path, "a", encoding="utf-8"):
-                pass
-
-    # --- 15) git_sync — dernière étape du programme ---
-    n_trades = len(fills_this_cycle)
-    message = (
-        f"Cycle {run_id} : {n_trades} trade(s), equity={equity_fin_cycle:.2f}$, "
-        f"DD={drawdown_pct:.2%}"
+    return WalletCycleResult(
+        wallet_id=wallet_id,
+        new_state=new_state,
+        trade_records=trade_records,
+        equity_record=equity_record,
+        decision_records=decisions,
+        n_trades=len(fills_this_cycle),
+        equity_usd=equity_fin_cycle,
+        initialized=True,
+        fx_rate_used=fx_rate_used,
     )
-    result = git_sync(repo, message, run_id=run_id)
+
+
+def _format_wallet_summary(wallet_cfg: dict, result: WalletCycleResult) -> str:
+    emoji = wallet_cfg["emoji"]
+    if not result.initialized or not result.fx_rate_used:
+        return f"{emoji} init. en attente"
+    equity_eur = result.equity_usd / result.fx_rate_used
+    return f"{emoji} {equity_eur:.0f}€"
+
+
+def main(now: Optional[datetime] = None) -> int:
+    """Point d'entrée du cycle horaire multi-wallets. `now` est optionnel (défaut : horloge
+    système réelle) — exposé explicitement pour les tests d'intégration."""
+    now = now or datetime.now(timezone.utc)
+    repo = repo_dir()
+
+    # --- 1) pull_rebase : repartir de l'état le plus récent poussé, AVANT toute lecture ---
+    pull_result = pull_rebase(repo)
+    if pull_result != "SUCCESS":
+        logger.warning(
+            "pull_rebase a échoué (%s) — poursuite avec l'état local du clone tel quel.",
+            pull_result,
+        )
+
+    all_paths = all_wallet_paths()
+
+    # --- 2) idempotence GLOBALE (state/cycle.json couvre les 3 wallets à la fois) ---
+    cycle_state = load_cycle_state(config.CYCLE_JSON, config.WALLET_IDS)
+    run_id = compute_run_id(now)
+
+    if is_cycle_already_done(cycle_state, run_id):
+        if has_uncommitted_state_changes(repo, all_paths):
+            logger.warning(
+                "cycle déjà marqué comme traité (last_run_id=%s) MAIS des changements non "
+                "commités subsistent — reprise de git_sync avant de conclure à un doublon.",
+                run_id,
+            )
+            message = f"Cycle {run_id} : reprise de git_sync après interruption pré-push"
+            result = git_sync(repo, message, run_id=run_id, state_path=config.CYCLE_JSON, paths=all_paths)
+            if result in ("SUCCESS", "ABORTED_DUPLICATE"):
+                logger.info("Reprise de git_sync terminée (%s) pour run_id=%s.", result, run_id)
+                return 0
+            logger.error("Reprise de git_sync a échoué (FAILED) pour run_id=%s.", run_id)
+            return 1
+
+        logger.info(
+            "cycle déjà traité pour run_id=%s (last_run_id=%s) — abandon silencieux propre.",
+            run_id, cycle_state.get("last_run_id"),
+        )
+        return 0
+
+    # --- garde-fou anti-doublon post-crash (étendu aux 3 wallets) ---
+    orphaned: Dict[str, List[dict]] = {}
+    for wallet_id in config.WALLET_IDS:
+        for path in (
+            config.wallet_trades_jsonl(wallet_id),
+            config.wallet_equity_jsonl(wallet_id),
+            config.wallet_decisions_jsonl(wallet_id),
+        ):
+            recs = records_for_run(path, run_id)
+            if recs:
+                orphaned[path] = recs
+    if orphaned:
+        logger.error(
+            "ANOMALIE CRITIQUE : des enregistrements pour run_id=%s existent déjà dans %s "
+            "alors que state/cycle.json ne le connaît pas comme last_run_id — signe d'un "
+            "cycle précédent interrompu en cours de journalisation. Arrêt immédiat, AUCUNE "
+            "écriture, AUCUN appel réseau — revue manuelle requise.",
+            run_id, sorted(orphaned.keys()),
+        )
+        return 1
+
+    logger.info("Démarrage du cycle multi-wallets run_id=%s (%s)", run_id, config.WALLET_IDS)
+
+    # --- 4) univers actif ce cycle = UNION des univers des 3 wallets ---
+    crypto_symbols_all: List[str] = sorted({
+        sym for w in config.WALLETS for sym in w["univers_crypto"]
+    })
+    prices: Dict[str, Optional[Quote]] = get_prices(crypto_symbols_all) if crypto_symbols_all else {}
+    for sym in crypto_symbols_all:
+        prices.setdefault(sym, None)
+
+    history: Dict[str, "object"] = {}
+    history_failed: Set[str] = set()
+    for sym in crypto_symbols_all:
+        if prices.get(sym) is None:
+            continue
+        try:
+            history[sym] = get_history(sym, config.HISTORY_N_HOURS)
+        except HistoryUnavailableError as exc:
+            logger.warning("historique indisponible pour %s: %s", sym, exc)
+            history_failed.add(sym)
+
+    # --- FX EUR/USD : UNE fois, partagé entre les 3 wallets ---
+    wallet_states: Dict[str, dict] = {}
+    last_known_fx: Optional[dict] = None
+    for wallet_cfg in config.WALLETS:
+        wstate = load_wallet_state(wallet_cfg)
+        wallet_states[wallet_cfg["id"]] = wstate
+        fx = wstate.get("fx") or {}
+        if last_known_fx is None and fx.get("last_rate"):
+            last_known_fx = {"rate": fx["last_rate"], "ts": fx.get("last_rate_ts")}
+
+    try:
+        fx_resolved = get_fx_rate("EURUSD", last_known=last_known_fx)
+    except Exception as exc:  # noqa: BLE001 — défense en profondeur, jamais de crash sur la FX
+        logger.error("get_fx_rate a levé une exception inattendue : %s", exc)
+        fx_resolved = None
+
+    if fx_resolved is None:
+        logger.warning(
+            "aucun taux EUR/USD disponible ce cycle — tout wallet non encore initialisé le "
+            "restera (aucun taux inventé), réessai au prochain cycle horaire."
+        )
+    elif fx_resolved.stale:
+        logger.warning(
+            "taux EUR/USD STALE utilisé ce cycle (source=%s, ts=%s) — les deux sources "
+            "réseau ont échoué, repli sur le dernier taux connu.",
+            fx_resolved.source, fx_resolved.ts,
+        )
+
+    # --- 5) traitement des 3 wallets, EN MÉMOIRE, tout-ou-rien ---
+    results: List[WalletCycleResult] = []
+    try:
+        for wallet_cfg in config.WALLETS:
+            wallet_id = wallet_cfg["id"]
+            try:
+                result = process_wallet(
+                    wallet_cfg, wallet_states[wallet_id], run_id, now,
+                    prices, history, history_failed, fx_resolved,
+                )
+            except Exception as exc:  # noqa: BLE001 — capturé plus haut, ré-empaqueté avec le wallet fautif
+                raise WalletCycleError(wallet_id, exc) from exc
+            results.append(result)
+    except WalletCycleError as exc:
+        logger.error(
+            "ÉCHEC du cycle : le traitement du wallet %r a levé une exception (%s) — "
+            "principe tout-ou-rien : AUCUNE écriture, AUCUN commit pour AUCUN wallet ce "
+            "cycle. Intervention manuelle requise.",
+            exc.wallet_id, exc.original,
+        )
+        return 1
+
+    # --- 6) tous les wallets ont réussi : écritures disque, puis UN SEUL commit ---
+    for wallet_cfg, result in zip(config.WALLETS, results):
+        wallet_id = wallet_cfg["id"]
+        append_journal_many(config.wallet_trades_jsonl(wallet_id), result.trade_records)
+        if result.equity_record is not None:
+            append_journal_many(config.wallet_equity_jsonl(wallet_id), [result.equity_record])
+        append_journal_many(config.wallet_decisions_jsonl(wallet_id), result.decision_records)
+        save_state(result.new_state, config.wallet_state_json(wallet_id))
+
+    new_cycle_state = {
+        "schema_version": cycle_state.get("schema_version", 1),
+        "last_run_id": run_id,
+        "last_run_completed_at": now.isoformat(),
+        "wallet_ids": list(config.WALLET_IDS),
+    }
+    save_cycle_state(new_cycle_state, config.CYCLE_JSON)
+
+    _empty_journals_touch(all_paths)
+
+    total_trades = sum(r.n_trades for r in results)
+    summary = " | ".join(
+        _format_wallet_summary(wallet_cfg, result) for wallet_cfg, result in zip(config.WALLETS, results)
+    )
+    message = f"Cycle {run_id} : {summary} — {total_trades} trade(s)"
+
+    result = git_sync(repo, message, run_id=run_id, state_path=config.CYCLE_JSON, paths=all_paths)
 
     if result == "SUCCESS":
-        logger.info("git_sync SUCCESS — cycle %s terminé (equity=%.2f$).", run_id, equity_fin_cycle)
+        logger.info("git_sync SUCCESS — cycle %s terminé (%s).", run_id, summary)
         return 0
     if result == "ABORTED_DUPLICATE":
         logger.info(
-            "git_sync ABORTED_DUPLICATE — un autre run a gagné la course pour run_id=%s, "
-            "sortie propre.", run_id,
+            "git_sync ABORTED_DUPLICATE — un autre run a gagné la course pour run_id=%s.",
+            run_id,
         )
         return 0
 

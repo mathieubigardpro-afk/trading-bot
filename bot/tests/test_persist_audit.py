@@ -57,6 +57,8 @@ def _build_valid_chain(repo: Path) -> list[tuple[dict, str]]:
     trades.jsonl au même cycle (invariant de conservation, cf. audit.py). Retourne
     [(state, commit_hash), ...] dans l'ordre chronologique."""
     s0 = init_state()
+    s0["cash_usd"] = 100000.0  # capital de départ explicite (init_state() par défaut = 0.0, wallet non initialisé)
+    s0["equity_peak_usd"] = 100000.0
     s0["state_hash_prev"] = compute_state_hash(init_state())  # genèse arbitraire cohérente
     c0 = _commit_state(repo, s0, "Run T0")
     hash0 = compute_state_hash(s0)
@@ -244,6 +246,8 @@ def test_verify_chain_detects_cash_inflation_without_matching_trades(tmp_path):
     repo = _make_repo(tmp_path)
 
     s0 = init_state()
+    s0["cash_usd"] = 100000.0
+    s0["equity_peak_usd"] = 100000.0
     _commit_state(repo, s0, "Etat initial")
     hash0 = compute_state_hash(s0)
 

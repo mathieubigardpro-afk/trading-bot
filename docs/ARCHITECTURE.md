@@ -734,3 +734,218 @@ Tests de non-régression : `bot/tests/test_persist_audit.py` (invariant de conse
 `bot/tests/test_persist_git_sync.py` (détection de changements non commités),
 `bot/tests/test_runner_crash_recovery.py` (scénarios de bout en bout : orphelin post-crash,
 reprise de git_sync, cycle réel, idempotence).
+
+---
+
+## 10. Addendum multi-wallets (2026-07-23) — trois portefeuilles pédagogiques
+
+Le portefeuille unique de 100 000 $ décrit aux sections précédentes est remplacé par **trois
+wallets indépendants de 1 000 € chacun**, vivant le MÊME marché en parallèle, chacun avec son
+propre profil de risque. La comparaison des trois tempéraments (prudent / équilibré / agressif)
+est le cœur pédagogique du produit pour un utilisateur débutant. Rien n'est détruit : l'ancien
+portefeuille est archivé tel quel (§10.6). Les sections 0 à 9 ci-dessus restent la référence
+pour tout ce qui n'est pas explicitement changé ici (principes non négociables, modèle de fill
+pessimiste, formats `Quote`/`Fill`, chaîne de hash, git_sync...).
+
+### 10.1 Les 3 wallets
+
+| id | emoji | vol cible | expo brute max | cap/actif | univers | breakers (perte 24h / demi-taille DD / flatten DD) |
+|---|---|---|---|---|---|---|
+| `prudent` | 🛡️ | 10% | 40% | 20% | BTC, ETH | 2% / 10% / 15% |
+| `equilibre` | ⚖️ | 20% | 70% | 25% | BTC, ETH, SOL, DOGE, LINK, AVAX (6 majors) | 3% / 15% / 25% |
+| `agressif` | 🔥 | 35% | 90% | 30% | 30 cryptos (`bot.config.CRYPTO_SYMBOLS_30`, paliers de coûts majors/mids/smalls) | 5% / 20% / 35% |
+
+Source de vérité unique : `bot/config.py:WALLETS` (liste de dicts `id, emoji, label,
+capital_initial_eur, univers_crypto, risque{...}`), reflétée en JSON informatif (dashboard/audit
+humain, jamais lu par le code) dans `bot/config.json`. `bot.config.wallet_config(id)` retourne la
+config d'un wallet ; `bot.config.WALLET_IDS` la liste des 3 identifiants.
+
+Le calibrage "AGRESSIF" historique (`VOL_TARGET_ANNUALIZED`, `CB_*`, `CAP_PER_ASSET_*` de la
+section 2) reste défini dans `bot/config.py` mais n'est plus utilisé que pour reproduire l'ancien
+portefeuille archivé — aucun module ne le lit plus au niveau module (`bot.risk.RiskManager` et
+`bot.sim.ExchangeSim` sont déjà entièrement paramétrables par constructeur ; `bot/runner.py`
+construit une instance de chacun PAR wallet et PAR cycle, avec les valeurs de son profil).
+
+### 10.2 Devise : comptabilité USD, capital nominal EUR
+
+Les marchés cotent en USD ; chaque wallet tient sa comptabilité interne (`cash_usd`,
+`positions`, `equity_usd`) exclusivement en USD, comme l'ancien portefeuille. Le capital nominal
+de 1 000 € n'est converti qu'**une seule fois**, au tout premier cycle où un taux EUR/USD est
+disponible (`state["fx"]["initial_rate"]`, gelé pour toujours ensuite) :
+
+```
+cash_usd (premier cycle initialisé) = initial_eur (1000.0) × fx.initial_rate
+```
+
+Si aucun taux n'est disponible au premier cycle (les deux sources réseau ET le dernier taux
+connu ont tous échoué), le wallet reste **NON INITIALISÉ** (`fx.initial_rate = null`,
+`cash_usd = 0.0`, `positions = {}`) et retente automatiquement au cycle horaire suivant — jamais
+de taux inventé (principe cardinal pessimiste, §0.3). C'est le comportement observé lors du
+développement de cette fonctionnalité, le réseau étant bloqué dans le conteneur de
+développement : les 3 wallets sont restés non initialisés à chaque cycle local, proprement
+journalisés (`decisions.jsonl` : `NO_TRADE`, raison explicite), jusqu'au premier run réel sur
+GitHub Actions (runners avec accès réseau normal).
+
+L'affichage utilisateur (dashboard, messages de commit) est toujours en EUR :
+`equity_eur = equity_usd / fx.last_rate` (dernier taux connu de CE wallet, frais ou stale).
+
+### 10.3 `bot/feeds/fx.py` — `get_fx_rate('EURUSD')`
+
+Deux sources gratuites, sans clé API, testables depuis un runner GitHub Actions :
+
+1. `https://api.frankfurter.app/latest?from=EUR&to=USD` (primaire).
+2. `https://open.er-api.com/v6/latest/EUR` (repli réseau).
+3. Repli final : le dernier taux connu fourni par l'appelant (`last_known={"rate", "ts"}`,
+   lu depuis `state["fx"]["last_rate"]`/`last_rate_ts` de n'importe quel wallet déjà
+   initialisé — le taux EUR/USD est le même pour les 3) — retourné avec `stale=True`. Le taux
+   EUR/USD bouge peu d'un cycle horaire à l'autre : un taux de la veille reste défendable **à
+   condition d'être marqué explicitement stale**, jamais silencieusement confondu avec un taux
+   frais.
+
+Si les trois échouent, `get_fx_rate()` retourne `None` — jamais de taux inventé. Le runner
+appelle cette fonction **une seule fois par cycle**, taux partagé entre les 3 wallets (comme les
+prix crypto, §10.4).
+
+### 10.4 Nouvel état — `state/wallets/<id>/`
+
+```
+state/
+├── cycle.json                      # idempotence GLOBALE (un run_id = les 3 wallets, tout-ou-rien)
+├── archive-100k/                   # ancien portefeuille unique, déplacé tel quel (§10.6)
+│   ├── state.json, trades.jsonl, equity.jsonl, decisions.jsonl
+└── wallets/
+    ├── prudent/{state.json,trades.jsonl,equity.jsonl,decisions.jsonl}
+    ├── equilibre/{...}
+    └── agressif/{...}
+```
+
+Chaque `state/wallets/<id>/state.json` reprend EXACTEMENT le schéma de la section 3.1, plus :
+
+```json
+{
+  "wallet_id": "prudent",
+  "initial_eur": 1000.0,
+  "fx": {
+    "initial_rate": 1.0812,
+    "last_rate": 1.0809,
+    "last_rate_ts": "2026-07-23T10:00:12+00:00",
+    "last_rate_source": "frankfurter",
+    "last_rate_stale": false
+  }
+}
+```
+
+`equity_peak_usd` peut légitimement valoir `0.0` tant que le wallet n'est pas initialisé (assoupli
+de "strictement positif" à "positif ou nul" par rapport au schéma d'origine — voir
+`bot/persist/state.py:validate_schema`). Chaque wallet garde SA PROPRE chaîne d'intégrité
+(`state_hash_prev`), totalement indépendante des deux autres — `bot.persist.audit.verify_chain()`
+s'utilise sans changement, un `path`/`trades_path` par wallet.
+
+`trades.jsonl`/`equity.jsonl`/`decisions.jsonl` gardent leur schéma de la section 3, plus un champ
+`wallet_id` sur chaque enregistrement ; `equity.jsonl` gagne `equity_eur` et `fx_rate_used`.
+
+### 10.5 Idempotence globale — `state/cycle.json`
+
+```json
+{"schema_version": 1, "last_run_id": "2026-07-22T14",
+ "last_run_completed_at": "2026-07-22T14:03:41+00:00",
+ "wallet_ids": ["prudent", "equilibre", "agressif"]}
+```
+
+Le `run_id` (même format horaire qu'avant, §4.1) couvre les 3 wallets à la fois : c'est ce
+fichier, et lui seul, que `bot/runner.py` consulte pour décider si le cycle a déjà été traité
+(`bot.persist.cycle.is_cycle_already_done`), remplaçant la vérification `last_run_id` du
+`state.json` unique de la section 4.2. Le garde-fou anti-doublon post-crash (§4.4 finding
+MAJEUR n°2) est étendu aux 12 fichiers journaux des 3 wallets : si UN SEUL enregistrement
+orphelin est trouvé pour `run_id` dans N'IMPORTE lequel des 3 wallets, le cycle entier
+s'arrête net (aucune écriture, code retour 1) plutôt que de deviner une réconciliation partielle.
+
+### 10.6 Séquence exacte d'un cycle multi-wallets — `bot/runner.py: main()`
+
+1. `pull_rebase`.
+2. Idempotence globale sur `state/cycle.json` (§10.5).
+3. Univers actif = **UNION** des `univers_crypto` des 3 wallets (30 symboles au total, le
+   wallet agressif couvrant déjà tous ceux des deux autres). `get_prices()` et `get_history()`
+   sont appelés **une seule fois** pour cette union — les 3 wallets partagent EXACTEMENT les
+   mêmes quotes/historiques ce cycle, condition nécessaire à ce que la comparaison des 3
+   tempéraments soit une expérience contrôlée (même marché, seul le profil de risque diffère).
+   `get_fx_rate('EURUSD')` est appelé une seule fois, partagé de la même façon (§10.3).
+4. **Traitement séquentiel des 3 wallets, ENTIÈREMENT EN MÉMOIRE** (`bot.runner.process_wallet`,
+   une fonction quasi pure prenant l'état du wallet + les prix/historique/taux FX partagés en
+   entrée, retournant un `WalletCycleResult` sans toucher au disque) :
+   - initialisation FX/capital si le wallet n'est pas encore initialisé (§10.2) ;
+   - stratégies (`combine_strategies(strategies, history, state, profile=wallet_cfg)` —
+     `StrategyBase.target_weights()` reçoit désormais `profile`, le dict de config du wallet
+     courant, en plus de `history`/`state` : une même classe de stratégie pourra être active
+     dans plusieurs wallets avec des réglages différents selon `profile["risque"]` ou
+     `profile["univers_crypto"]`) ;
+   - `RiskManager` construit avec les seuils du profil du wallet (`vol_target_annualized`,
+     `gross_exposure_max`, `cap_per_asset`, les 3 seuils de circuit breakers) — la classe
+     `RiskManager` elle-même n'a PAS changé (§5.3), elle était déjà entièrement paramétrable par
+     constructeur ;
+   - `ExchangeSim` construit avec les paliers de coûts du wallet (`fee_taker_bps_by_symbol`,
+     `slippage_penalty_bps_by_symbol` — nouveaux paramètres optionnels, §10.7) ;
+   - génération des ordres, `Ledger` propre au wallet (aucun état partagé entre wallets : un
+     breaker déclenché sur l'agressif ne modifie NI les cibles NI l'état du prudent évalué au
+     même cycle, cf. `bot/tests/test_runner_crash_recovery.py::test_process_wallet_circuit_breaker_isolation_between_wallets`).
+5. **Tout-ou-rien** : si le traitement d'UN wallet lève une exception, RIEN n'est écrit sur
+   disque pour AUCUN des 3 wallets et le cycle échoue proprement (code retour 1) — la cohérence
+   du cycle global prime sur la disponibilité partielle d'un wallet. Ce n'est PAS le cas d'un
+   wallet simplement non initialisé faute de taux FX : c'est un état normal, journalisé
+   proprement, qui n'empêche jamais la réussite du cycle pour les 2 autres wallets.
+6. Si les 3 wallets ont réussi : écritures disque (par wallet : trades -> equity -> decisions
+   -> state, même ordre que §4.4), puis `state/cycle.json`, puis **UN SEUL commit** couvrant les
+   12 fichiers de wallet + `cycle.json` :
+   `git_sync(repo, message, paths=[cycle.json] + 4 fichiers × 3 wallets)`. Message type :
+   `"Cycle 2026-07-23T10 : 🛡️ 1002€ | ⚖️ 998€ | 🔥 1015€ — 2 trade(s)"` (ou `"init. en attente"`
+   pour un wallet pas encore initialisé).
+
+### 10.7 Paliers de coûts (wallet agressif) et petits montants
+
+Le wallet agressif trade 30 cryptos ; les 24 au-delà des 6 "majors" historiques n'ont pas de
+calibrage de coûts/pas de quantité connu dans ce dépôt. Palier pessimiste croissant avec
+l'illiquidité présumée (`bot.config.COST_TIER_MAJORS/MIDS/SMALLS`,
+`COST_TIER_FEE_TAKER_BPS`/`COST_TIER_SLIPPAGE_PENALTY_BPS` — 10/5, 15/10, 25/20 bps) : hypothèse
+documentée, à affiner si des données de liquidité réelles deviennent disponibles.
+`bot.sim.ExchangeSim` accepte désormais `fee_taker_bps_by_symbol`/`slippage_penalty_bps_by_symbol`
+(dicts optionnels, un symbole absent retombe sur `fee_taker_bps`/`slippage_penalty_bps` de base —
+comportement historique inchangé pour tout appelant qui ne les fournit pas).
+
+**`min_notional_usd` ajusté de 10 $ à 5 $** (`bot/config.py:MIN_NOTIONAL_USD`) : avec un capital
+~1 080 $ (1 000 €) et des caps par actif de 20-30 %, une position typique pèse 50-300 $ ; la bande
+no-trade (5 %) et le vol-scalar cold-start (×0.5) peuvent réduire un delta d'ordre isolé sous les
+10 $ initiaux (ex. petit rééquilibrage fin de cycle). 5 $ reste strictement positif et pessimiste
+tout en restant praticable aux montants réels de ce produit — décision assumée et documentée, pas
+un oubli. Les pas de quantité (`bot.config.QTY_STEPS_EXTENDED` /
+`bot.sim.exchange.DEFAULT_QTY_STEPS`) des 24 paires supplémentaires ont été calibrés pour rester
+praticables sur des positions de 50-300 $ (granularité approximative < ~1 $/unité), plutôt que de
+retomber sur le pas par défaut de 1.0 unité entière (beaucoup trop grossier pour un actif à
+plusieurs centaines de dollars, ce qui aurait fait rejeter la quasi-totalité des ordres du wallet
+agressif sur ces paires — vérifié explicitement, cf. `bot/tests/test_exchange.py`).
+
+### 10.8 Migration — `tools/migrate_to_wallets.py`
+
+Script idempotent, exécuté une fois sur ce dépôt :
+1. Archive `state/state.json`, `trades.jsonl`, `equity.jsonl`, `decisions.jsonl` (contenu
+   inchangé, simple déplacement `git mv`) dans `state/archive-100k/`.
+2. Crée `state/wallets/<id>/{state.json,trades.jsonl,equity.jsonl,decisions.jsonl}` pour les 3
+   wallets, NON INITIALISÉS, et `state/cycle.json` initial.
+
+Relancer ce script ne touche JAMAIS un wallet déjà présent (même non initialisé) — l'idempotence
+porte sur la présence du fichier, jamais sur son contenu, pour ne jamais écraser un wallet déjà
+engagé par un cycle réel. Tests : `bot/tests/test_migration.py`.
+
+### 10.9 Tests de non-régression multi-wallets
+
+- `bot/tests/test_persist_state.py` : schéma étendu (`wallet_id`, `initial_eur`, `fx{...}`),
+  `equity_peak_usd=0.0` désormais légitime.
+- `bot/tests/test_fx.py` : `get_fx_rate` — 2 sources + repli dernier taux connu + `None`
+  strict si tout échoue.
+- `bot/tests/test_migration.py` : archivage, création des 3 wallets, idempotence, non-écrasement
+  d'un wallet déjà initialisé.
+- `bot/tests/test_exchange.py` : paliers de coûts par symbole (`fee_taker_bps_by_symbol`).
+- `bot/tests/test_runner_crash_recovery.py` (réécrit pour le multi-wallets) : idempotence
+  globale (`cycle.json`), reprise de `git_sync`, garde-fou anti-doublon étendu aux 3 wallets,
+  initialisation FX/capital réelle (mock de `get_fx_rate`/`get_prices`), **isolation des
+  wallets** (un breaker déclenché sur l'agressif n'affecte pas le prudent évalué au même cycle),
+  et **tout-ou-rien** (un wallet en échec bloque le commit des 2 autres).

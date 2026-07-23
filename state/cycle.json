@@ -1,0 +1,10 @@
+{
+  "last_run_completed_at": null,
+  "last_run_id": null,
+  "schema_version": 1,
+  "wallet_ids": [
+    "prudent",
+    "equilibre",
+    "agressif"
+  ]
+}

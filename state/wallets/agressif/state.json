@@ -1,0 +1,29 @@
+{
+  "cash_usd": 0.0,
+  "circuit_breakers": {
+    "consecutive_losses": 0,
+    "cooldown_until": null,
+    "daily_loss_freeze_until": null,
+    "dd_half_size_active": false,
+    "flatten_mode": false,
+    "manual_review_required": false
+  },
+  "equity_peak_ts": null,
+  "equity_peak_usd": 0.0,
+  "fx": {
+    "initial_rate": null,
+    "last_rate": null,
+    "last_rate_source": null,
+    "last_rate_stale": false,
+    "last_rate_ts": null
+  },
+  "initial_eur": 1000.0,
+  "last_run_completed_at": null,
+  "last_run_id": null,
+  "positions": {},
+  "realized_pnl_cumulative_usd": 0.0,
+  "schema_version": 1,
+  "state_hash_prev": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "trade_history_for_breakers": [],
+  "wallet_id": "agressif"
+}

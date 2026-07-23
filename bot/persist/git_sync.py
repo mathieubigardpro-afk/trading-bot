@@ -103,6 +103,7 @@ def git_sync(
     run_id: str | None = None,
     state_path: str = DEFAULT_STATE_PATH,
     branch: str = "main",
+    paths: list[str] | None = None,
 ) -> str:
     """Commit + push des fichiers d'état. Retourne 'SUCCESS' | 'ABORTED_DUPLICATE' | 'FAILED'.
 
@@ -121,8 +122,14 @@ def git_sync(
     `run_id` doit être fourni par l'appelant pour permettre la ré-vérification d'idempotence
     en cas de conflit concurrent. Sans lui, un conflit est traité prudemment comme 'FAILED'
     plutôt que de risquer de masquer un double-run.
+
+    `paths` : fichiers à `git add` (par défaut `STATE_FILES`, le portefeuille unique
+    historique). Le runner multi-wallets (`bot/runner.py`) passe explicitement l'ensemble des
+    12 fichiers des 3 wallets + `state/cycle.json`, pour garantir UN SEUL commit couvrant tout
+    le cycle (tout-ou-rien, docs/ARCHITECTURE.md §9.3).
     """
-    add = _run(repo_dir, "add", *STATE_FILES)
+    add_paths = paths if paths is not None else STATE_FILES
+    add = _run(repo_dir, "add", *add_paths)
     if add.returncode != 0:
         return "FAILED"
 

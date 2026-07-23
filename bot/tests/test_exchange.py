@@ -210,3 +210,35 @@ def test_qty_rounded_down_never_exceeds_requested():
     assert isinstance(fill, Fill)
     assert fill.qty <= 5.7
     assert fill.qty == pytest.approx(5.0)  # step DOGE = 1.0 par défaut
+
+
+# ---------------------------------------------------------------------------
+# Paliers de coûts par symbole (majors/mids/smalls) — multi-wallets, wallet agressif
+# ---------------------------------------------------------------------------
+
+def test_per_symbol_fee_and_slippage_override_applies_only_to_matching_symbol():
+    sim = ExchangeSim(
+        fee_taker_bps=10, slippage_penalty_bps=5,
+        fee_taker_bps_by_symbol={"XLM": 25}, slippage_penalty_bps_by_symbol={"XLM": 20},
+    )
+    assert sim.fee_taker_bps_for("XLM") == 25
+    assert sim.slippage_penalty_bps_for("XLM") == 20
+    # Symbole absent du dict de palier : retombe sur les valeurs de base inchangées.
+    assert sim.fee_taker_bps_for("BTC") == 10
+    assert sim.slippage_penalty_bps_for("BTC") == 5
+
+
+def test_per_symbol_fee_override_produces_higher_fees_than_base_rate():
+    base_sim = make_sim()
+    tiered_sim = ExchangeSim(
+        fee_taker_bps=10, slippage_penalty_bps=5,
+        fee_taker_bps_by_symbol={"XLM": 25}, slippage_penalty_bps_by_symbol={"XLM": 20},
+    )
+    quote = make_quote(bid=0.10, ask=0.1002)
+
+    base_fill = base_sim.execute_order("BUY", "XLM", 1000.0, quote, "s", "2026-07-22T14", now=NOW)
+    tiered_fill = tiered_sim.execute_order("BUY", "XLM", 1000.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(base_fill, Fill) and isinstance(tiered_fill, Fill)
+    assert tiered_fill.fees_usd > base_fill.fees_usd
+    assert tiered_fill.price_fill > base_fill.price_fill  # slippage plus pénalisant

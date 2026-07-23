@@ -44,6 +44,22 @@ def _load() -> SimpleNamespace:
         for key in _DEFAULTS:
             if hasattr(real_config, key):
                 values[key] = getattr(real_config, key)
+
+        # Univers crypto étendu (multi-wallets, cf. bot/config.py:CRYPTO_SYMBOLS_30 / le
+        # wallet "agressif") : la façade bot.feeds doit reconnaître TOUS les symboles
+        # utilisés par N'IMPORTE quel wallet (pas seulement les 6 "majors" historiques),
+        # pour router get_prices()/get_history() correctement quel que soit le wallet
+        # appelant. Fusion, jamais de remplacement destructif des paires déjà résolues.
+        if hasattr(real_config, "CRYPTO_SYMBOLS_30"):
+            values["SYMBOLS_CRYPTO"] = sorted(
+                set(values["SYMBOLS_CRYPTO"]) | set(real_config.CRYPTO_SYMBOLS_30)
+            )
+            merged_binance = dict(getattr(real_config, "CRYPTO_PAIR_BINANCE_30", {}))
+            merged_binance.update(values["CRYPTO_PAIR_BINANCE"])
+            values["CRYPTO_PAIR_BINANCE"] = merged_binance
+            merged_coinbase = dict(getattr(real_config, "CRYPTO_PAIR_COINBASE_30", {}))
+            merged_coinbase.update(values["CRYPTO_PAIR_COINBASE"])
+            values["CRYPTO_PAIR_COINBASE"] = merged_coinbase
     return SimpleNamespace(**values)
 
 

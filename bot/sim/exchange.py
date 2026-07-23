@@ -26,7 +26,7 @@ DEFAULT_MIN_NOTIONAL_USD = 10.0
 # Pas de quantité réaliste par actif (granularité d'exécution). Valeurs crypto proches des
 # stepSize Binance usuels ; actions traitées en lots entiers (pas de fractionnaire supposé).
 DEFAULT_QTY_STEPS: Dict[str, float] = {
-    # crypto
+    # crypto — 6 "majors" historiques
     "BTC": 0.00001,
     "ETH": 0.0001,
     "SOL": 0.001,
@@ -40,6 +40,12 @@ DEFAULT_QTY_STEPS: Dict[str, float] = {
     "AMZN": 1.0,
     "NVDA": 1.0,
     "META": 1.0,
+    # crypto — 24 paires supplémentaires de l'univers étendu (wallet agressif, multi-wallets)
+    # voir bot/config.py:QTY_STEPS_EXTENDED pour la justification du calibrage.
+    "BNB": 0.001, "XRP": 0.1, "ADA": 1.0, "DOT": 0.1, "LTC": 0.001, "TRX": 1.0,
+    "BCH": 0.001, "ETC": 0.01, "UNI": 0.1, "ATOM": 0.1, "NEAR": 0.1, "FIL": 0.1,
+    "APT": 0.1, "ARB": 1.0, "OP": 0.1, "INJ": 0.01, "ICP": 0.1, "HBAR": 1.0,
+    "AAVE": 0.001, "ALGO": 1.0, "SAND": 1.0, "MANA": 1.0, "XLM": 1.0, "VET": 10.0,
 }
 # Repli si un symbole hors de la table ci-dessus est rencontré. On choisit le pas le plus
 # conservateur (le plus grossier, whole-unit) car on ne connaît pas la nature exacte de
@@ -75,6 +81,8 @@ class ExchangeSim:
         max_quote_age_seconds: float = DEFAULT_MAX_QUOTE_AGE_SECONDS,
         min_notional_usd: float = DEFAULT_MIN_NOTIONAL_USD,
         qty_steps: Optional[Dict[str, float]] = None,
+        fee_taker_bps_by_symbol: Optional[Dict[str, float]] = None,
+        slippage_penalty_bps_by_symbol: Optional[Dict[str, float]] = None,
     ):
         if fee_taker_bps < 0 or slippage_penalty_bps < 0:
             raise ValueError("fee_taker_bps et slippage_penalty_bps doivent être >= 0")
@@ -85,9 +93,22 @@ class ExchangeSim:
         self.qty_steps: Dict[str, float] = dict(DEFAULT_QTY_STEPS)
         if qty_steps:
             self.qty_steps.update(qty_steps)
+        # Paliers de coûts par symbole (majors/mids/smalls, wallet agressif — multi-wallets).
+        # Optionnels : un symbole absent de ces dicts retombe sur fee_taker_bps/
+        # slippage_penalty_bps "de base" ci-dessus (comportement historique inchangé).
+        self.fee_taker_bps_by_symbol: Dict[str, float] = dict(fee_taker_bps_by_symbol or {})
+        self.slippage_penalty_bps_by_symbol: Dict[str, float] = dict(
+            slippage_penalty_bps_by_symbol or {}
+        )
 
     def step_for(self, symbol: str) -> float:
         return self.qty_steps.get(symbol, DEFAULT_UNKNOWN_SYMBOL_STEP)
+
+    def fee_taker_bps_for(self, symbol: str) -> float:
+        return float(self.fee_taker_bps_by_symbol.get(symbol, self.fee_taker_bps))
+
+    def slippage_penalty_bps_for(self, symbol: str) -> float:
+        return float(self.slippage_penalty_bps_by_symbol.get(symbol, self.slippage_penalty_bps))
 
     def execute_order(
         self,
@@ -158,10 +179,13 @@ class ExchangeSim:
                 f"quantité ({qty}) arrondie à zéro au pas réaliste ({step}) pour {symbol}"
             )
 
+        slippage_penalty_bps = self.slippage_penalty_bps_for(symbol)
+        fee_taker_bps = self.fee_taker_bps_for(symbol)
+
         if side_u == "BUY":
-            price_fill = quote.ask * (1 + self.slippage_penalty_bps / 1e4)
+            price_fill = quote.ask * (1 + slippage_penalty_bps / 1e4)
         else:  # SELL
-            price_fill = quote.bid * (1 - self.slippage_penalty_bps / 1e4)
+            price_fill = quote.bid * (1 - slippage_penalty_bps / 1e4)
 
         notional_usd = qty_rounded * price_fill
         if notional_usd < self.min_notional_usd:
@@ -169,7 +193,7 @@ class ExchangeSim:
                 f"notionnel ({notional_usd:.2f}$) < minimum ({self.min_notional_usd:.2f}$)"
             )
 
-        fees_usd = notional_usd * self.fee_taker_bps / 1e4
+        fees_usd = notional_usd * fee_taker_bps / 1e4
         slippage_usd = abs(price_fill - quote.mid) * qty_rounded
 
         return Fill(
