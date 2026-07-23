@@ -214,6 +214,30 @@ def _wallet_alloc_ex_cash(wallet_cfg: dict) -> float:
 # ------------------------------------------------------------------------------------------
 
 
+def test_no_trade_band_scale_by_symbol_matches_pocket_alloc_for_all_wallets():
+    """Unitaire, sans réseau ni cycle complet : `runner._no_trade_band_scale_by_symbol()`
+    (correctif audit critique #1) doit associer à chaque symbole tradable d'un wallet le
+    `capital_alloc_pct` EXACT de la poche qui le porte, pour les 3 wallets réels de
+    `bot.config.WALLETS` (pas seulement un cas synthétique)."""
+    for wallet_cfg in config.WALLETS:
+        scale = runner._no_trade_band_scale_by_symbol(wallet_cfg)
+        for pocket in wallet_cfg.get("pockets", []) or []:
+            if not pocket.get("strategy_ref"):
+                continue
+            alloc = float(pocket["capital_alloc_pct"])
+            if pocket["asset_class"] == "crypto":
+                symbols = wallet_cfg["univers_crypto"]
+            else:
+                symbols = runner.POCKET_STRATEGY_TRADABLE_SYMBOLS[pocket["strategy_ref"]]
+            for sym in symbols:
+                assert scale[sym] == pytest.approx(alloc), (
+                    f"wallet {wallet_cfg['id']}: {sym} attendu alloc={alloc}, obtenu {scale.get(sym)}"
+                )
+        # poche cash : aucun symbole n'y est rattaché (pas de strategy_ref -> ignorée)
+        cash_pockets = [p for p in wallet_cfg["pockets"] if p["asset_class"] == "cash"]
+        assert all(p.get("strategy_ref") is None for p in cash_pockets)
+
+
 def test_full_cycle_market_open_produces_coherent_orders(tmp_path, monkeypatch):
     origin, clone = _make_repo(tmp_path)
     monkeypatch.setattr(runner, "repo_dir", lambda: str(clone))
