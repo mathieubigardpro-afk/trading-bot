@@ -949,3 +949,47 @@ engagé par un cycle réel. Tests : `bot/tests/test_migration.py`.
   initialisation FX/capital réelle (mock de `get_fx_rate`/`get_prices`), **isolation des
   wallets** (un breaker déclenché sur l'agressif n'affecte pas le prudent évalué au même cycle),
   et **tout-ou-rien** (un wallet en échec bloque le commit des 2 autres).
+
+### 10.10 Addendum post-audit multi-wallets (2026-07-23) — l'archive doit rester auditable
+
+Un second audit adversarial (copie isolée, remote neutralisé, réseau bloqué) a mis en évidence
+une régression MAJEURE introduite par la migration §10.8 : `state/archive-100k/state.json`
+(ancien portefeuille unique, archivé tel quel, contenu volontairement inchangé) devenait
+impossible à charger ET à auditer, alors même que §9 qualifie `verify_chain()` de protection
+CRITIQUE. Deux causes indépendantes, corrigées ici :
+
+1. **`bot/persist/state.py:validate_schema()` exigeait inconditionnellement `wallet_id`/
+   `initial_eur`/`fx`.** Ces champs n'existent QUE dans le schéma multi-wallets (§10.4) — le
+   fichier archivé, par définition inchangé par la migration, ne les a jamais eus et ne doit
+   jamais les recevoir a posteriori (ce serait inventer une donnée, contraire au principe
+   pessimiste §0). Correctif : `validate_schema()` détecte le schéma via la seule présence de
+   `wallet_id` — absent, elle valide contre le schéma PRÉ-wallets historique (§3.1, sans exiger
+   ni tolérer `initial_eur`/`fx`, qui resteraient alors un mélange de schéma incohérent et
+   toujours rejeté). `load_state()`/`save_state()` s'appliquent donc de nouveau sans changement
+   à `state/archive-100k/state.json` comme à tout `state/wallets/<id>/state.json`.
+2. **`bot/persist/audit.py:verify_chain()` lisait chaque commit de l'historique avec le
+   chemin ACTUEL du fichier**, alors que `git log --follow` remonte correctement l'historique
+   à travers le renommage (`git mv state/state.json state/archive-100k/state.json` de la
+   migration) : `git show <commit_antérieur_au_mv>:state/archive-100k/state.json` échoue
+   puisque ce chemin n'existait pas encore à ce commit. Correctif : le chemin utilisé pour
+   `git show` (et pour dériver le `trades_path` par défaut) est désormais déterminé **par
+   commit**, via `git log --follow --name-status`, qui donne le chemin exact du fichier tel
+   qu'il existait dans CE commit (ancien chemin avant le renommage, nouveau après).
+   Conséquence directe et attendue : la transition de renommage elle-même relie deux versions
+   de `state.json` au contenu strictement identique (un `git mv` ne change pas le blob) — dans
+   ce cas précis, `state_hash_prev` de la version "après" ne peut structurellement PAS être
+   égal au hash de la version "avant" (il pointe, comme elle, vers le hash du cycle réel
+   précédent, puisque rien n'a changé) : `verify_chain()` ne signale plus d'erreur pour une
+   transition à contenu JSON strictement identique (elle ne peut par construction receler
+   aucune falsification de `cash_usd`/`positions`), tout en continuant de détecter toute
+   falsification normale (voir `test_verify_chain_still_detects_tampering_across_a_rename`).
+
+Avec ces deux correctifs, `verify_chain('.', path='state/archive-100k/state.json')` retourne
+`ok=True` sur le vrai historique du dépôt (vérifié en copie isolée, remote neutralisé).
+
+Tests de non-régression : `bot/tests/test_persist_state.py` (schéma legacy sans `wallet_id`,
+rejet du schéma "mixte" `initial_eur`/`fx` sans `wallet_id`, chargement du vrai fichier archivé
+du dépôt), `bot/tests/test_persist_audit.py` (`verify_chain()` à travers un `git mv`, avec et
+sans falsification post-renommage), `bot/tests/test_migration.py`
+(`test_migrated_archive_stays_loadable_and_auditable` : `migrate()` réel suivi de
+`load_state()`+`verify_chain()` sur l'archive produite, bout en bout).

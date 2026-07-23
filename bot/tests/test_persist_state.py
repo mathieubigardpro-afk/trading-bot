@@ -263,6 +263,78 @@ def test_validate_schema_accepts_wallet_fx_fully_populated():
     validate_schema(state)  # ne doit pas lever
 
 
+# --------------------------------------------------------------------------------------
+# Schéma LEGACY pré-wallets (state/archive-100k/state.json, ARCHITECTURE.md §10.6/§10.8) —
+# non-régression du finding MAJEUR de l'audit multi-wallets : `state/archive-100k/state.json`
+# (ancien portefeuille 100k$ unique, archivé tel quel par `tools/migrate_to_wallets.py`, sans
+# jamais avoir possédé `wallet_id`/`initial_eur`/`fx`) doit rester chargeable/auditable.
+# --------------------------------------------------------------------------------------
+
+
+def _legacy_archived_state() -> dict:
+    """Reproduit fidèlement la forme de l'état pré-wallets réellement archivé dans le dépôt
+    (état complet SAUF `wallet_id`/`initial_eur`/`fx`, qui n'ont jamais existé dans ce
+    schéma) — voir `state/archive-100k/state.json` du dépôt réel."""
+    s = init_state()
+    del s["wallet_id"]
+    del s["initial_eur"]
+    del s["fx"]
+    s["cash_usd"] = 100000.0
+    s["equity_peak_usd"] = 100000.0
+    s["last_run_id"] = "2026-07-23T10"
+    return s
+
+
+def test_validate_schema_accepts_legacy_pre_wallets_state_without_wallet_fields():
+    """Non-régression (audit multi-wallets, finding MAJEUR n°1) : un state.json qui n'a
+    jamais eu `wallet_id`/`initial_eur`/`fx` (schéma pré-wallets, archivé tel quel) reste
+    valide — ce n'est pas un fichier corrompu, c'est un schéma antérieur volontairement
+    inchangé par la migration."""
+    validate_schema(_legacy_archived_state())  # ne doit pas lever
+
+
+def test_load_state_accepts_legacy_pre_wallets_state_on_disk(tmp_path):
+    path = tmp_path / "state.json"
+    path.write_text(json.dumps(_legacy_archived_state()), encoding="utf-8")
+
+    state = load_state(str(path))  # ne doit pas lever StateValidationError
+
+    assert "wallet_id" not in state
+    assert "initial_eur" not in state
+    assert "fx" not in state
+    assert state["cash_usd"] == 100000.0
+
+
+def test_load_state_accepts_real_archived_100k_state_file():
+    """Reproduction directe du finding de l'audit : `load_state()` sur le VRAI fichier
+    archivé du dépôt (state/archive-100k/state.json) ne doit plus lever."""
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    archived_path = os.path.join(repo_root, "state", "archive-100k", "state.json")
+    if not os.path.exists(archived_path):
+        pytest.skip("state/archive-100k/state.json absent de ce checkout (rien à vérifier ici)")
+    state = load_state(archived_path)  # ne doit pas lever
+    assert "wallet_id" not in state
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        # Schéma "mixte" incohérent : `initial_eur`/`fx` présents sans `wallet_id` — jamais
+        # produit ni par le schéma legacy ni par le schéma wallet, doit rester rejeté.
+        lambda s: s.update(initial_eur=1000.0),
+        lambda s: s.update(fx={
+            "initial_rate": None, "last_rate": None, "last_rate_ts": None,
+            "last_rate_source": None, "last_rate_stale": False,
+        }),
+    ],
+)
+def test_validate_schema_rejects_mixed_legacy_wallet_schema(mutate):
+    state = _legacy_archived_state()
+    mutate(state)
+    with pytest.raises(StateValidationError):
+        validate_schema(state)
+
+
 def test_load_state_rejects_invalid_json(tmp_path):
     path = tmp_path / "state.json"
     path.write_text("{not valid json,,,", encoding="utf-8")

@@ -10,7 +10,8 @@ from pathlib import Path
 import pytest
 
 from bot import config
-from bot.persist.state import load_state, validate_schema
+from bot.persist.audit import verify_chain
+from bot.persist.state import compute_state_hash, init_state, load_state, save_state, validate_schema
 from tools.migrate_to_wallets import migrate
 
 
@@ -128,3 +129,76 @@ def test_migrate_without_legacy_state_only_creates_wallets(tmp_path):
     assert report.archived is False
     assert not (repo / "state" / "archive-100k").exists()
     assert set(report.wallets_created) == set(config.WALLET_IDS)
+
+
+# --- Non-régression : finding MAJEUR de l'audit multi-wallets --------------------------
+#
+# Le migrateur déplace l'ancien state.json (schéma legacy, sans wallet_id/initial_eur/fx) tel
+# quel. Ni `test_migrate_archives_legacy_state_unchanged` (n'appelle jamais `load_state()` sur
+# l'archive) ni les autres tests ci-dessus (ne portent que sur les 3 wallets neufs) ne
+# vérifiaient que l'archive produite reste effectivement chargeable ET auditable après coup —
+# c'est précisément ce que couvre le test suivant, en reproduisant un état legacy COMPLET
+# (tous les champs du schéma pré-wallets, comme le vrai state.json de production) sur deux
+# cycles réels avant migration.
+
+
+def _make_full_legacy_repo(tmp_path) -> Path:
+    """Dépôt avec un historique legacy complet et VALIDE (2 cycles réels, schéma pré-wallets
+    complet — pas le fixture minimal de `_make_legacy_repo`, qui n'a jamais eu vocation à
+    passer `validate_schema`/`verify_chain`)."""
+    repo = tmp_path / "repo_full_legacy"
+    repo.mkdir()
+    assert _git(repo, "init", "-b", "main").returncode == 0
+    state_dir = repo / "state"
+    state_dir.mkdir()
+
+    s0 = init_state()
+    del s0["wallet_id"]
+    del s0["initial_eur"]
+    del s0["fx"]
+    s0["cash_usd"] = 100000.0
+    s0["equity_peak_usd"] = 100000.0
+    save_state(s0, str(state_dir / "state.json"))
+    (state_dir / "trades.jsonl").write_text("", encoding="utf-8")
+    (state_dir / "equity.jsonl").write_text("", encoding="utf-8")
+    (state_dir / "decisions.jsonl").write_text("", encoding="utf-8")
+    _git(repo, "add", "state")
+    _git(repo, "commit", "-m", "Cycle T0")
+    hash0 = compute_state_hash(s0)
+
+    # Cycle T1 : aucun trade (cash/positions inchangés, cohérent avec trades.jsonl vide) —
+    # seul `last_run_id`/`state_hash_prev` avancent, comme un cycle horaire "0 trade(s)" réel.
+    s1 = json.loads(json.dumps(s0))
+    s1["last_run_id"] = "2026-07-23T07"
+    s1["state_hash_prev"] = hash0
+    save_state(s1, str(state_dir / "state.json"))
+    _git(repo, "add", "state")
+    _git(repo, "commit", "-m", "Cycle T1")
+
+    return repo
+
+
+def test_migrated_archive_stays_loadable_and_auditable(tmp_path):
+    """Reproduction directe du finding MAJEUR : après `migrate()` (git mv réel, contenu
+    inchangé), `state/archive-100k/state.json` doit rester chargeable par `load_state()`
+    (schéma legacy accepté sans wallet_id/initial_eur/fx) ET auditable de bout en bout par
+    `verify_chain()` (chemin suivi à travers le renommage, chaîne de hash cohérente malgré la
+    version identique introduite par le mv)."""
+    repo = _make_full_legacy_repo(tmp_path)
+
+    report = migrate(str(repo))
+    assert report.archived is True
+    # migrate() ne committe pas lui-même (§10.8 : c'est un simple `git mv` staged) — on
+    # committe ici pour reproduire fidèlement le commit réel de migration du dépôt.
+    _git(repo, "commit", "-m", "Migration multi-wallets : archive l'ancien portefeuille")
+
+    archived_path = repo / "state" / "archive-100k" / "state.json"
+    state = load_state(str(archived_path))  # ne doit pas lever StateValidationError
+    validate_schema(state)
+    assert "wallet_id" not in state
+    assert state["cash_usd"] == 100000.0
+    assert state["last_run_id"] == "2026-07-23T07"
+
+    result = verify_chain(str(repo), path="state/archive-100k/state.json")
+    assert result.ok is True, result.errors
+    assert result.n_versions_checked == 3

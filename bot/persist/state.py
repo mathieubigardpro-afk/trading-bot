@@ -141,11 +141,26 @@ def validate_schema(state: Any) -> None:
     if schema_version != SCHEMA_VERSION:
         _fail(f"schema_version non supporté : {schema_version!r} (attendu {SCHEMA_VERSION})")
 
-    wallet_id = _require(state, "wallet_id", str)
-    if not wallet_id:
-        _fail("champ 'wallet_id' : ne doit pas être vide")
-
-    _require_finite_number(state, "initial_eur", strictly_positive=True)
+    # Multi-wallets (docs/ARCHITECTURE.md §10.4/§10.6) : `wallet_id`/`initial_eur`/`fx` sont
+    # obligatoires pour un state.json de wallet, mais l'ancien portefeuille unique archivé
+    # tel quel (`state/archive-100k/state.json`, §10.8) n'a JAMAIS possédé ces champs — ce
+    # n'est pas un fichier corrompu, c'est un schéma antérieur volontairement inchangé. On
+    # distingue les deux par la seule présence de `wallet_id` : si absent, on valide contre le
+    # schéma pré-wallets (sans exiger ni inventer wallet_id/initial_eur/fx) plutôt que
+    # d'échouer — condition nécessaire pour que `load_state()`/`verify_chain()` restent
+    # utilisables sur l'archive (cf. bot/tests/test_persist_state.py::test_*_legacy_schema*).
+    is_wallet_schema = "wallet_id" in state
+    if is_wallet_schema:
+        wallet_id = _require(state, "wallet_id", str)
+        if not wallet_id:
+            _fail("champ 'wallet_id' : ne doit pas être vide")
+        _require_finite_number(state, "initial_eur", strictly_positive=True)
+    else:
+        if "initial_eur" in state or "fx" in state:
+            _fail(
+                "state.json incohérent : champ(s) multi-wallets présent(s) sans 'wallet_id' "
+                "('initial_eur' et/ou 'fx') — schéma mixte non supporté"
+            )
 
     _require(state, "last_run_id", (str, type(None)))
     _require(state, "last_run_completed_at", (str, type(None)))
@@ -185,22 +200,23 @@ def validate_schema(state: Any) -> None:
     _require(state, "equity_peak_ts", (str, type(None)))
     _require_finite_number(state, "realized_pnl_cumulative_usd")
 
-    fx = _require(state, "fx", dict)
-    fx_rate = _require(fx, "initial_rate", (int, float, type(None)))
-    if fx_rate is not None:
-        if isinstance(fx_rate, bool) or not math.isfinite(fx_rate) or fx_rate <= 0:
-            _fail("fx.initial_rate : doit être un nombre fini strictement positif, ou null")
-    fx_last_rate = _require(fx, "last_rate", (int, float, type(None)))
-    if fx_last_rate is not None:
-        if isinstance(fx_last_rate, bool) or not math.isfinite(fx_last_rate) or fx_last_rate <= 0:
-            _fail("fx.last_rate : doit être un nombre fini strictement positif, ou null")
-    _require(fx, "last_rate_ts", (str, type(None)))
-    _require(fx, "last_rate_source", (str, type(None)))
-    fx_stale = _require(fx, "last_rate_stale", bool)
-    extra_fx_keys = set(fx) - {"initial_rate", "last_rate", "last_rate_ts", "last_rate_source", "last_rate_stale"}
-    if extra_fx_keys:
-        _fail(f"fx : champ(s) inattendu(s) {sorted(extra_fx_keys)}")
-    del fx_stale  # déjà validé par _require, juste pour lisibilité (pas de contrainte de valeur)
+    if is_wallet_schema:
+        fx = _require(state, "fx", dict)
+        fx_rate = _require(fx, "initial_rate", (int, float, type(None)))
+        if fx_rate is not None:
+            if isinstance(fx_rate, bool) or not math.isfinite(fx_rate) or fx_rate <= 0:
+                _fail("fx.initial_rate : doit être un nombre fini strictement positif, ou null")
+        fx_last_rate = _require(fx, "last_rate", (int, float, type(None)))
+        if fx_last_rate is not None:
+            if isinstance(fx_last_rate, bool) or not math.isfinite(fx_last_rate) or fx_last_rate <= 0:
+                _fail("fx.last_rate : doit être un nombre fini strictement positif, ou null")
+        _require(fx, "last_rate_ts", (str, type(None)))
+        _require(fx, "last_rate_source", (str, type(None)))
+        fx_stale = _require(fx, "last_rate_stale", bool)
+        extra_fx_keys = set(fx) - {"initial_rate", "last_rate", "last_rate_ts", "last_rate_source", "last_rate_stale"}
+        if extra_fx_keys:
+            _fail(f"fx : champ(s) inattendu(s) {sorted(extra_fx_keys)}")
+        del fx_stale  # déjà validé par _require, juste pour lisibilité (pas de contrainte de valeur)
 
     cb = _require(state, "circuit_breakers", dict)
     for f in _CB_BOOL_FIELDS:

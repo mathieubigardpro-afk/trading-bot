@@ -315,3 +315,99 @@ def test_verify_chain_detects_trades_jsonl_rewrite(tmp_path):
     result = verify_chain(str(repo), path="state/state.json")
     assert result.ok is False
     assert any("append-only" in e for e in result.errors)
+
+
+# --- Non-régression : finding MAJEUR de l'audit multi-wallets (verify_chain vs git mv) -----
+#
+# `tools/migrate_to_wallets.py` déplace l'ancien state.json/trades.jsonl (schéma LEGACY, sans
+# wallet_id/initial_eur/fx) vers state/archive-100k/ via `git mv` (contenu strictement
+# inchangé). `verify_chain()` doit rester utilisable sur l'archive après ce renommage : suivre
+# l'historique à travers le `git mv` (pas seulement au chemin actuel) ET accepter le schéma
+# legacy des versions archivées.
+
+
+def test_verify_chain_follows_git_mv_rename_and_succeeds(tmp_path):
+    """Reproduit fidèlement le scénario réel : un state.json legacy (sans wallet_id/
+    initial_eur/fx) accumule 2 cycles à `state/state.json`, puis est déplacé tel quel
+    (`git mv`, contenu inchangé) vers `state/archive-100k/state.json`. Avant le correctif,
+    `verify_chain(path="state/archive-100k/state.json")` échouait à lire les commits
+    antérieurs au renommage (chemin introuvable dans leur arbre) ET rejetait le schéma
+    legacy (StateValidationError sur 'wallet_id' manquant)."""
+    repo = _make_repo(tmp_path)
+
+    # T0 : premier cycle, schéma LEGACY pré-wallets (comme l'ancien portefeuille unique réel).
+    s0 = init_state()
+    del s0["wallet_id"]
+    del s0["initial_eur"]
+    del s0["fx"]
+    s0["cash_usd"] = 100000.0
+    s0["equity_peak_usd"] = 100000.0
+    c0 = _commit_state(repo, s0, "Cycle T0")
+    hash0 = compute_state_hash(s0)
+
+    # T1 : un fill réel, toujours au chemin legacy state/state.json.
+    s1 = json.loads(json.dumps(s0))
+    s1["last_run_id"] = "2026-07-23T07"
+    s1["cash_usd"] = 98000.0
+    s1["positions"] = {"BTC": {"qty": 0.1, "prix_moyen": 19900.0}}
+    s1["state_hash_prev"] = hash0
+    fill_t1 = {
+        "run_id": "2026-07-23T07", "ts": "2026-07-23T07:00:00+00:00", "symbol": "BTC",
+        "strategy": "ensemble", "side": "BUY", "qty": 0.1, "notional_usd": 1990.0,
+        "price_fill": 19900.0, "price_mid_ideal": 19895.0, "fees_usd": 10.0,
+        "slippage_usd": 0.5, "quote_source": "binance", "quote_ts": "2026-07-23T07:00:00+00:00",
+        "cash_after_usd": 98000.0,
+    }
+    c1 = _commit_state(repo, s1, "Cycle T1", trades=[fill_t1])
+    del c0, c1  # non réutilisés directement, juste pour lisibilité du scénario
+
+    # Migration multi-wallets : git mv (contenu strictement inchangé), comme
+    # tools/migrate_to_wallets.py le fait réellement sur le vrai dépôt.
+    archive_dir = repo / "state" / "archive-100k"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    _git_ok(repo, "mv", "state/state.json", "state/archive-100k/state.json")
+    _git_ok(repo, "mv", "state/trades.jsonl", "state/archive-100k/trades.jsonl")
+    _git_ok(repo, "commit", "-m", "Migration multi-wallets : archive l'ancien portefeuille")
+
+    result = verify_chain(str(repo), path="state/archive-100k/state.json")
+
+    assert result.ok is True, result.errors
+    # 3 versions : T0, T1, et la version post-mv (contenu identique à T1, mais un nouveau
+    # commit git distinct pour le fichier suivi).
+    assert result.n_versions_checked == 3
+    assert result.errors == []
+
+
+def test_verify_chain_still_detects_tampering_across_a_rename(tmp_path):
+    """Le correctif du suivi de renommage ne doit pas ouvrir de faille : falsifier le
+    contenu APRÈS le git mv (cash_usd gonflé sans fill correspondant) doit rester détecté."""
+    repo = _make_repo(tmp_path)
+
+    s0 = init_state()
+    del s0["wallet_id"]
+    del s0["initial_eur"]
+    del s0["fx"]
+    s0["cash_usd"] = 100000.0
+    s0["equity_peak_usd"] = 100000.0
+    _commit_state(repo, s0, "Cycle T0")
+    hash0 = compute_state_hash(s0)
+
+    archive_dir = repo / "state" / "archive-100k"
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    _git_ok(repo, "mv", "state/state.json", "state/archive-100k/state.json")
+    _git_ok(repo, "mv", "state/trades.jsonl", "state/archive-100k/trades.jsonl")
+    _git_ok(repo, "commit", "-m", "Migration")
+
+    forged = json.loads(json.dumps(s0))
+    forged["last_run_id"] = "2026-07-23T08"
+    forged["cash_usd"] = 999000.0  # gonflé sans le moindre trade
+    forged["state_hash_prev"] = hash0
+    forged_path = archive_dir / "state.json"
+    save_state(forged, str(forged_path))
+    _git_ok(repo, "add", "state/archive-100k/state.json")
+    _git_ok(repo, "commit", "-m", "Cycle falsifié post-migration")
+
+    result = verify_chain(str(repo), path="state/archive-100k/state.json")
+
+    assert result.ok is False
+    assert any("cash_usd" in e and "incohérente" in e for e in result.errors)
