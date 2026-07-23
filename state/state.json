@@ -13,6 +13,10 @@
       {
         "equity": 100000.0,
         "ts": "2026-07-22T16:04:06.693399+00:00"
+      },
+      {
+        "equity": 100000.0,
+        "ts": "2026-07-23T07:07:29.597854+00:00"
       }
     ],
     "flatten_mode": false,
@@ -20,11 +24,11 @@
   },
   "equity_peak_ts": null,
   "equity_peak_usd": 100000.0,
-  "last_run_completed_at": "2026-07-22T16:04:06.693399+00:00",
-  "last_run_id": "2026-07-22T16",
+  "last_run_completed_at": "2026-07-23T07:07:29.597854+00:00",
+  "last_run_id": "2026-07-23T07",
   "positions": {},
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "b356e054f67680254d3ae1275b94cb327ef1ff9977733c2fdf2e9c9086a04908",
+  "state_hash_prev": "2f965ad97b953e863f499ed150a9a09f56e0faa85a9f3ee21b53e5c21b703ef5",
   "trade_history_for_breakers": []
 }
