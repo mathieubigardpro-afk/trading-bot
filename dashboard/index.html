@@ -239,6 +239,10 @@
   /* ---------- two column grid ---------- */
   .grid-2col { display: grid; grid-template-columns: 1.05fr 1.55fr; gap: 18px; align-items: start; }
   @media (max-width: 920px) { .grid-2col { grid-template-columns: 1fr; } }
+  /* Grid/flex items default to min-width:auto, so a wide nowrap table refuses to shrink and
+     blows out the whole page layout instead of scrolling in its own .table-scroll box.
+     min-width:0 lets the item shrink to its track and hands overflow back to .table-scroll. */
+  .grid-2col > .card, .kpi-grid > .stat-tile, .metrics-grid > .metric-tile { min-width: 0; }
 
   .empty-note {
     color: var(--text-muted); font-size: 13px; padding: 20px 8px; text-align: center;
@@ -398,7 +402,7 @@
 
   <footer class="app-footer">
     <span id="footerFetchInfo">—</span>
-    <span>Les heures sont affichées dans le fuseau horaire de votre navigateur ; les cycles du bot tournent en UTC (toutes les heures, à la 7ᵉ minute).</span>
+    <span>Les heures sont affichées à l'heure de Paris (Europe/Paris) ; les cycles du bot tournent en UTC (toutes les heures, à la 7ᵉ minute).</span>
     <span>Ce tableau de bord lit uniquement des fichiers publics du dépôt GitHub (aucune clé, aucun secret, aucune écriture). Capital et trades entièrement fictifs.</span>
   </footer>
 
@@ -509,15 +513,18 @@
     if (x === null || x === undefined || !isFinite(x)) return "—";
     return x.toLocaleString("fr-FR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
+  // Toutes les heures affichées à l'utilisateur sont fixées à Europe/Paris (pas le fuseau du
+  // navigateur, qui peut différer si Mathieu voyage ou si l'appareil est mal configuré).
+  var DISPLAY_TZ = "Europe/Paris";
   function fmtDateTime(ts) {
     var d = new Date(ts);
     if (isNaN(d.getTime())) return "—";
-    return d.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: DISPLAY_TZ });
   }
   function fmtTime(ts) {
     var d = new Date(ts);
     if (isNaN(d.getTime())) return "—";
-    return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: DISPLAY_TZ });
   }
   function fmtUTC(d) {
     return String(d.getUTCHours()).padStart(2, "0") + "h" + String(d.getUTCMinutes()).padStart(2, "0") + " UTC";
@@ -576,11 +583,17 @@
 
   function loadAll() {
     app.errors = [];
+    // stateKnown / equityKnown distinguent "fichier absent car le bot n'a pas encore tourné"
+    // (donnée connue : 100% cash) d'un véritable échec réseau/parsing (donnée INCONNUE — il ne
+    // faut jamais afficher un 100 000 $ ou un 0 % qui aurait l'air d'un vrai chiffre dans ce cas).
+    app.stateKnown = true;
+    app.equityKnown = true;
     var pState = fetchText(URLS.state).then(function (t) {
-      try { return t ? JSON.parse(t) : defaultState(); } catch (e) { app.errors.push("state.json illisible"); return defaultState(); }
-    }).catch(function () { app.errors.push("state.json inaccessible"); return defaultState(); });
+      if (!t) return defaultState(); // 404 : pas encore de state.json, "100% cash" est un fait, pas une inconnue
+      try { return JSON.parse(t); } catch (e) { app.errors.push("state.json illisible"); app.stateKnown = false; return defaultState(); }
+    }).catch(function () { app.errors.push("state.json inaccessible"); app.stateKnown = false; return defaultState(); });
 
-    var pEquity = fetchText(URLS.equity).then(parseJsonl).catch(function () { app.errors.push("equity.jsonl inaccessible"); return []; });
+    var pEquity = fetchText(URLS.equity).then(parseJsonl).catch(function () { app.errors.push("equity.jsonl inaccessible"); app.equityKnown = false; return []; });
     var pTrades = fetchText(URLS.trades).then(parseJsonl).catch(function () { app.errors.push("trades.jsonl inaccessible"); return []; });
     var pDecisions = fetchText(URLS.decisions).then(parseJsonl).catch(function () { app.errors.push("decisions.jsonl inaccessible"); return []; });
 
@@ -593,6 +606,16 @@
       renderAll();
     });
   }
+  // Vrai seulement quand on n'a NI le dernier state.json NI un seul point d'equity.jsonl :
+  // dans ce cas on ne connaît vraiment rien (ni équity, ni PnL, ni drawdown) — il faut le dire.
+  function dataUnknown() {
+    return !app.stateKnown && !app.equityKnown && app.equity.length === 0;
+  }
+  // positions/cash n'existent QUE dans state.json — si ce fichier précis a échoué, on ne peut
+  // pas affirmer "portefeuille 100% cash", même si equity.jsonl (autre fichier) a bien chargé.
+  function positionsUnknown() {
+    return !app.stateKnown;
+  }
 
   /* =========================================================================
      CALCULS
@@ -603,6 +626,7 @@
   function currentEquity() {
     var last = latestEquityRecord();
     if (last && typeof last.equity_usd === "number") return last.equity_usd;
+    if (dataUnknown()) return null; // échec réel de chargement : on ne connaît pas l'équity, on ne l'invente pas
     if (app.state) return equityFromState();
     return INITIAL_CASH;
   }
@@ -739,7 +763,10 @@
     var lastRunTxt = app.state && app.state.last_run_completed_at;
     var pill = document.getElementById("pillFraicheurText");
     var dot = document.getElementById("pulseDot");
-    if (!lastRunTxt) {
+    if (dataUnknown()) {
+      pill.textContent = "Statut inconnu — échec de chargement";
+      dot.className = "pulse-dot bad";
+    } else if (!lastRunTxt) {
       pill.textContent = "Aucun cycle enregistré pour l'instant";
       dot.className = "pulse-dot warn";
     } else {
@@ -821,16 +848,17 @@
   function renderKpis() {
     var grid = document.getElementById("kpiGrid");
     clear(grid);
+    var unknown = dataUnknown();
     var eq = currentEquity();
-    var totalPnl = eq - INITIAL_CASH;
-    var totalPnlPct = totalPnl / INITIAL_CASH;
+    var totalPnl = eq === null ? null : eq - INITIAL_CASH;
+    var totalPnlPct = totalPnl === null ? null : totalPnl / INITIAL_CASH;
 
     var dayRef = equityAt(24);
-    var dayPnl = dayRef && typeof dayRef.equity_usd === "number" ? eq - dayRef.equity_usd : null;
+    var dayPnl = (eq !== null && dayRef && typeof dayRef.equity_usd === "number") ? eq - dayRef.equity_usd : null;
     var dayPnlPct = dayPnl !== null && dayRef.equity_usd ? dayPnl / dayRef.equity_usd : null;
 
     var last = latestEquityRecord();
-    var dd = last && typeof last.drawdown_pct === "number" ? last.drawdown_pct : 0;
+    var dd = unknown ? null : (last && typeof last.drawdown_pct === "number" ? last.drawdown_pct : 0);
 
     var sparkVals = app.equity.slice(-16).map(function (e) { return e.equity_usd; });
     var sparkPts = sparklinePath(sparkVals, 90, 22);
@@ -842,7 +870,9 @@
       h("div", { class: "stat-label" }, ["Équité actuelle", h("span", { class: "info-tip", tabindex: "0", "data-tip": "La valeur totale du portefeuille en ce moment : cash disponible + valeur de marché de toutes les positions." }, ["i"])]),
       h("div", { class: "stat-value" }, [fmtUSD(eq)]),
       h("div", { class: "stat-sub" }, [
-        h("span", { class: "delta " + deltaClass(totalPnl) }, [fmtUSD(totalPnl, { signed: true }) + " (" + fmtPct(totalPnlPct, { signed: true }) + ") depuis le départ"])
+        unknown
+          ? h("span", { class: "delta flat" }, ["Données indisponibles (échec de chargement) — voir le bandeau ci-dessus"])
+          : h("span", { class: "delta " + deltaClass(totalPnl) }, [fmtUSD(totalPnl, { signed: true }) + " (" + fmtPct(totalPnlPct, { signed: true }) + ") depuis le départ"])
       ])
     ]);
     if (sparkPts) {
@@ -856,22 +886,22 @@
     grid.appendChild(h("div", { class: "stat-tile" }, [
       h("div", { class: "stat-label" }, ["PnL du jour (24 h)", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Variation de l'équity sur les 24 dernières heures glissantes (pas le jour calendaire) — comparé au cycle le plus proche d'il y a 24 h." }, ["i"])]),
       h("div", { class: "stat-value " + (dayPnl === null ? "" : deltaClass(dayPnl)) }, [dayPnl === null ? "—" : fmtUSD(dayPnl, { signed: true })]),
-      h("div", { class: "stat-sub" }, [dayPnl === null ? "Historique insuffisant" : (fmtPct(dayPnlPct, { signed: true }) + " · réf. " + relativeTime(dayRef.ts))])
+      h("div", { class: "stat-sub" }, [unknown ? "Données indisponibles" : (dayPnl === null ? "Historique insuffisant" : (fmtPct(dayPnlPct, { signed: true }) + " · réf. " + relativeTime(dayRef.ts)))])
     ]));
 
     // 3. PnL total
     grid.appendChild(h("div", { class: "stat-tile" }, [
       h("div", { class: "stat-label" }, ["PnL total", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Gain ou perte cumulé depuis le tout premier cycle du bot, comparé au capital de départ de 100 000 $." }, ["i"])]),
-      h("div", { class: "stat-value " + deltaClass(totalPnl) }, [fmtUSD(totalPnl, { signed: true })]),
-      h("div", { class: "stat-sub" }, [fmtPct(totalPnlPct, { signed: true }) + " · capital initial 100 000 $"])
+      h("div", { class: "stat-value " + deltaClass(totalPnl) }, [totalPnl === null ? "—" : fmtUSD(totalPnl, { signed: true })]),
+      h("div", { class: "stat-sub" }, [unknown ? "Données indisponibles" : (fmtPct(totalPnlPct, { signed: true }) + " · capital initial 100 000 $")])
     ]));
 
     // 4. Drawdown courant
-    var ddSeverity = dd > 0.15 ? "bad" : (dd > 0.05 ? "warn" : "flat");
+    var ddSeverity = dd === null ? "flat" : (dd > 0.15 ? "bad" : (dd > 0.05 ? "warn" : "flat"));
     grid.appendChild(h("div", { class: "stat-tile" }, [
       h("div", { class: "stat-label" }, ["Drawdown courant", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Recul de l'équity actuelle par rapport à son plus haut historique. 0 % = l'équity est à son sommet. Les seuils du bot : réduction des tailles à 15 %, liquidation totale à 25 %." }, ["i"])]),
       h("div", { class: "stat-value " + (ddSeverity === "bad" ? "num bad" : ddSeverity === "warn" ? "" : "") , style: ddSeverity === "warn" ? "color:var(--status-warning)" : "" }, [fmtPct(dd)]),
-      h("div", { class: "stat-sub" }, ["Pic historique : " + fmtUSD(last ? last.equity_peak_usd : (app.state ? app.state.equity_peak_usd : INITIAL_CASH))])
+      h("div", { class: "stat-sub" }, [unknown ? "Données indisponibles" : ("Pic historique : " + fmtUSD(last ? last.equity_peak_usd : (app.state ? app.state.equity_peak_usd : INITIAL_CASH)))])
     ]));
 
     // 5. Statut / fraîcheur
@@ -884,6 +914,8 @@
         h("div", { class: "stat-value", style: "font-size:17px" }, [relativeTime(lastRunTxt)]),
         h("div", { class: "stat-sub" }, ["Prochain cycle : ~" + fmtUTC(next) + (ageH > STALE_HOURS ? " · en retard" : "")])
       ];
+    } else if (unknown) {
+      freshBody = [h("div", { class: "stat-value", style: "font-size:17px" }, ["Statut inconnu"]), h("div", { class: "stat-sub" }, ["Échec de chargement de state.json — impossible de savoir quand le bot a tourné pour la dernière fois"])];
     } else {
       freshBody = [h("div", { class: "stat-value", style: "font-size:17px" }, ["Aucun cycle"]), h("div", { class: "stat-sub" }, ["En attente du premier cycle du bot"])];
     }
@@ -1128,8 +1160,8 @@
   }
 
   function formatAxisDate(d) {
-    if (currentRange === "24h") return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+    if (currentRange === "24h") return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: DISPLAY_TZ });
+    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", timeZone: DISPLAY_TZ });
   }
 
   function renderChartTable(data) {
@@ -1161,6 +1193,12 @@
   function renderPositions() {
     var box = document.getElementById("positionsWrap");
     clear(box);
+    if (positionsUnknown()) {
+      box.appendChild(h("div", { class: "empty-note" }, [
+        "Données indisponibles — échec du chargement de state.json (voir le bandeau ci-dessus). Impossible de savoir ce que détient le bot en ce moment."
+      ]));
+      return;
+    }
     var positions = (app.state && app.state.positions) || {};
     var symbols = Object.keys(positions);
     if (!symbols.length) {
@@ -1261,6 +1299,7 @@
     var mdd = maxDrawdown();
     var expoLast = latestEquityRecord();
     var tip = timeInPositionPct();
+    var unknownData = dataUnknown();
 
     function tile(label, tipText, valueNode, note, wide) {
       var t = h("div", { class: "metric-tile" + (wide ? " wide" : "") }, [
@@ -1292,15 +1331,31 @@
       tm.n === 0 ? "Aucun trade clôturé" : "Sur " + tm.n + " trade(s) clôturé(s)"));
 
     grid.appendChild(tile("Drawdown maximum", "Le plus grand recul observé entre un sommet d'équity et le creux suivant, sur tout l'historique enregistré.",
-      fmtPct(mdd),
-      "Seuils du bot : /2 taille à 15 %, liquidation à 25 %"));
+      unknownData ? "—" : fmtPct(mdd),
+      unknownData ? "Indisponible" : "Seuils du bot : /2 taille à 15 %, liquidation à 25 %"));
 
     grid.appendChild(tile("Exposition brute", "Somme des valeurs absolues des positions rapportée à l'équity. 0 % = tout cash, 80 % = plafond maximal autorisé par le bot.",
       expoLast ? fmtPct(expoLast.gross_exposure_pct || 0) : "—",
       tip === null ? "" : ("En position " + fmtPct(tip, { decimals: 0 }) + " du temps observé")));
 
+    // PnL réalisé (officiel, tenu par le grand livre du bot) vs PnL latent (positions encore ouvertes) —
+    // séparation explicite demandée : de l'argent "encaissé" (ventes clôturées) contre un gain/perte
+    // sur le papier qui peut encore changer avant d'être vendu.
+    var realizedCum = (!positionsUnknown() && app.state && typeof app.state.realized_pnl_cumulative_usd === "number")
+      ? app.state.realized_pnl_cumulative_usd : null;
+    var assetsForLatent = pnlByAsset();
+    var latentTotal = positionsUnknown() ? null : assetsForLatent.reduce(function (a, x) { return a + x.latent; }, 0);
+
+    grid.appendChild(tile("PnL réalisé cumulé", "Gain ou perte définitivement encaissé sur les ventes déjà clôturées, tenu par le grand livre (ledger) du bot lui-même — la valeur officielle de state.json, pas un recalcul. Ne change plus une fois la vente faite.",
+      realizedCum === null ? "—" : h("span", { class: "num " + (realizedCum > 0 ? "good" : realizedCum < 0 ? "bad" : "flat") }, [fmtUSD(realizedCum, { signed: true })]),
+      realizedCum === null ? "Indisponible" : "Depuis le tout premier trade clôturé (realized_pnl_cumulative_usd)"));
+
+    grid.appendChild(tile("PnL latent (positions ouvertes)", "Gain ou perte « sur le papier » des positions encore détenues, au prix actuel implicite. Ce n'est PAS de l'argent encaissé — ça peut encore monter ou redescendre avant la vente.",
+      latentTotal === null ? "—" : h("span", { class: "num " + (latentTotal > 0 ? "good" : latentTotal < 0 ? "bad" : "flat") }, [fmtUSD(latentTotal, { signed: true })]),
+      latentTotal === null ? "Indisponible" : ((app.state && app.state.positions && Object.keys(app.state.positions).length) ? "Sur " + Object.keys(app.state.positions).length + " position(s) ouverte(s)" : "Aucune position ouverte")));
+
     // PnL par actif
-    var assets = pnlByAsset();
+    var assets = assetsForLatent;
     var assetBody;
     if (!assets.length) {
       assetBody = h("div", { class: "m-note" }, ["Aucune activité sur aucun actif pour l'instant."]);
