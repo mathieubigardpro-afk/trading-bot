@@ -13,6 +13,10 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-23T15:20:08.365151+00:00"
+      },
+      {
+        "equity": 1141.079,
+        "ts": "2026-07-23T17:42:36.867701+00:00"
       }
     ],
     "flatten_mode": false,
@@ -25,15 +29,15 @@
     "last_rate": 1.1392,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-23T15:20:19.110500+00:00"
+    "last_rate_ts": "2026-07-23T17:43:24.706155+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-23T15:20:08.365151+00:00",
-  "last_run_id": "2026-07-23T15",
+  "last_run_completed_at": "2026-07-23T17:42:36.867701+00:00",
+  "last_run_id": "2026-07-23T17",
   "positions": {},
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "3f48068b97cd50bfe2115c4c894dc1e5b6d193663b1e5a05357646d0e1b3c109",
+  "state_hash_prev": "b7452790fa8c3f2de77c95e447b7617551d5502cd3dd803e5a4f2f2758376524",
   "trade_history_for_breakers": [],
   "wallet_id": "prudent"
 }
