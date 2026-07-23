@@ -128,7 +128,17 @@ def wallet_decisions_jsonl(wallet_id: str) -> str:
 
 
 # --- Historique requis pour les stratégies / filtres de régime ---
-HISTORY_N_HOURS = max(720, REGIME_SMA_DAYS * 24)
+# Marge de +48h AJOUTÉE lors de l'intégration des stratégies (docs/ARCHITECTURE.md §11) :
+# `bot.strategies.quasi_passif_crypto._daily_closes()` n'agrège que des JOURS CALENDAIRES
+# COMPLETS (24 heures distinctes) et exige `REGIME_SMA_DAYS` (200) d'entre eux pour calculer sa
+# SMA200. Sans marge, une fenêtre de EXACTEMENT `REGIME_SMA_DAYS*24` heures perd jusqu'à 23h au
+# jour courant (toujours partiel, exclu par construction) ET jusqu'à 23h au jour le plus ancien
+# de la fenêtre (le début de la fenêtre tombe rarement pile à minuit UTC) — pire cas 46h
+# "perdues", pouvant ramener le nombre de jours complets disponibles à 199 au lieu de 200 selon
+# l'heure du cycle, rendant la SMA200 structurellement incalculable à certaines heures. +48h
+# couvre ce pire cas avec 2h de marge. Bug identifié et corrigé lors de l'intégration
+# (bot/tests/test_daily_history_warmup_margin.py), pas une valeur arbitraire.
+HISTORY_N_HOURS = max(720, REGIME_SMA_DAYS * 24 + 48)
 
 # ======================================================================================
 # --- Univers crypto étendu (30 paires) pour le wallet AGRESSIF ---
@@ -184,6 +194,60 @@ QTY_STEPS_EXTENDED: dict[str, float] = {
 }
 
 # ======================================================================================
+# --- Univers actions / ETF (SPEC docs/config-strategies.json, addendum §11 ARCHITECTURE.md) ---
+# Repris À L'IDENTIQUE des constantes de module de `bot/strategies/xs_momentum_sp100.py`
+# (`UNIVERSE_SP100`, `MARKET_FILTER_SYMBOL`) et `bot/strategies/dual_momentum_etf.py`
+# (`RISKY_UNIVERSE`, `BOND_BOGEY`) — dupliqué ici (plutôt qu'importé) pour que `bot/config.py`
+# reste sans dépendance sur `bot/strategies/` (source de vérité unique et autonome, cf. bandeau
+# de tête de ce fichier). Ces deux jeux de constantes DOIVENT rester synchronisés — vérifié
+# explicitement par `bot/tests/test_config_strategies_sync.py`.
+# ======================================================================================
+EQUITIES_SP100_UNIVERSE = [
+    "AAPL", "ABBV", "ABT", "ACN", "ADBE", "AIG", "AMD", "AMGN", "AMT", "AMZN",
+    "AVGO", "AXP", "BA", "BAC", "BKNG", "BLK", "BMY", "BRK.B", "C", "CAT",
+    "CHTR", "CL", "CMCSA", "COF", "COP", "COST", "CRM", "CSCO", "CVS", "CVX",
+    "DE", "DHR", "DIS", "DOW", "DUK", "EMR", "F", "FDX", "GD", "GE",
+    "GILD", "GM", "GOOG", "GOOGL", "GS", "HD", "HON", "IBM", "INTC", "INTU",
+    "ISRG", "JNJ", "JPM", "KHC", "KMI", "KO", "LIN", "LLY", "LMT", "LOW",
+    "MA", "MCD", "MDLZ", "MDT", "MET", "META", "MMM", "MO", "MRK", "MS",
+    "MSFT", "NEE", "NFLX", "NKE", "NVDA", "ORCL", "PEP", "PFE", "PG", "PM",
+    "PYPL", "QCOM", "RTX", "SBUX", "SCHW", "SO", "SPG", "T", "TGT", "TJX",
+    "TMO", "TMUS", "TSLA", "TXN", "UNH", "UNP", "UPS", "USB", "V", "VZ",
+    "WFC", "WMT", "XOM",
+]
+EQUITIES_MARKET_FILTER_SYMBOL = "SPY"  # filtre de régime xs_momentum_sp100 (jamais détenu pour lui-même côté actions)
+ETF_RISKY_UNIVERSE = ["SPY", "QQQ", "IWM", "EFA", "EEM", "VNQ", "GLD", "DBC"]
+ETF_BOND_BOGEY = "IEF"
+
+# `bot.feeds` (get_prices/get_history) route un symbole vers l'adaptateur actions (Yahoo) s'il
+# figure dans SYMBOLS_EQUITY (cf. bot/feeds/_config_fallback.py) — doit donc couvrir TOUT
+# symbole actions/ETF réellement suivi par au moins un wallet (S&P100 + SPY + les 8 ETF risqués
+# + IEF), sous peine de routage silencieusement incorrect (get_prices renverrait None faute de
+# reconnaître le symbole).
+SYMBOLS_EQUITY = sorted(
+    set(EQUITIES_SP100_UNIVERSE)
+    | {EQUITIES_MARKET_FILTER_SYMBOL}
+    | set(ETF_RISKY_UNIVERSE)
+    | {ETF_BOND_BOGEY}
+)
+
+# ======================================================================================
+# --- Univers crypto resserré du wallet AGRESSIF (12 actifs diversifiés) ---
+# CHANGEMENT ADOPTÉ vs l'ancien univers 30 cryptos complet (cf. docs/SELECTION-FINALE.md §3 et
+# docs/config-strategies.json:_meta.changements_proposes_vs_config_actuel) : panier resserré
+# justifié par l'analyse de diversification (ENB) -- majors pour la liquidité/les coûts
+# (BTC, ETH, SOL, BNB, XRP) + diversificateurs à faible corrélation BTC (TRX, XLM, HBAR, ICP,
+# OP, UNI, FIL). Remplace l'ancien `CRYPTO_SYMBOLS_30` comme univers du wallet agressif -- ce
+# dernier reste défini ci-dessus pour l'archive 100k$ / rétro-compatibilité bas niveau
+# (`bot.sim.exchange.DEFAULT_QTY_STEPS`, tests bas niveau), mais N'EST PLUS l'univers du wallet
+# agressif en production.
+# ======================================================================================
+CRYPTO_SYMBOLS_AGRESSIF_12 = [
+    "BTC", "ETH", "SOL", "BNB", "XRP",
+    "TRX", "XLM", "HBAR", "ICP", "OP", "UNI", "FIL",
+]
+
+# ======================================================================================
 # --- WALLETS : les 3 portefeuilles indépendants (cœur pédagogique du produit) ---
 # ======================================================================================
 WALLETS = [
@@ -193,6 +257,19 @@ WALLETS = [
         "label": "Prudent",
         "capital_initial_eur": 1000.0,
         "univers_crypto": ["BTC", "ETH"],
+        # Poches par classe d'actif (docs/config-strategies.json -> wallets.prudent.pockets ;
+        # docs/SELECTION-FINALE.md §3). `capital_alloc_pct` = part du capital TOTAL du wallet
+        # (pas de la seule poche) ; `strategy_ref` = `StrategyBase.name` de la stratégie
+        # concrète qui porte cette poche (résolue dynamiquement par bot/runner.py via
+        # `load_strategies()`), ou `None` pour une poche "cash" (réserve, aucun ordre généré).
+        # La somme des `capital_alloc_pct` non-cash est TOUJOURS < 1.0 (le reliquat est la
+        # réserve cash implicite) -- propriété exploitée par bot/runner.py pour borner le cap
+        # d'exposition brute globale sans avoir à en inventer un nouveau, cf. ARCHITECTURE.md §11.
+        "pockets": [
+            {"asset_class": "etf", "capital_alloc_pct": 0.55, "strategy_ref": "dual_momentum_etf"},
+            {"asset_class": "crypto", "capital_alloc_pct": 0.30, "strategy_ref": "quasi_passif_crypto"},
+            {"asset_class": "cash", "capital_alloc_pct": 0.15, "strategy_ref": None},
+        ],
         "risque": {
             "vol_target_annualized": 0.10,
             "gross_exposure_max": 0.40,
@@ -215,6 +292,12 @@ WALLETS = [
         "label": "Équilibré",
         "capital_initial_eur": 1000.0,
         "univers_crypto": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+        "pockets": [
+            {"asset_class": "equities", "capital_alloc_pct": 0.35, "strategy_ref": "xs_momentum_sp100"},
+            {"asset_class": "etf", "capital_alloc_pct": 0.25, "strategy_ref": "dual_momentum_etf"},
+            {"asset_class": "crypto", "capital_alloc_pct": 0.30, "strategy_ref": "quasi_passif_crypto"},
+            {"asset_class": "cash", "capital_alloc_pct": 0.10, "strategy_ref": None},
+        ],
         "risque": {
             "vol_target_annualized": 0.20,
             "gross_exposure_max": 0.70,
@@ -236,7 +319,14 @@ WALLETS = [
         "emoji": "🔥",
         "label": "Agressif",
         "capital_initial_eur": 1000.0,
-        "univers_crypto": list(CRYPTO_SYMBOLS_30),
+        # Univers resserré à 12 actifs (changement ADOPTÉ, cf. bandeau CRYPTO_SYMBOLS_AGRESSIF_12
+        # ci-dessus et docs/SELECTION-FINALE.md §3) -- remplace l'ancien univers 30 cryptos complet.
+        "univers_crypto": list(CRYPTO_SYMBOLS_AGRESSIF_12),
+        "pockets": [
+            {"asset_class": "equities", "capital_alloc_pct": 0.30, "strategy_ref": "xs_momentum_sp100"},
+            {"asset_class": "crypto", "capital_alloc_pct": 0.60, "strategy_ref": "quasi_passif_crypto"},
+            {"asset_class": "cash", "capital_alloc_pct": 0.10, "strategy_ref": None},
+        ],
         "risque": {
             "vol_target_annualized": 0.35,
             "gross_exposure_max": 0.90,

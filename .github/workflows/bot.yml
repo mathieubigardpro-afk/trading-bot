@@ -52,7 +52,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy requests
+          # yfinance ajouté lors de l'intégration des stratégies (docs/ARCHITECTURE.md §11) :
+          # bot/feeds/daily.py (poches actions xs_momentum_sp100 + ETF dual_momentum_etf) l'utilise
+          # comme source primaire (téléchargement par lots), repli stooq.com si absent/en échec —
+          # le cycle reste fonctionnel sans yfinance, mais en disponibilité dégradée (stooq seul).
+          pip install pandas numpy requests yfinance
 
       - name: Configure git identity
         run: |

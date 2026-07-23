@@ -6,6 +6,11 @@
       "label": "Prudent",
       "capital_initial_eur": 1000.0,
       "univers_crypto": ["BTC", "ETH"],
+      "pockets": [
+        {"asset_class": "etf", "capital_alloc_pct": 0.55, "strategy_ref": "dual_momentum_etf"},
+        {"asset_class": "crypto", "capital_alloc_pct": 0.30, "strategy_ref": "quasi_passif_crypto"},
+        {"asset_class": "cash", "capital_alloc_pct": 0.15, "strategy_ref": null}
+      ],
       "risque": {
         "vol_target_annualized": 0.10,
         "gross_exposure_max": 0.40,
@@ -28,6 +33,12 @@
       "label": "Équilibré",
       "capital_initial_eur": 1000.0,
       "univers_crypto": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "pockets": [
+        {"asset_class": "equities", "capital_alloc_pct": 0.35, "strategy_ref": "xs_momentum_sp100"},
+        {"asset_class": "etf", "capital_alloc_pct": 0.25, "strategy_ref": "dual_momentum_etf"},
+        {"asset_class": "crypto", "capital_alloc_pct": 0.30, "strategy_ref": "quasi_passif_crypto"},
+        {"asset_class": "cash", "capital_alloc_pct": 0.10, "strategy_ref": null}
+      ],
       "risque": {
         "vol_target_annualized": 0.20,
         "gross_exposure_max": 0.70,
@@ -49,10 +60,15 @@
       "emoji": "🔥",
       "label": "Agressif",
       "capital_initial_eur": 1000.0,
+      "univers_crypto_note": "CHANGEMENT ADOPTÉ (docs/SELECTION-FINALE.md §3) : restreint de 30 cryptos complètes à un panier resserré de 12 actifs diversifiés (majors liquides + faible corrélation BTC), cf. bot/config.py:CRYPTO_SYMBOLS_AGRESSIF_12.",
       "univers_crypto": [
-        "BTC", "ETH", "BNB", "SOL", "XRP", "ADA", "DOGE", "AVAX", "DOT", "LINK",
-        "LTC", "TRX", "BCH", "ETC", "UNI", "ATOM", "NEAR", "FIL", "APT", "ARB",
-        "OP", "INJ", "ICP", "HBAR", "AAVE", "ALGO", "SAND", "MANA", "XLM", "VET"
+        "BTC", "ETH", "SOL", "BNB", "XRP",
+        "TRX", "XLM", "HBAR", "ICP", "OP", "UNI", "FIL"
+      ],
+      "pockets": [
+        {"asset_class": "equities", "capital_alloc_pct": 0.30, "strategy_ref": "xs_momentum_sp100"},
+        {"asset_class": "crypto", "capital_alloc_pct": 0.60, "strategy_ref": "quasi_passif_crypto"},
+        {"asset_class": "cash", "capital_alloc_pct": 0.10, "strategy_ref": null}
       ],
       "cost_tiers": {
         "majors": {"symbols": ["BTC", "ETH", "BNB", "SOL", "XRP"], "fee_taker_bps": 10, "slippage_penalty_bps": 5},
@@ -76,6 +92,19 @@
       }
     }
   ],
+  "univers_actions_etf": {
+    "note": "Ajouté lors de l'intégration des stratégies (docs/config-strategies.json, docs/SELECTION-FINALE.md). Source de vérité réelle : bot/config.py (EQUITIES_SP100_UNIVERSE, EQUITIES_MARKET_FILTER_SYMBOL, ETF_RISKY_UNIVERSE, ETF_BOND_BOGEY) + bot/strategies/xs_momentum_sp100.py / dual_momentum_etf.py.",
+    "sp100_count": 103,
+    "market_filter_symbol": "SPY",
+    "etf_risky_universe": ["SPY", "QQQ", "IWM", "EFA", "EEM", "VNQ", "GLD", "DBC"],
+    "etf_bond_bogey": "IEF"
+  },
+  "strategies": {
+    "note": "Association poche -> stratégie déjà répétée dans chaque wallets[*].pockets[*].strategy_ref ci-dessus ; résumé pour lecture rapide.",
+    "quasi_passif_crypto": "poche crypto, 3 wallets (variantes prudent_btc_eth / equilibre_6majors / agressif_12diversifie selon profile['risque'] + profile['univers_crypto'])",
+    "xs_momentum_sp100": "poche actions, wallets équilibré + agressif uniquement (exclu du wallet prudent)",
+    "dual_momentum_etf": "poche ETF, wallets prudent + équilibré uniquement (absent du wallet agressif)"
+  },
   "devise": {
     "comptabilite_interne": "USD",
     "affichage": "EUR",

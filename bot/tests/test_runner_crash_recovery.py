@@ -21,7 +21,7 @@ import pytest
 import bot.runner as runner
 from bot import config
 from bot.feeds.fx import FxRate
-from bot.feeds.types import Quote
+from bot.feeds.types import HistoryUnavailableError, Quote
 from bot.persist.cycle import save_cycle_state
 from bot.persist.journal import append_journal
 from bot.persist.state import save_state
@@ -62,11 +62,21 @@ def origin_and_clone(tmp_path):
 def _no_network_and_repo_override(monkeypatch, origin_and_clone):
     """Par défaut : aucun appel réseau ne renvoie quoi que ce soit d'exploitable (reproduit le
     réseau bloqué du bac à sable) — chaque test qui a besoin de prix/FX les fournit lui-même
-    via un monkeypatch supplémentaire ciblé."""
+    via un monkeypatch supplémentaire ciblé. `prefetch_daily_history`/`get_daily_history`
+    (poches actions/ETF, docs/ARCHITECTURE.md §11) sont également neutralisés ici : sans ce
+    monkeypatch, ces tests déclencheraient de VRAIS appels réseau (yfinance/stooq) à chaque
+    `runner.main()`, lents et non déterministes dans ce bac à sable (proxy bloqué)."""
     _origin, clone = origin_and_clone
     monkeypatch.setattr(runner, "repo_dir", lambda: str(clone))
     monkeypatch.setattr(runner, "get_prices", lambda symbols: {sym: None for sym in symbols})
     monkeypatch.setattr(runner, "get_fx_rate", lambda pair, last_known=None: None)
+    monkeypatch.setattr(runner, "prefetch_daily_history", lambda symbols, asset_class, n_days=None: {})
+    monkeypatch.setattr(
+        runner, "get_daily_history",
+        lambda symbol, n_days, asset_class: (_ for _ in ()).throw(
+            HistoryUnavailableError("pas de fixture réseau (réseau bloqué du bac à sable)")
+        ),
+    )
     monkeypatch.chdir(clone)
 
 

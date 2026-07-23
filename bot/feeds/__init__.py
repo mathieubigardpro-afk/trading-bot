@@ -17,6 +17,13 @@ from bot.feeds import calendar  # noqa: F401  (réexporté pour bot.feeds.calend
 from bot.feeds._config_fallback import cfg
 from bot.feeds.calendar import is_us_market_open  # noqa: F401  (réexport de confort)
 from bot.feeds.crypto import get_history_crypto, get_prices_crypto
+from bot.feeds.daily import (  # noqa: F401  (réexport, historique journalier bas-fréquence)
+    MIN_WARMUP_DAYS,
+    clear_daily_cache,
+    get_daily_history,
+    is_daily_history_available,
+    prefetch_daily_history,
+)
 from bot.feeds.equities import get_history_equity, get_prices_equity
 from bot.feeds.fx import FxRate, get_fx_rate  # noqa: F401  (réexport, multi-wallets)
 from bot.feeds.types import HistoryUnavailableError, Quote  # noqa: F401  (réexport)
@@ -31,6 +38,11 @@ __all__ = [
     "is_us_market_open",
     "FxRate",
     "get_fx_rate",
+    "get_daily_history",
+    "prefetch_daily_history",
+    "is_daily_history_available",
+    "clear_daily_cache",
+    "MIN_WARMUP_DAYS",
 ]
 
 

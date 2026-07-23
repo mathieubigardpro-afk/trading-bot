@@ -993,3 +993,140 @@ du dépôt), `bot/tests/test_persist_audit.py` (`verify_chain()` à travers un `
 sans falsification post-renommage), `bot/tests/test_migration.py`
 (`test_migrated_archive_stays_loadable_and_auditable` : `migrate()` réel suivi de
 `load_state()`+`verify_chain()` sur l'archive produite, bout en bout).
+
+---
+
+## 11. Addendum stratégies — intégration en production (2026-07-23)
+
+Le cerveau du bot est branché : `bot/strategies/` contient désormais 3 stratégies concrètes
+(livrées en parallèle, câblées ici) fidèles à `docs/config-strategies.json` /
+`docs/SELECTION-FINALE.md` — `quasi_passif_crypto.QuasiPassifCrypto`,
+`xs_momentum_sp100.XsMomentumSp100`, `dual_momentum_etf.DualMomentumETF`. `bot/strategies/
+combine_strategies()` (moyenne équi-pondérée générique, §5.5/§8) reste un placeholder **jamais
+appelé en production** — le runner utilise sa propre agrégation par poche, décrite ci-dessous.
+
+### 11.1 Poches par wallet — `bot/config.py:WALLETS[*]["pockets"]`
+
+Chaque wallet définit désormais `"pockets"` : une liste de `{asset_class, capital_alloc_pct,
+strategy_ref}` (`strategy_ref` = `StrategyBase.name`, ou `None` pour une poche "cash", jamais
+tradée). Reprise exacte de `docs/config-strategies.json` -> `wallets.*.pockets` :
+
+| Wallet | Poches (`capital_alloc_pct`) |
+|---|---|
+| 🛡️ prudent | ETF 55% (`dual_momentum_etf`) · crypto 30% (`quasi_passif_crypto`) · cash 15% |
+| ⚖️ équilibré | actions 35% (`xs_momentum_sp100`) · ETF 25% (`dual_momentum_etf`) · crypto 30% (`quasi_passif_crypto`) · cash 10% |
+| 🔥 agressif | actions 30% (`xs_momentum_sp100`) · crypto 60% (`quasi_passif_crypto`) · cash 10% |
+
+La somme des `capital_alloc_pct` non-cash est TOUJOURS < 1.0 (le reliquat est la réserve cash
+implicite) — propriété exploitée §11.3 pour borner le cap d'exposition brute portefeuille sans
+inventer de nouvelle valeur (`bot/tests/test_config_strategies_sync.py:
+test_pockets_capital_alloc_pct_sums_to_at_most_one_per_wallet`).
+
+**Changement ADOPTÉ** (recommandation `docs/SELECTION-FINALE.md` §3, non appliquée
+automatiquement par ce document) : l'univers crypto du wallet agressif passe de 30 cryptos
+complètes à un panier resserré de 12 actifs diversifiés (`bot.config.
+CRYPTO_SYMBOLS_AGRESSIF_12` = BTC, ETH, SOL, BNB, XRP, TRX, XLM, HBAR, ICP, OP, UNI, FIL) —
+justifié par l'analyse de diversification (ENB) : un panier resserré bien choisi capture
+l'essentiel du gain de diversification mesurable, à coûts de transaction inférieurs (paliers
+majors/mids vs jusqu'à 60 bps pour les "smalls" écartés). `CRYPTO_SYMBOLS_30` reste défini dans
+`bot/config.py` pour rétro-compatibilité bas niveau (`bot.sim.exchange.DEFAULT_QTY_STEPS`,
+tests) mais N'EST PLUS l'univers réel d'aucun wallet.
+
+### 11.2 Agrégation par poche — `bot/runner.py:_combine_pockets()`
+
+Pour chaque poche non-cash d'un wallet, la stratégie référencée est appelée avec l'historique
+adapté à sa classe d'actif (`history_hourly` crypto pour `quasi_passif_crypto`, `daily_history`
+JOURNALIER clôturé pour `xs_momentum_sp100`/`dual_momentum_etf`, cf. §11.4). Chaque stratégie
+retourne un poids BRUT 0..1 par symbole **relatif à SA POCHE** (pas au wallet total, cf.
+docstrings des 3 modules de stratégie). `_combine_pockets()` met à l'échelle : `cible_wallet
+[symbole] += poids_poche[symbole] * capital_alloc_pct` — c'est cette fonction, PAS
+`bot.strategies.combine_strategies`, qui réalise "le capital d'une poche = part × equity du
+wallet" (mission d'intégration). Le résultat (`cibles_brutes`, une fraction de l'équity TOTALE
+du wallet par symbole, toutes poches confondues) est ensuite passé à `RiskManager.apply()`.
+
+### 11.3 `RiskManager` "par-dessus" — neutralisation du vol-targeting portefeuille
+
+`bot/runner.py:_risk_manager_for_wallet()` construit UN `RiskManager` par wallet, appliqué à
+`cibles_brutes` (toutes poches combinées). Piège identifié et évité explicitement : `wallet_cfg
+["risque"]` (`vol_target_annualized`, `gross_exposure_max`, `cap_per_asset`) correspond
+EXACTEMENT aux paramètres de la SEULE poche crypto (`docs/config-strategies.json` ->
+`crypto_quasi_passif_vol_targete.variants.*`) et est déjà appliqué EN INTERNE par
+`QuasiPassifCrypto`, sur des poids relatifs à SA poche. Les réutiliser tels quels au niveau
+PORTEFEUILLE écraserait à tort les poches actions/ETF (ex. `gross_exposure_max` prudent = 0.40
+couperait la poche ETF visée à 55%). Le `RiskManager` "par-dessus" est donc configuré :
+
+- `vol_target_annualized=50.0` (borne haute du constructeur) + `vol_coldstart_scalar=1.0` :
+  neutralisent ENTIÈREMENT le scalaire de vol-targeting portefeuille (ratio ET pénalité
+  cold-start — cette dernière se déclenche sinon systématiquement dès qu'une poche actions/ETF
+  est non nulle, faute d'historique HORAIRE pour ces symboles, et réduirait de moitié TOUTES les
+  cibles du cycle, crypto y compris). Le vol-targeting réel de la poche crypto reste entier,
+  fait par `QuasiPassifCrypto` elle-même.
+- `cap_per_asset_equity=1.0` : aucun cap par actif dédié n'est spécifié par le SPEC pour les
+  poches actions/ETF (sizing déjà borné par construction, top_k équipondéré) — réutiliser le cap
+  crypto écraserait une concentration légitime (dual-momentum peut placer 100% de sa poche sur
+  IEF, jusqu'à 55% du wallet prudent).
+- `gross_exposure_max=1.0` : jamais contraignant par construction (§11.1), plafond trivial.
+- `cap_per_asset_crypto`, les circuit breakers (`cb_*`) et `no_trade_band` restent ceux du
+  profil du wallet, appliqués WALLET-WIDE (`docs/SELECTION-FINALE.md` §5 : les seuils de
+  drawdown `cb_dd_flatten_pct` 15%/25%/35% sont explicitement définis au niveau wallet) — c'est
+  la vraie valeur ajoutée de ce passage.
+
+### 11.4 Données actions/ETF — `bot/feeds/daily.py`, marché ouvert
+
+`bot/runner.py:main()` calcule, à partir des `pockets` de `bot.config.WALLETS`, l'univers
+JOURNALIER nécessaire (S&P100 + SPY pour `xs_momentum_sp100` — SPY sert de filtre de régime,
+jamais détenu par cette poche ; les 8 ETF risqués + IEF pour `dual_momentum_etf`) et le
+précharge UNE fois (`prefetch_daily_history` + `get_daily_history`, `bot/feeds/daily.py`, warmup
+`MIN_WARMUP_DAYS=400`), partagé entre tous les wallets concernés — même motif que le préchargement
+crypto horaire existant. Toute erreur (réseau bloqué, historique insuffisant) est capturée par
+symbole (`_gather_daily_history`, jamais d'exception qui remonte) : le symbole est alors absent
+de `daily_history`, sa stratégie le traite comme non éligible ce cycle (principe pessimiste),
+sans jamais interrompre le cycle des 3 wallets.
+
+`is_us_market_open(now)` est calculé UNE fois par cycle (`market_open_now`). Pour tout symbole
+actions/ETF, `market_open=False` force `decision="NO_TRADE"` **quelle que soit la cible
+calculée** — aucun ordre n'est jamais soumis à `ExchangeSim` hors séance régulière NYSE, la
+position existante est conservée (§7, comportement inchangé, désormais réellement câblé — avant
+cette intégration, le cycle multi-wallets était 100% crypto et ce chemin n'était jamais
+exercé). La crypto reste `market_open=True` inconditionnellement (24/7). `decisions.jsonl`
+documente `asset_class` réel (`"crypto"` / `"equities"` / `"etf"`, plus par symbole) au lieu de
+la valeur `"crypto"` codée en dur avant cette intégration.
+
+### 11.5 `state["strategy_state"]` — champ persistant, actuellement inerte
+
+Un champ `strategy_state` (dict, vide par défaut) est désormais propagé tel quel d'un cycle à
+l'autre dans chaque `state/wallets/<id>/state.json` (`bot/runner.py:process_wallet`). Aucune des
+3 stratégies câblées ne le lit ni ne l'écrit aujourd'hui : leurs rebalancements mensuels
+(`xs_momentum_sp100`, `dual_momentum_etf`) sont dérivés PUREMENT du calendrier (dernier jour de
+bourse confirmé du mois, cf. leurs docstrings "Point dur (1)"), sans avoir besoin de mémoriser
+une date de dernier rebalancement. Le champ est câblé par anticipation, pour qu'une future
+stratégie qui en aurait réellement besoin puisse l'utiliser sans changement de schéma d'état ni
+migration. `bot/persist/state.py:validate_schema()` n'a pas été modifié (aucune contrainte sur
+les clés supplémentaires au niveau racine de `state.json`) — un `state.json` archivé avant cette
+intégration (sans ce champ) reste chargeable tel quel (`state.get("strategy_state") or {}`).
+
+### 11.6 Bug corrigé en intégration — marge de warmup `HISTORY_N_HOURS`
+
+`bot.config.HISTORY_N_HOURS` valait auparavant EXACTEMENT `REGIME_SMA_DAYS*24` (4800h).
+`QuasiPassifCrypto`/`_daily_closes()` n'agrège que des JOURS CALENDAIRES COMPLETS (24 heures
+distinctes) : une fenêtre de exactement 4800h peut perdre jusqu'à 46h aux deux bords (jour
+courant toujours partiel + jour le plus ancien de la fenêtre rarement aligné sur minuit UTC),
+ramenant le nombre de jours complets disponibles à 199 au lieu de 200 selon l'HEURE DU CYCLE —
+la SMA200 devenait alors structurellement incalculable à certaines heures (pas une question de
+profondeur d'historique réel, mais un pur artefact d'alignement). Corrigé par une marge de +48h
+(`HISTORY_N_HOURS = max(720, REGIME_SMA_DAYS*24 + 48)`), avec test de non-régression paramétré
+sur les 24 heures possibles du cycle (`bot/tests/test_daily_history_warmup_margin.py`).
+
+### 11.7 Tests
+
+`bot/tests/test_config_strategies_sync.py` (univers `bot.config` <-> constantes des modules de
+stratégie, somme des poches, résolution `strategy_ref`), `bot/tests/
+test_daily_history_warmup_margin.py` (§11.6), `bot/tests/test_integration_full_cycle.py` — test
+bout-en-bout demandé par la mission d'intégration : cycle complet `bot.runner.main()`, prix +
+historiques (horaire crypto ET journalier actions/ETF) mockés mais RICHES pour la totalité de
+l'univers réel des 3 wallets, sans aucun appel réseau. Vérifie : notionnels de chaque fill >=
+`MIN_NOTIONAL_USD`, exposition brute de chaque wallet <= somme de ses poches non-cash, aucun
+ordre actions/ETF hors séance régulière NYSE (marché fermé simulé un week-end : `decision=
+NO_TRADE` partout sur ces classes, positions conservées, crypto continue de trader), et la poche
+crypto quasi-passive achète bien BTC quand son historique mocké le place au-dessus de sa SMA200
+journalière.
