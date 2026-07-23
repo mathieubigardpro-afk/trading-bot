@@ -1,0 +1,63 @@
+name: Bot cycle
+
+# Déclencheurs :
+#   - schedule : un cycle par heure, à la minute 7 (décalé de l'heure pile pour éviter la
+#     charge générique des runners GitHub sur ':00').
+#   - workflow_dispatch : lancement manuel (rattrapage, debug).
+#   - push sur ce fichier lui-même : run de validation immédiat dès le premier push (seul
+#     moyen de vérifier le pipeline sans attendre la prochaine minute 7 ni dépendre de l'API
+#     GitHub, inaccessible depuis l'environnement qui a produit ce commit).
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/bot.yml"
+
+permissions:
+  contents: write
+
+# Un seul cycle à la fois : jamais d'annulation d'un run en cours (un cycle en cours de
+# git_sync ne doit jamais être interrompu au milieu d'un push), le suivant attend en file.
+concurrency:
+  group: bot-cycle
+  cancel-in-progress: false
+
+jobs:
+  run-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # verify_chain() (bot/persist/audit.py) et pull_rebase/git_sync ont besoin de
+          # l'historique complet (pas un clone superficiel) pour opérer sur state/ à travers
+          # les commits successifs.
+          fetch-depth: 0
+          # persist-credentials par défaut (true) : actions/checkout configure
+          # http.extraheader dans .git/config pour authentifier les push ultérieurs. Le code
+          # de bot/persist/git_sync.py reste volontairement agnostique de ce mécanisme — il
+          # ne fait que `git pull --rebase` / `git push` sur le remote `origin` tel quel,
+          # sans jamais lire ni modifier son URL.
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy requests
+
+      - name: Configure git identity
+        run: |
+          git config user.name "Trading Bot"
+          git config user.email "bot@trading.local"
+
+      - name: Run bot cycle
+        run: python -m bot.runner

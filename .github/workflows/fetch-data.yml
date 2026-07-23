@@ -1,0 +1,51 @@
+name: Fetch market data
+
+# Déclencheurs :
+#   - workflow_dispatch : lancement manuel depuis l'onglet Actions.
+#   - push sur les chemins qui définissent ce pipeline lui-même (tools/fetch_data.py ou ce
+#     fichier yml) : c'est le SEUL moyen de déclencher le tout premier run depuis un
+#     environnement où l'API GitHub n'est pas accessible (pas de workflow_dispatch possible
+#     via `gh`/API à ce moment-là) — le push final de la mission déclenche donc
+#     automatiquement ce workflow.
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/fetch_data.py"
+      - ".github/workflows/fetch-data.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-data
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # persist-credentials (par défaut true) laisse actions/checkout configurer
+          # l'authentification ambiante (http.extraheader) dans .git/config : le script
+          # git de tools/fetch_data.py peut ensuite faire un `git push --force` sur la
+          # branche orpheline `market-data` sans jamais manipuler de token lui-même.
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas pyarrow
+
+      - name: Run fetch_data.py
+        run: python tools/fetch_data.py
