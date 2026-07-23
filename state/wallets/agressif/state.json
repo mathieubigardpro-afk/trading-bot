@@ -9,6 +9,10 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-23T12:46:26.478286+00:00"
+      },
+      {
+        "equity": 1141.079,
+        "ts": "2026-07-23T15:20:08.365151+00:00"
       }
     ],
     "flatten_mode": false,
@@ -18,18 +22,18 @@
   "equity_peak_usd": 1141.079,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.141079,
-    "last_rate_source": "open_er_api",
+    "last_rate": 1.1392,
+    "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-23T12:48:10.971724+00:00"
+    "last_rate_ts": "2026-07-23T15:20:19.110500+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-23T12:46:26.478286+00:00",
-  "last_run_id": "2026-07-23T12",
+  "last_run_completed_at": "2026-07-23T15:20:08.365151+00:00",
+  "last_run_id": "2026-07-23T15",
   "positions": {},
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "5b2471476a77498b994b8b514214f71b5e9c968104b200ee34010aa4d43db36b",
+  "state_hash_prev": "840a192100f2d351308772b0e9b3194d5abe8bd7e95aa37c3be1cb488c84f70e",
   "trade_history_for_breakers": [],
   "wallet_id": "agressif"
 }
