@@ -61,3 +61,5 @@ jobs:
 
       - name: Run bot cycle
         run: python -m bot.runner
+
+# (touch: run de validation déclenché manuellement le 2026-07-23)
