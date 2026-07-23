@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tableau de bord — Bot de paper trading</title>
-<meta name="description" content="Suivi en direct du bot de paper trading maison : équity, positions, trades et décisions.">
+<title>Tableau de bord — Bot de paper trading (3 wallets)</title>
+<meta name="description" content="Suivi en direct de trois wallets de paper trading (prudent, équilibré, agressif) vivant le même marché en parallèle : équity, positions, trades et décisions.">
 <style>
   /* =========================================================================
      PALETTE — issue du skill dataviz (references/palette.md), mode sombre
@@ -35,6 +35,14 @@
     --cat-6-green:   #008300;
     --cat-7-violet:  #9085e9;
     --cat-8-red:     #e66767;
+
+    /* Identité des 3 wallets : slots catégoriels 1/2/3 (les 3 seuls qui valident
+       "all-pairs" en clair ET en sombre — indispensable ici car les 3 courbes se
+       superposent sur le même graphique). Ordre fixe = ordre du risque croissant
+       (prudent -> équilibré -> agressif), jamais réattribué selon le classement. */
+    --wallet-prudent:   var(--cat-1-blue);
+    --wallet-equilibre: var(--cat-2-orange);
+    --wallet-agressif:  var(--cat-3-aqua);
 
     /* Rôles sémantiques dérivés des slots catégoriels (texte, contraste vérifié ≥4.5:1 sur #1a1a19) */
     --series-equity:    var(--cat-1-blue);
@@ -75,6 +83,7 @@
   a { color: var(--cat-1-blue); }
 
   .wrap { max-width: 1400px; margin: 0 auto; padding: 20px 20px 64px; }
+  main[hidden] { display: none !important; }
 
   /* ---------- Header ---------- */
   header.topbar {
@@ -83,16 +92,21 @@
     padding-bottom: 18px; margin-bottom: 18px;
     border-bottom: 1px solid var(--border);
   }
-  .brand h1 { font-size: 22px; margin: 0 0 4px; font-weight: 700; letter-spacing: -.01em; }
+  /* Flex items par defaut ont min-width:auto (= largeur du contenu le plus long, ex. une URL
+     non coupable) : sans ce reset ils refusent de retrecir sous cette taille et poussent le
+     document en debordement horizontal sur mobile plutot que de passer a la ligne. */
+  header.topbar > * { min-width: 0; }
+  .brand h1 { font-size: 21px; margin: 0 0 4px; font-weight: 700; letter-spacing: -.01em; }
   .brand p { margin: 0; color: var(--text-secondary); font-size: 13.5px; }
-  .brand .repo-link { color: var(--text-muted); font-size: 12.5px; }
+  .brand .repo-link { color: var(--text-muted); font-size: 12.5px; overflow-wrap: anywhere; }
 
   .status-cluster { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .pill {
     display: inline-flex; align-items: center; gap: 7px;
     padding: 6px 12px; border-radius: 999px;
     background: var(--surface-1); border: 1px solid var(--border);
-    font-size: 12.5px; color: var(--text-secondary); white-space: nowrap;
+    font-size: 12.5px; color: var(--text-secondary);
+    max-width: 100%; white-space: normal;
   }
   .pulse-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; flex: none; }
   .pulse-dot.ok { background: var(--status-good); }
@@ -115,7 +129,7 @@
   }
 
   /* ---------- Alerts ---------- */
-  #alerts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  #globalAlerts, #alerts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
   .alert {
     display: flex; gap: 10px; align-items: flex-start;
     padding: 12px 14px; border-radius: var(--radius);
@@ -150,9 +164,13 @@
   }
   .info-tip::after {
     content: attr(data-tip);
-    position: absolute; z-index: 30; bottom: calc(100% + 8px); left: 50%;
-    transform: translateX(-50%);
-    width: max-content; max-width: 240px;
+    /* Ancré par le bord DROIT de l'icône plutôt que centré : un centrage (left:50% +
+       translateX(-50%)) pousse la boîte au-delà du viewport sur les cartes étroites
+       (mobile ~420px) dès que l'icône est proche du bord droit — et ce même invisible
+       (visibility:hidden compte quand même dans le scrollWidth du document, ce qui
+       provoquait un débordement horizontal fantôme de la page entière). */
+    position: absolute; z-index: 30; bottom: calc(100% + 8px); right: -6px; left: auto;
+    width: max-content; max-width: min(260px, calc(100vw - 32px));
     background: #262524; color: var(--text-primary);
     border: 1px solid var(--border-strong);
     padding: 8px 10px; border-radius: var(--radius-sm);
@@ -162,6 +180,65 @@
     box-shadow: 0 6px 20px rgba(0,0,0,.4);
   }
   .info-tip:hover::after, .info-tip:focus-visible::after { opacity: 1; visibility: visible; }
+
+  /* ---------- Vue d'ensemble : cartes wallet ---------- */
+  .wallet-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 14px;
+  }
+  .wallet-card {
+    position: relative; display: flex; flex-direction: column; gap: 8px;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-left: 3px solid var(--wallet-color, var(--border-strong));
+    border-radius: var(--radius); padding: 16px 18px;
+    text-decoration: none; color: inherit; cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .wallet-card:hover { background: var(--surface-2); border-color: var(--wallet-color); }
+  .wallet-card:focus-visible { outline: 2px solid var(--wallet-color); outline-offset: 2px; }
+  .wc-head { display: flex; align-items: center; gap: 8px; }
+  .wc-emoji { font-size: 21px; line-height: 1; }
+  .wc-title { font-weight: 700; font-size: 15.5px; flex: 1; }
+  .wc-value { font-size: 27px; font-weight: 700; letter-spacing: -.01em; font-variant-numeric: proportional-nums; }
+  .wc-pnl { font-size: 13px; font-weight: 600; }
+  .wc-sub { font-size: 12.5px; color: var(--text-muted); }
+  .wc-pending { font-size: 13px; color: var(--text-muted); padding: 6px 0; }
+  .wc-spark { display: block; margin-top: 2px; }
+  .wc-risk { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .wallet-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .wallet-badge.good     { color: var(--status-good); background: rgba(12,163,12,.14); }
+  .wallet-badge.warning  { color: var(--status-warning); background: rgba(250,178,25,.14); }
+  .wallet-badge.critical { color: #ffffff; background: var(--status-critical); }
+  .wallet-badge.pending  { color: var(--text-muted); background: rgba(137,135,129,.14); }
+
+  /* ---------- Navigation entre wallets ---------- */
+  .wallet-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .back-link { color: var(--text-secondary); font-size: 13px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+  .back-link:hover { color: var(--text-primary); }
+  .wallet-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .wallet-tabs button {
+    font-family: inherit; cursor: pointer; background: var(--surface-1);
+    border: 1px solid var(--border-strong); color: var(--text-secondary);
+    border-radius: 999px; padding: 6px 13px; font-size: 12.5px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .wallet-tabs button[aria-current="true"] {
+    border-color: var(--tab-color, var(--border-strong)); color: var(--text-primary);
+    background: var(--surface-2); font-weight: 700;
+  }
+
+  /* ---------- Carte profil de risque (vue détail wallet) ---------- */
+  .profile-card {
+    display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px;
+    border-left: 3px solid var(--wallet-color, var(--border-strong));
+  }
+  .profile-card .pc-head { display: flex; align-items: center; gap: 9px; font-size: 17px; font-weight: 700; flex-wrap: wrap; }
+  .profile-card .pc-desc { color: var(--text-secondary); font-size: 13px; line-height: 1.55; margin: 0; }
+  .profile-card .pc-desc strong { color: var(--text-primary); font-weight: 600; }
+  .profile-card .pc-fx { color: var(--text-muted); font-size: 12px; margin: 0; }
 
   /* ---------- KPI row ---------- */
   .kpi-grid {
@@ -222,6 +299,14 @@
   .chart-tooltip .tt-row .k { display:flex; align-items:center; gap:5px; color: var(--text-secondary); }
   .chart-tooltip .tt-row .v { font-weight: 700; font-variant-numeric: proportional-nums; }
   .tt-key { width: 9px; height: 2px; border-radius: 2px; flex: none; }
+
+  /* ---------- Légende (graphique de comparaison) ---------- */
+  .compare-legend { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .compare-legend .cl-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; }
+  .compare-legend .cl-item.is-pending { opacity: .55; }
+  .compare-legend .cl-swatch { width: 15px; height: 3px; border-radius: 2px; flex: none; }
+  .compare-legend .cl-name { color: var(--text-secondary); }
+  .compare-legend .cl-value { font-weight: 700; font-variant-numeric: proportional-nums; }
 
   table.data-table {
     margin-top: 10px; width: 100%; border-collapse: collapse; font-size: 12.5px;
@@ -319,6 +404,13 @@
     font-family: inherit; font-size: 12px; padding: 5px 10px; border-radius: 999px; cursor: pointer;
   }
   .subtle-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+  @media (max-width: 480px) {
+    .wrap { padding: 14px 12px 48px; }
+    .brand h1 { font-size: 18px; }
+    .wc-value { font-size: 23px; }
+    .profile-card .pc-head { font-size: 15px; }
+  }
 </style>
 </head>
 <body>
@@ -326,8 +418,8 @@
 
   <header class="topbar">
     <div class="brand">
-      <h1>Bot de paper trading — Tableau de bord</h1>
-      <p>Capital fictif 100&nbsp;000&nbsp;$ · aucune monnaie réelle en jeu · données publiques, lecture seule</p>
+      <h1>Bot de paper trading — 3 tempéraments, un seul marché</h1>
+      <p>Trois wallets fictifs indépendants de 1&nbsp;000&nbsp;€ chacun (🛡️ prudent, ⚖️ équilibré, 🔥 agressif) · aucune monnaie réelle en jeu · données publiques, lecture seule</p>
       <p class="repo-link">Source : <a href="https://github.com/mathieubigardpro-afk/trading-bot" target="_blank" rel="noopener">github.com/mathieubigardpro-afk/trading-bot</a></p>
     </div>
     <div class="status-cluster">
@@ -336,73 +428,113 @@
     </div>
   </header>
 
-  <div id="alerts" role="status" aria-live="polite"></div>
+  <!-- ===================== VUE D'ENSEMBLE ===================== -->
+  <main id="viewOverview">
+    <div id="globalAlerts" role="status" aria-live="polite"></div>
 
-  <section aria-label="Indicateurs clés">
-    <div class="kpi-grid" id="kpiGrid"></div>
-  </section>
+    <section aria-label="Les trois wallets">
+      <div class="wallet-cards" id="walletCards"></div>
+    </section>
 
-  <section aria-labelledby="titreCourbe">
-    <div class="card chart-card">
-      <div class="chart-head">
-        <div>
-          <h2 class="section-title" id="titreCourbe">Courbe d'équity
-            <span class="info-tip" tabindex="0" data-tip="La valeur totale du portefeuille (cash + positions) heure par heure. La ligne pointillée grise marque les 100 000 $ de départ.">i</span>
-          </h2>
-          <p class="section-sub">et drawdown (recul depuis le sommet historique)</p>
+    <section aria-labelledby="titreCompare">
+      <div class="card chart-card">
+        <div class="chart-head">
+          <div>
+            <h2 class="section-title" id="titreCompare">Comparaison des trois tempéraments
+              <span class="info-tip" tabindex="0" data-tip="Chaque courbe part de 100 au premier cycle où CE wallet a pu être initialisé (taux de change disponible). Même échelle en % pour les trois, quel que soit leur point de départ réel — c'est la performance relative qui compte ici, pas le montant en euros.">i</span>
+            </h2>
+            <p class="section-sub">Équity indexée base 100 · même marché, même heure, seul le profil de risque diffère</p>
+          </div>
+          <button type="button" class="subtle-btn" id="btnCompareTableToggle" aria-pressed="false">Voir en tableau</button>
         </div>
-        <div class="range-controls" role="group" aria-label="Plage de temps">
-          <button type="button" data-range="24h" aria-pressed="false">24 h</button>
-          <button type="button" data-range="7j" aria-pressed="false">7 j</button>
-          <button type="button" data-range="30j" aria-pressed="false">30 j</button>
-          <button type="button" data-range="tout" aria-pressed="true">Tout</button>
-          <button type="button" class="subtle-btn" id="btnTableToggle" aria-pressed="false">Voir en tableau</button>
+        <div class="chart-area" id="compareChartArea">
+          <div id="compareChartWrap"></div>
+          <div class="chart-tooltip" id="compareTooltip"></div>
+          <div id="compareTableWrap" hidden></div>
+        </div>
+        <div class="compare-legend" id="compareLegend"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== VUE PAR WALLET ===================== -->
+  <main id="viewWallet" hidden>
+    <div class="wallet-nav">
+      <a class="back-link" href="#/">← Vue d'ensemble (les 3 wallets)</a>
+      <div class="wallet-tabs" id="walletTabs" role="group" aria-label="Changer de wallet"></div>
+    </div>
+
+    <div class="card profile-card" id="profileCard"></div>
+
+    <div id="alerts" role="status" aria-live="polite"></div>
+
+    <section aria-label="Indicateurs clés">
+      <div class="kpi-grid" id="kpiGrid"></div>
+    </section>
+
+    <section aria-labelledby="titreCourbe">
+      <div class="card chart-card">
+        <div class="chart-head">
+          <div>
+            <h2 class="section-title" id="titreCourbe">Courbe d'équity
+              <span class="info-tip" tabindex="0" data-tip="La valeur totale du wallet (cash + positions), convertie en euros au dernier taux de change connu. La ligne pointillée grise marque les 1 000 € de départ.">i</span>
+            </h2>
+            <p class="section-sub">et drawdown (recul depuis le sommet historique)</p>
+          </div>
+          <div class="range-controls" role="group" aria-label="Plage de temps">
+            <button type="button" data-range="24h" aria-pressed="false">24 h</button>
+            <button type="button" data-range="7j" aria-pressed="false">7 j</button>
+            <button type="button" data-range="30j" aria-pressed="false">30 j</button>
+            <button type="button" data-range="tout" aria-pressed="true">Tout</button>
+            <button type="button" class="subtle-btn" id="btnTableToggle" aria-pressed="false">Voir en tableau</button>
+          </div>
+        </div>
+        <div class="chart-area" id="chartArea">
+          <div id="chartsWrap"></div>
+          <div class="chart-tooltip" id="chartTooltip"></div>
+          <div id="chartTableWrap" hidden></div>
         </div>
       </div>
-      <div class="chart-area" id="chartArea">
-        <div id="chartsWrap"></div>
-        <div class="chart-tooltip" id="chartTooltip"></div>
-        <div id="chartTableWrap" hidden></div>
+    </section>
+
+    <section class="grid-2col">
+      <div class="card" aria-labelledby="titrePositions">
+        <h2 class="section-title" id="titrePositions">Positions ouvertes
+          <span class="info-tip" tabindex="0" data-tip="Ce que ce wallet détient actuellement. Le prix actuel est déduit du dernier calcul d'équity du bot (pas une nouvelle requête de prix). Prix et montants en dollars ($) : les marchés cotent en USD, seule la valeur totale du wallet est affichée en euros.">i</span>
+        </h2>
+        <p class="section-sub">Symbole, quantité, prix d'entrée moyen, prix actuel implicite, PnL latent (en $)</p>
+        <div id="positionsWrap"></div>
       </div>
-    </div>
-  </section>
 
-  <section class="grid-2col">
-    <div class="card" aria-labelledby="titrePositions">
-      <h2 class="section-title" id="titrePositions">Positions ouvertes
-        <span class="info-tip" tabindex="0" data-tip="Ce que le bot détient actuellement. Le prix actuel est déduit du dernier calcul d'équity du bot (pas une nouvelle requête de prix).">i</span>
+      <div class="card" aria-labelledby="titreTrades">
+        <h2 class="section-title" id="titreTrades">Journal des trades
+          <span class="info-tip" tabindex="0" data-tip="Les 50 derniers ordres exécutés par le simulateur pour ce wallet, avec l'écart entre le prix obtenu et le prix « idéal » (mid) au moment de la décision — la mesure d'honnêteté du simulateur. Montants en dollars ($), comme les marchés.">i</span>
+        </h2>
+        <p class="section-sub">50 derniers fills, du plus récent au plus ancien</p>
+        <div id="tradesWrap"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="titreMetrics">
+      <h2 class="section-title" id="titreMetrics">Métriques de performance</h2>
+      <p class="section-sub">Calculées à partir de l'historique réel de ce wallet — chaque tuile a sa propre infobulle explicative</p>
+      <div class="metrics-grid" id="metricsGrid"></div>
+    </section>
+
+    <section aria-labelledby="titreDecisions">
+      <h2 class="section-title" id="titreDecisions">Dernières décisions du bot pour ce wallet
+        <span class="info-tip" tabindex="0" data-tip="Un cycle tourne chaque heure pour les 3 wallets et évalue TOUS les actifs de l'univers de ce wallet, même quand la décision finale est « pas de trade ». Rien n'est jamais silencieux ici.">i</span>
       </h2>
-      <p class="section-sub">Symbole, quantité, prix d'entrée moyen, prix actuel implicite, PnL latent</p>
-      <div id="positionsWrap"></div>
-    </div>
-
-    <div class="card" aria-labelledby="titreTrades">
-      <h2 class="section-title" id="titreTrades">Journal des trades
-        <span class="info-tip" tabindex="0" data-tip="Les 50 derniers ordres exécutés par le simulateur, avec l'écart entre le prix obtenu et le prix « idéal » (mid) au moment de la décision — la mesure d'honnêteté du simulateur.">i</span>
-      </h2>
-      <p class="section-sub">50 derniers fills, du plus récent au plus ancien</p>
-      <div id="tradesWrap"></div>
-    </div>
-  </section>
-
-  <section aria-labelledby="titreMetrics">
-    <h2 class="section-title" id="titreMetrics">Métriques de performance</h2>
-    <p class="section-sub">Calculées à partir de l'historique réel du bot — chaque tuile a sa propre infobulle explicative</p>
-    <div class="metrics-grid" id="metricsGrid"></div>
-  </section>
-
-  <section aria-labelledby="titreDecisions">
-    <h2 class="section-title" id="titreDecisions">Dernières décisions du bot
-      <span class="info-tip" tabindex="0" data-tip="Un cycle tourne chaque heure et évalue TOUS les actifs de l'univers, même quand la décision finale est « pas de trade ». Rien n'est jamais silencieux ici.">i</span>
-    </h2>
-    <p class="section-sub">Un cycle par groupe, un actif par ligne — y compris les raisons de ne pas trader</p>
-    <div id="decisionsWrap"></div>
-    <div id="decisionsMore"></div>
-  </section>
+      <p class="section-sub">Un cycle par groupe, un actif par ligne — y compris les raisons de ne pas trader</p>
+      <div id="decisionsWrap"></div>
+      <div id="decisionsMore"></div>
+    </section>
+  </main>
 
   <footer class="app-footer">
     <span id="footerFetchInfo">—</span>
-    <span>Les heures sont affichées à l'heure de Paris (Europe/Paris) ; les cycles du bot tournent en UTC (toutes les heures, à la 7ᵉ minute).</span>
+    <span>Les heures sont affichées à l'heure de Paris (Europe/Paris) ; les cycles du bot tournent en UTC (toutes les heures, à la 7ᵉ minute), les 3 wallets partagent exactement le même marché et le même taux de change à chaque cycle.</span>
+    <span>Comptabilité interne de chaque wallet en dollars ($, la devise des marchés crypto) ; valeur totale et PnL affichés en euros (€) au dernier taux de change EUR/USD connu — sa fraîcheur est indiquée sur chaque wallet.</span>
     <span>Ce tableau de bord lit uniquement des fichiers publics du dépôt GitHub (aucune clé, aucun secret, aucune écriture). Capital et trades entièrement fictifs.</span>
   </footer>
 
@@ -416,13 +548,11 @@
      CONFIG
      ========================================================================= */
   var REPO_RAW_BASE = "https://raw.githubusercontent.com/mathieubigardpro-afk/trading-bot/main/state/";
-  var URLS = {
-    state:     REPO_RAW_BASE + "state.json",
-    equity:    REPO_RAW_BASE + "equity.jsonl",
-    trades:    REPO_RAW_BASE + "trades.jsonl",
-    decisions: REPO_RAW_BASE + "decisions.jsonl"
-  };
-  var INITIAL_CASH = 100000.0;
+  var CYCLE_URL = REPO_RAW_BASE + "cycle.json";
+  function walletUrls(id) {
+    var base = REPO_RAW_BASE + "wallets/" + id + "/";
+    return { state: base + "state.json", equity: base + "equity.jsonl", trades: base + "trades.jsonl", decisions: base + "decisions.jsonl" };
+  }
   var CRON_MINUTE = 7;          // bot.yml : "7 * * * *" (UTC)
   var STALE_HOURS = 2;          // au-delà : "bot en panne ?"
   var REFRESH_MS = 60000;
@@ -435,20 +565,46 @@
     "mean_reversion_rsi2": "Retour à la moyenne RSI(2)"
   };
 
-  /* =========================================================================
-     ETAT APPLICATIF
-     ========================================================================= */
-  var app = {
-    state: null,
-    equity: [],
-    trades: [],
-    decisions: [],
-    fetchedAt: null,
-    errors: [],
-    decisionsShown: DECISIONS_RUNS_PAGE
+  // Source de vérité : bot/config.py:WALLETS (miroir informatif bot/config.json). Ordre fixe =
+  // ordre des slots catégoriels du skill dataviz (1 bleu, 2 orange, 3 aqua) = ordre du risque
+  // croissant. Ne jamais réordonner selon le classement du moment (color follows the entity).
+  var WALLET_IDS = ["prudent", "equilibre", "agressif"];
+  var WALLET_META = {
+    prudent: {
+      id: "prudent", emoji: "🛡️", label: "Prudent", colorVar: "--wallet-prudent", capitalEur: 1000,
+      univers: "BTC, ETH", universLong: "BTC et ETH uniquement",
+      risk: { vol: 0.10, expoMax: 0.40, cap: 0.20 },
+      breakers: { freeze: 0.02, half: 0.10, flatten: 0.15 }
+    },
+    equilibre: {
+      id: "equilibre", emoji: "⚖️", label: "Équilibré", colorVar: "--wallet-equilibre", capitalEur: 1000,
+      univers: "BTC, ETH, SOL, DOGE, LINK, AVAX", universLong: "6 grandes cryptos (BTC, ETH, SOL, DOGE, LINK, AVAX)",
+      risk: { vol: 0.20, expoMax: 0.70, cap: 0.25 },
+      breakers: { freeze: 0.03, half: 0.15, flatten: 0.25 }
+    },
+    agressif: {
+      id: "agressif", emoji: "🔥", label: "Agressif", colorVar: "--wallet-agressif", capitalEur: 1000,
+      univers: "30 cryptos", universLong: "univers étendu de 30 cryptos (paliers de coûts majors/mids/smalls)",
+      risk: { vol: 0.35, expoMax: 0.90, cap: 0.30 },
+      breakers: { freeze: 0.05, half: 0.20, flatten: 0.35 }
+    }
   };
-  var currentRange = "tout";
-  var tableViewOn = false;
+
+  /* =========================================================================
+     ETAT APPLICATIF — un objet par wallet + un état global (cycle.json)
+     ========================================================================= */
+  function makeWallet(id) {
+    return {
+      id: id, meta: WALLET_META[id],
+      data: { state: null, equity: [], trades: [], decisions: [], errors: [], stateKnown: true, equityKnown: true },
+      ui: { currentRange: "tout", tableViewOn: false, decisionsShown: DECISIONS_RUNS_PAGE }
+    };
+  }
+  var W = {};
+  WALLET_IDS.forEach(function (id) { W[id] = makeWallet(id); });
+  var CYCLE = { data: null, known: true };
+  var fetchedAt = null;
+  var route = { view: "overview", id: null };
 
   /* =========================================================================
      UTILITAIRES DOM
@@ -486,29 +642,24 @@
   /* =========================================================================
      FORMATAGE (fr-FR)
      ========================================================================= */
-  function fmtUSD(x, opts) {
+  function fmtMoney(x, suffix, opts) {
     opts = opts || {};
     if (x === null || x === undefined || !isFinite(x)) return "—";
     var decimals = opts.decimals === undefined ? 2 : opts.decimals;
     var sign = opts.signed && x > 0 ? "+" : "";
-    var s = Math.abs(x) < 1e-9 && opts.signed ? x.toLocaleString("fr-FR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-      : x.toLocaleString("fr-FR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-    return (opts.signed && x >= 0 ? sign : "") + s + " $";
+    var s = x.toLocaleString("fr-FR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    return (opts.signed && x >= 0 ? sign : "") + s + " " + suffix;
   }
-  function fmtUSDCompact(x) {
-    if (x === null || x === undefined || !isFinite(x)) return "—";
-    var abs = Math.abs(x);
-    if (abs >= 1000000) return (x/1000000).toLocaleString("fr-FR",{maximumFractionDigits:2}) + " M$";
-    if (abs >= 10000) return Math.round(x).toLocaleString("fr-FR") + " $";
-    return fmtUSD(x, { decimals: 2 });
-  }
+  function fmtUSD(x, opts) { return fmtMoney(x, "$", opts); }
+  function fmtEUR(x, opts) { return fmtMoney(x, "€", opts); }
   function fmtPct(x, opts) {
     opts = opts || {};
     if (x === null || x === undefined || !isFinite(x)) return "—";
     var decimals = opts.decimals === undefined ? 2 : opts.decimals;
     var sign = opts.signed && x > 0 ? "+" : "";
-    return sign + (x * 100).toLocaleString("fr-FR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + " %";
+    return sign + (x * 100).toLocaleString("fr-FR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + " %";
   }
+  function fmtPctRound(x) { if (x === null || x === undefined || !isFinite(x)) return "—"; return Math.round(x * 100) + " %"; }
   function fmtNum(x, decimals) {
     if (x === null || x === undefined || !isFinite(x)) return "—";
     return x.toLocaleString("fr-FR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
@@ -572,88 +723,125 @@
     }
     return out;
   }
-  function defaultState() {
+  function defaultWalletState(id) {
+    var meta = WALLET_META[id];
     return {
-      cash_usd: INITIAL_CASH, positions: {}, equity_peak_usd: INITIAL_CASH, equity_peak_ts: null,
-      realized_pnl_cumulative_usd: 0, last_run_id: null, last_run_completed_at: null,
+      wallet_id: id, initial_eur: meta.capitalEur, cash_usd: 0.0, positions: {},
+      equity_peak_usd: 0.0, equity_peak_ts: null, realized_pnl_cumulative_usd: 0,
+      last_run_id: null, last_run_completed_at: null,
+      fx: { initial_rate: null, last_rate: null, last_rate_ts: null, last_rate_source: null, last_rate_stale: false },
       circuit_breakers: { flatten_mode: false, manual_review_required: false, daily_loss_freeze_until: null,
         cooldown_until: null, consecutive_losses: 0, dd_half_size_active: false }
     };
   }
 
-  function loadAll() {
-    app.errors = [];
-    // stateKnown / equityKnown distinguent "fichier absent car le bot n'a pas encore tourné"
-    // (donnée connue : 100% cash) d'un véritable échec réseau/parsing (donnée INCONNUE — il ne
-    // faut jamais afficher un 100 000 $ ou un 0 % qui aurait l'air d'un vrai chiffre dans ce cas).
-    app.stateKnown = true;
-    app.equityKnown = true;
-    var pState = fetchText(URLS.state).then(function (t) {
-      if (!t) return defaultState(); // 404 : pas encore de state.json, "100% cash" est un fait, pas une inconnue
-      try { return JSON.parse(t); } catch (e) { app.errors.push("state.json illisible"); app.stateKnown = false; return defaultState(); }
-    }).catch(function () { app.errors.push("state.json inaccessible"); app.stateKnown = false; return defaultState(); });
+  function loadWallet(w) {
+    var urls = walletUrls(w.id);
+    w.data.errors = [];
+    w.data.stateKnown = true;
+    w.data.equityKnown = true;
+    var pState = fetchText(urls.state).then(function (t) {
+      if (!t) return defaultWalletState(w.id); // 404 : pas encore migré/écrit — état "pas initialisé" est un fait
+      try { return JSON.parse(t); } catch (e) { w.data.errors.push("state.json illisible"); w.data.stateKnown = false; return defaultWalletState(w.id); }
+    }).catch(function () { w.data.errors.push("state.json inaccessible"); w.data.stateKnown = false; return defaultWalletState(w.id); });
 
-    var pEquity = fetchText(URLS.equity).then(parseJsonl).catch(function () { app.errors.push("equity.jsonl inaccessible"); app.equityKnown = false; return []; });
-    var pTrades = fetchText(URLS.trades).then(parseJsonl).catch(function () { app.errors.push("trades.jsonl inaccessible"); return []; });
-    var pDecisions = fetchText(URLS.decisions).then(parseJsonl).catch(function () { app.errors.push("decisions.jsonl inaccessible"); return []; });
+    var pEquity = fetchText(urls.equity).then(parseJsonl).catch(function () { w.data.errors.push("equity.jsonl inaccessible"); w.data.equityKnown = false; return []; });
+    var pTrades = fetchText(urls.trades).then(parseJsonl).catch(function () { w.data.errors.push("trades.jsonl inaccessible"); return []; });
+    var pDecisions = fetchText(urls.decisions).then(parseJsonl).catch(function () { w.data.errors.push("decisions.jsonl inaccessible"); return []; });
 
     return Promise.all([pState, pEquity, pTrades, pDecisions]).then(function (r) {
-      app.state = r[0] || defaultState();
-      app.equity = (r[1] || []).filter(function (e) { return e && e.ts; }).sort(function (a, b) { return new Date(a.ts) - new Date(b.ts); });
-      app.trades = (r[2] || []).filter(function (t) { return t && t.ts; }).sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
-      app.decisions = (r[3] || []).filter(function (d) { return d && d.ts; }).sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
-      app.fetchedAt = new Date();
+      w.data.state = r[0] || defaultWalletState(w.id);
+      w.data.equity = (r[1] || []).filter(function (e) { return e && e.ts; }).sort(function (a, b) { return new Date(a.ts) - new Date(b.ts); });
+      w.data.trades = (r[2] || []).filter(function (t) { return t && t.ts; }).sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
+      w.data.decisions = (r[3] || []).filter(function (d) { return d && d.ts; }).sort(function (a, b) { return new Date(b.ts) - new Date(a.ts); });
+    });
+  }
+
+  function loadAll() {
+    var pCycle = fetchText(CYCLE_URL).then(function (t) {
+      CYCLE.known = true;
+      if (!t) return null;
+      try { return JSON.parse(t); } catch (e) { CYCLE.known = false; return null; }
+    }).catch(function () { CYCLE.known = false; return null; });
+
+    var ps = WALLET_IDS.map(function (id) { return loadWallet(W[id]); });
+    return Promise.all([pCycle].concat(ps)).then(function (r) {
+      CYCLE.data = r[0];
+      fetchedAt = new Date();
       renderAll();
     });
   }
+
   // Vrai seulement quand on n'a NI le dernier state.json NI un seul point d'equity.jsonl :
-  // dans ce cas on ne connaît vraiment rien (ni équity, ni PnL, ni drawdown) — il faut le dire.
-  function dataUnknown() {
-    return !app.stateKnown && !app.equityKnown && app.equity.length === 0;
-  }
+  // dans ce cas on ne connaît vraiment rien de ce wallet (ni équity, ni PnL, ni drawdown).
+  function dataUnknown(w) { return !w.data.stateKnown && !w.data.equityKnown && w.data.equity.length === 0; }
   // positions/cash n'existent QUE dans state.json — si ce fichier précis a échoué, on ne peut
   // pas affirmer "portefeuille 100% cash", même si equity.jsonl (autre fichier) a bien chargé.
-  function positionsUnknown() {
-    return !app.stateKnown;
+  function positionsUnknown(w) { return !w.data.stateKnown; }
+  // Un wallet est "en attente" tant qu'aucun taux EUR/USD n'a jamais pu être obtenu au premier
+  // cycle : pas de capital converti, pas de position possible. État normal, pas une panne.
+  function isPending(w) {
+    if (dataUnknown(w)) return false; // panne réseau : "inconnu" prime sur "en attente"
+    var fx = w.data.state && w.data.state.fx;
+    return !fx || fx.initial_rate === null || fx.initial_rate === undefined;
   }
 
   /* =========================================================================
-     CALCULS
+     CALCULS — conversion EUR, par wallet
      ========================================================================= */
-  function latestEquityRecord() {
-    return app.equity.length ? app.equity[app.equity.length - 1] : null;
+  function latestEquityRecord(w) {
+    return w.data.equity.length ? w.data.equity[w.data.equity.length - 1] : null;
   }
-  function currentEquity() {
-    var last = latestEquityRecord();
-    if (last && typeof last.equity_usd === "number") return last.equity_usd;
-    if (dataUnknown()) return null; // échec réel de chargement : on ne connaît pas l'équity, on ne l'invente pas
-    if (app.state) return equityFromState();
-    return INITIAL_CASH;
+  function fxRateFor(w, record) {
+    if (record && typeof record.fx_rate_used === "number" && record.fx_rate_used > 0) return record.fx_rate_used;
+    var fx = w.data.state && w.data.state.fx;
+    if (fx && typeof fx.last_rate === "number" && fx.last_rate > 0) return fx.last_rate;
+    return null;
   }
-  function equityFromState() {
-    // repli si equity.jsonl est vide mais qu'on a un state.json (cash + positions au coût, sans mark price)
-    var cash = app.state.cash_usd !== undefined ? app.state.cash_usd : INITIAL_CASH;
-    var positions = app.state.positions || {};
-    var sum = 0;
-    for (var sym in positions) sum += (positions[sym].qty || 0) * (positions[sym].prix_moyen || 0);
-    return cash + sum;
+  function eurOf(record, w) {
+    if (!record) return null;
+    if (typeof record.equity_eur === "number") return record.equity_eur;
+    if (typeof record.equity_usd === "number") {
+      var rate = fxRateFor(w, record);
+      if (rate) return record.equity_usd / rate;
+    }
+    return null;
   }
-  function equityAt(hoursAgo) {
-    if (!app.equity.length) return null;
+  // Équity actuelle en euros. Retourne { pending, unknown, value }.
+  function currentEquityEur(w) {
+    if (dataUnknown(w)) return { unknown: true, value: null };
+    if (isPending(w)) return { pending: true, value: null };
+    var last = latestEquityRecord(w);
+    var v = eurOf(last, w);
+    if (v !== null) return { value: v };
+    // repli : state.json seul (cash + positions au coût, sans mark price), converti au dernier taux connu
+    if (w.data.state) {
+      var cash = w.data.state.cash_usd || 0;
+      var positions = w.data.state.positions || {};
+      var sum = 0;
+      for (var sym in positions) sum += (positions[sym].qty || 0) * (positions[sym].prix_moyen || 0);
+      var rate = fxRateFor(w, null);
+      if (rate) return { value: (cash + sum) / rate };
+    }
+    return { pending: true, value: null };
+  }
+  function equityAtEur(w, hoursAgo) {
+    if (!w.data.equity.length) return null;
     var target = Date.now() - hoursAgo * 3600000;
     var best = null, bestDiff = Infinity;
-    for (var i = 0; i < app.equity.length; i++) {
-      var t = new Date(app.equity[i].ts).getTime();
+    for (var i = 0; i < w.data.equity.length; i++) {
+      var t = new Date(w.data.equity[i].ts).getTime();
       var diff = Math.abs(t - target);
-      if (t <= target + 3600000 && diff < bestDiff) { bestDiff = diff; best = app.equity[i]; }
+      if (t <= target + 3600000 && diff < bestDiff) { bestDiff = diff; best = w.data.equity[i]; }
     }
-    if (!best) best = app.equity[0]; // repli : point le plus ancien dispo
-    return best;
+    if (!best) best = w.data.equity[0];
+    var v = eurOf(best, w);
+    return v === null ? null : { ts: best.ts, value: v };
   }
-  function computeReturns() {
+  function computeReturns(w) {
     var rs = [];
-    for (var i = 1; i < app.equity.length; i++) {
-      var prev = app.equity[i - 1].equity_usd, cur = app.equity[i].equity_usd;
+    for (var i = 1; i < w.data.equity.length; i++) {
+      var prev = w.data.equity[i - 1].equity_usd, cur = w.data.equity[i].equity_usd;
       if (typeof prev === "number" && typeof cur === "number" && prev > 0) rs.push(cur / prev - 1);
     }
     return rs;
@@ -665,15 +853,15 @@
     for (var i = 0; i < arr.length; i++) s += (arr[i] - m) * (arr[i] - m);
     return Math.sqrt(s / (arr.length - 1));
   }
-  function computeSharpe() {
-    var r = computeReturns();
+  function computeSharpe(w) {
+    var r = computeReturns(w);
     if (r.length < 2) return null;
     var sd = stddev(r);
     if (sd === 0) return null;
     return (mean(r) / sd) * Math.sqrt(8760);
   }
-  function computeSortino() {
-    var r = computeReturns();
+  function computeSortino(w) {
+    var r = computeReturns(w);
     if (r.length < 2) return null;
     var downside = r.map(function (x) { return Math.min(x, 0); });
     var sq = downside.map(function (x) { return x * x; });
@@ -681,11 +869,11 @@
     if (dd === 0) return null;
     return (mean(r) / dd) * Math.sqrt(8760);
   }
-  function sellsWithPnl() {
-    return app.trades.filter(function (t) { return t.side === "SELL" && typeof t.realized_pnl_usd === "number"; });
+  function sellsWithPnl(w) {
+    return w.data.trades.filter(function (t) { return t.side === "SELL" && typeof t.realized_pnl_usd === "number"; });
   }
-  function computeTradeMetrics() {
-    var sells = sellsWithPnl();
+  function computeTradeMetrics(w) {
+    var sells = sellsWithPnl(w);
     var n = sells.length;
     var wins = sells.filter(function (t) { return t.realized_pnl_usd > 0; });
     var losses = sells.filter(function (t) { return t.realized_pnl_usd < 0; });
@@ -699,27 +887,26 @@
     var expectancy = n ? (winRate * avgWin - lossRate * avgLoss) : null;
     return { n: n, wins: wins.length, losses: losses.length, winRate: winRate, profitFactor: profitFactor, expectancy: expectancy, grossGains: grossGains, grossLosses: grossLosses };
   }
-  function markPriceFor(symbol, qty) {
-    var last = latestEquityRecord();
-    var eq = currentEquity();
-    if (!last || !last.exposures || !(symbol in last.exposures) || !qty) return null;
+  function markPriceFor(w, symbol, qty) {
+    var last = latestEquityRecord(w);
+    if (!last || !last.exposures || !(symbol in last.exposures) || !qty || !last.equity_usd) return null;
     var expo = last.exposures[symbol];
     if (!expo) return null;
-    return (expo * eq) / qty;
+    return (expo * last.equity_usd) / qty;
   }
-  function pnlByAsset() {
+  function pnlByAsset(w) {
     var map = {}; // symbol -> {realized, latent, hasPosition}
-    var sells = sellsWithPnl();
+    var sells = sellsWithPnl(w);
     sells.forEach(function (t) {
       map[t.symbol] = map[t.symbol] || { realized: 0, latent: 0, hasPosition: false };
       map[t.symbol].realized += t.realized_pnl_usd;
     });
-    var positions = (app.state && app.state.positions) || {};
+    var positions = (w.data.state && w.data.state.positions) || {};
     for (var sym in positions) {
       map[sym] = map[sym] || { realized: 0, latent: 0, hasPosition: false };
       map[sym].hasPosition = true;
       var qty = positions[sym].qty, entry = positions[sym].prix_moyen;
-      var mark = markPriceFor(sym, qty);
+      var mark = markPriceFor(w, sym, qty);
       if (mark !== null && typeof entry === "number") map[sym].latent = (mark - entry) * qty;
     }
     var out = [];
@@ -727,9 +914,9 @@
     out.sort(function (a, b) { return Math.abs(b.total) - Math.abs(a.total); });
     return out;
   }
-  function pnlByStrategy() {
+  function pnlByStrategy(w) {
     var map = {};
-    sellsWithPnl().forEach(function (t) {
+    sellsWithPnl(w).forEach(function (t) {
       var k = t.strategy || "inconnue";
       map[k] = (map[k] || 0) + t.realized_pnl_usd;
     });
@@ -738,16 +925,16 @@
     out.sort(function (a, b) { return Math.abs(b.pnl) - Math.abs(a.pnl); });
     return out;
   }
-  function maxDrawdown() {
-    if (!app.equity.length) return 0;
+  function maxDrawdown(w) {
+    if (!w.data.equity.length) return 0;
     var m = 0;
-    app.equity.forEach(function (e) { if (typeof e.drawdown_pct === "number" && e.drawdown_pct > m) m = e.drawdown_pct; });
+    w.data.equity.forEach(function (e) { if (typeof e.drawdown_pct === "number" && e.drawdown_pct > m) m = e.drawdown_pct; });
     return m;
   }
-  function timeInPositionPct() {
-    if (!app.equity.length) return null;
-    var inPos = app.equity.filter(function (e) { return (e.gross_exposure_pct || 0) > 0.001; }).length;
-    return inPos / app.equity.length;
+  function timeInPositionPct(w) {
+    if (!w.data.equity.length) return null;
+    var inPos = w.data.equity.filter(function (e) { return (e.gross_exposure_pct || 0) > 0.001; }).length;
+    return inPos / w.data.equity.length;
   }
   function nextCronRun(from) {
     var d = new Date(from.getTime());
@@ -757,13 +944,58 @@
   }
 
   /* =========================================================================
-     RENDU — En-tête / fraîcheur / alertes
+     ETAT / BADGE d'un wallet (partagé carte + onglets + alertes)
+     ========================================================================= */
+  function walletStatus(w) {
+    if (dataUnknown(w)) return { cls: "critical", label: "Statut inconnu" };
+    if (isPending(w)) return { cls: "pending", label: "En attente" };
+    var cb = (w.data.state && w.data.state.circuit_breakers) || {};
+    var now = new Date();
+    if (cb.flatten_mode) return { cls: "critical", label: "⛔ Liquidé" };
+    if (cb.manual_review_required) return { cls: "critical", label: "🛑 Revue requise" };
+    if (cb.dd_half_size_active) return { cls: "warning", label: "⚠️ Taille réduite" };
+    if (cb.daily_loss_freeze_until && new Date(cb.daily_loss_freeze_until) > now) return { cls: "warning", label: "❄️ Gel entrées" };
+    if (cb.cooldown_until && new Date(cb.cooldown_until) > now) return { cls: "warning", label: "⏸️ Cooldown" };
+    return { cls: "good", label: "▶️ Actif" };
+  }
+
+  function buildWalletFlags(w) {
+    var flags = [];
+    var cb = (w.data.state && w.data.state.circuit_breakers) || {};
+    var now = new Date();
+    if (cb.flatten_mode) {
+      flags.push({ level: "critical", icon: "⛔", label: "Mode liquidation actif", detail: "Le bot a vidé toutes les positions de ce wallet suite à un drawdown supérieur à " + fmtPctRound(w.meta.breakers.flatten) + " et reste en observation." });
+    }
+    if (cb.manual_review_required) {
+      flags.push({ level: "critical", icon: "🛑", label: "Revue manuelle requise", detail: "Un humain doit éditer le state.json de ce wallet pour repasser ce drapeau à false avant que le bot ne reprenne le trading normal." });
+    }
+    if (cb.dd_half_size_active) {
+      flags.push({ level: "warning", icon: "⚠️", label: "Taille des positions réduite de moitié", detail: "Drawdown supérieur à " + fmtPctRound(w.meta.breakers.half) + " : le bot réduit la taille de ses nouvelles positions par précaution." });
+    }
+    if (cb.daily_loss_freeze_until && new Date(cb.daily_loss_freeze_until) > now) {
+      flags.push({ level: "warning", icon: "❄️", label: "Gel des nouvelles entrées", detail: "Perte de plus de " + fmtPctRound(w.meta.breakers.freeze) + " sur 24 h glissantes : pas de nouvelle position avant " + fmtDateTime(cb.daily_loss_freeze_until) + "." });
+    }
+    if (cb.cooldown_until && new Date(cb.cooldown_until) > now) {
+      flags.push({ level: "warning", icon: "⏸️", label: "Pause après pertes consécutives", detail: "Plusieurs pertes d'affilée ont déclenché un cooldown jusqu'au " + fmtDateTime(cb.cooldown_until) + "." });
+    }
+    if (w.data.state && w.data.state.last_run_completed_at) {
+      var ageH = (Date.now() - new Date(w.data.state.last_run_completed_at).getTime()) / 3600000;
+      if (ageH > STALE_HOURS) {
+        flags.push({ level: "critical", icon: "🔌", label: "Aucun cycle depuis plus de " + STALE_HOURS + " h", detail: "Dernier cycle réussi " + relativeTime(w.data.state.last_run_completed_at) + ". Le planificateur GitHub Actions est peut-être en panne — à vérifier dans l'onglet Actions du dépôt." });
+      }
+    }
+    return flags;
+  }
+
+  /* =========================================================================
+     RENDU — En-tête / fraîcheur (globale, via cycle.json)
      ========================================================================= */
   function renderHeaderStatus() {
-    var lastRunTxt = app.state && app.state.last_run_completed_at;
     var pill = document.getElementById("pillFraicheurText");
     var dot = document.getElementById("pulseDot");
-    if (dataUnknown()) {
+    var lastRunTxt = CYCLE.data && CYCLE.data.last_run_completed_at;
+    var anyUnknown = !CYCLE.known && WALLET_IDS.every(function (id) { return dataUnknown(W[id]); });
+    if (anyUnknown) {
       pill.textContent = "Statut inconnu — échec de chargement";
       dot.className = "pulse-dot bad";
     } else if (!lastRunTxt) {
@@ -773,53 +1005,49 @@
       var lastRun = new Date(lastRunTxt);
       var ageH = (Date.now() - lastRun.getTime()) / 3600000;
       var next = nextCronRun(new Date());
-      pill.textContent = "Dernier cycle : " + relativeTime(lastRunTxt) + " · prochain : ~" + fmtUTC(next);
+      pill.textContent = "Dernier cycle (3 wallets) : " + relativeTime(lastRunTxt) + " · prochain : ~" + fmtUTC(next);
       dot.className = "pulse-dot " + (ageH > STALE_HOURS ? "bad" : (ageH > 1.5 ? "warn" : "ok"));
     }
-    document.getElementById("footerFetchInfo").textContent =
-      "Page actualisée " + relativeTime(app.fetchedAt.toISOString()) + " (" + fmtTime(app.fetchedAt.toISOString()) + ") · actualisation automatique toutes les 60 s · les fichiers du dépôt peuvent avoir jusqu'à ~5 min de retard (cache CDN GitHub raw).";
+    if (fetchedAt) {
+      document.getElementById("footerFetchInfo").textContent =
+        "Page actualisée " + relativeTime(fetchedAt.toISOString()) + " (" + fmtTime(fetchedAt.toISOString()) + ") · actualisation automatique toutes les 60 s · les fichiers du dépôt peuvent avoir jusqu'à ~5 min de retard (cache CDN GitHub raw).";
+    }
   }
 
-  function renderAlerts() {
+  function renderFetchErrorAlert(container, w) {
+    if (!w.data.errors.length) return;
+    container.appendChild(h("div", { class: "alert alert-fetcherror" }, [
+      h("span", { class: "alert-icon" }, ["📡"]),
+      h("div", {}, [
+        h("strong", {}, [w.meta.emoji + " " + w.meta.label + " — certaines données n'ont pas pu être chargées."]),
+        h("span", { class: "alert-detail" }, [w.data.errors.join(" · ") + " — nouvelle tentative dans 60 s."])
+      ])
+    ]));
+  }
+
+  function renderGlobalAlerts() {
+    var box = document.getElementById("globalAlerts");
+    clear(box);
+    WALLET_IDS.forEach(function (id) { renderFetchErrorAlert(box, W[id]); });
+    WALLET_IDS.forEach(function (id) {
+      var w = W[id];
+      buildWalletFlags(w).forEach(function (f) {
+        box.appendChild(h("div", { class: "alert " + f.level }, [
+          h("span", { class: "alert-icon" }, [f.icon]),
+          h("div", {}, [
+            h("strong", {}, [w.meta.emoji + " " + w.meta.label + " — " + f.label]),
+            h("span", { class: "alert-detail" }, [f.detail])
+          ])
+        ]));
+      });
+    });
+  }
+
+  function renderWalletAlerts(w) {
     var box = document.getElementById("alerts");
     clear(box);
-    var flags = [];
-    var cb = (app.state && app.state.circuit_breakers) || {};
-    var now = new Date();
-
-    if (cb.flatten_mode) {
-      flags.push({ level: "critical", icon: "⛔", label: "Mode liquidation actif", detail: "Le bot a vidé toutes ses positions suite à un drawdown supérieur à 25 % et reste en observation." });
-    }
-    if (cb.manual_review_required) {
-      flags.push({ level: "critical", icon: "🛑", label: "Revue manuelle requise", detail: "Un humain doit éditer state.json pour repasser ce drapeau à false avant que le bot ne reprenne le trading normal." });
-    }
-    if (cb.dd_half_size_active) {
-      flags.push({ level: "warning", icon: "⚠️", label: "Taille des positions réduite de moitié", detail: "Drawdown supérieur à 15 % : le bot réduit la taille de ses nouvelles positions par précaution." });
-    }
-    if (cb.daily_loss_freeze_until && new Date(cb.daily_loss_freeze_until) > now) {
-      flags.push({ level: "warning", icon: "❄️", label: "Gel des nouvelles entrées", detail: "Perte de plus de 3 % sur 24 h glissantes : pas de nouvelle position avant " + fmtDateTime(cb.daily_loss_freeze_until) + "." });
-    }
-    if (cb.cooldown_until && new Date(cb.cooldown_until) > now) {
-      flags.push({ level: "warning", icon: "⏸️", label: "Pause après pertes consécutives", detail: "5 pertes d'affilée ont déclenché un cooldown jusqu'au " + fmtDateTime(cb.cooldown_until) + "." });
-    }
-    if (app.state && app.state.last_run_completed_at) {
-      var ageH = (Date.now() - new Date(app.state.last_run_completed_at).getTime()) / 3600000;
-      if (ageH > STALE_HOURS) {
-        flags.push({ level: "critical", icon: "🔌", label: "Aucun cycle depuis plus de " + STALE_HOURS + " h", detail: "Dernier cycle réussi " + relativeTime(app.state.last_run_completed_at) + ". Le planificateur GitHub Actions est peut-être en panne — à vérifier dans l'onglet Actions du dépôt." });
-      }
-    }
-    if (app.errors.length) {
-      var errEl = h("div", { class: "alert alert-fetcherror" }, [
-        h("span", { class: "alert-icon" }, ["📡"]),
-        h("div", {}, [
-          h("strong", {}, ["Certaines données n'ont pas pu être chargées."]),
-          h("span", { class: "alert-detail" }, [app.errors.join(" · ") + " — nouvelle tentative dans 60 s."])
-        ])
-      ]);
-      box.appendChild(errEl);
-    }
-
-    flags.forEach(function (f) {
+    renderFetchErrorAlert(box, w);
+    buildWalletFlags(w).forEach(function (f) {
       box.appendChild(h("div", { class: "alert " + f.level }, [
         h("span", { class: "alert-icon" }, [f.icon]),
         h("div", {}, [
@@ -831,101 +1059,69 @@
   }
 
   /* =========================================================================
-     RENDU — Bandeau KPI
+     RENDU — Vue d'ensemble : cartes wallet
      ========================================================================= */
-  function sparklinePath(values, w, hgt) {
+  function sparklinePath(values, w0, hgt) {
     if (values.length < 2) return null;
     var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
     if (min === max) { min -= 1; max += 1; }
     var pts = values.map(function (v, i) {
-      var x = (i / (values.length - 1)) * w;
+      var x = (i / (values.length - 1)) * w0;
       var y = hgt - ((v - min) / (max - min)) * hgt;
       return x.toFixed(1) + "," + y.toFixed(1);
     });
     return pts.join(" ");
   }
 
-  function renderKpis() {
-    var grid = document.getElementById("kpiGrid");
-    clear(grid);
-    var unknown = dataUnknown();
-    var eq = currentEquity();
-    var totalPnl = eq === null ? null : eq - INITIAL_CASH;
-    var totalPnlPct = totalPnl === null ? null : totalPnl / INITIAL_CASH;
+  function renderWalletCard(w) {
+    var meta = w.meta;
+    var status = walletStatus(w);
+    var eqInfo = currentEquityEur(w);
+    var card = h("a", { class: "wallet-card", href: "#/wallet/" + w.id, style: "--wallet-color:var(" + meta.colorVar + ")" }, []);
 
-    var dayRef = equityAt(24);
-    var dayPnl = (eq !== null && dayRef && typeof dayRef.equity_usd === "number") ? eq - dayRef.equity_usd : null;
-    var dayPnlPct = dayPnl !== null && dayRef.equity_usd ? dayPnl / dayRef.equity_usd : null;
-
-    var last = latestEquityRecord();
-    var dd = unknown ? null : (last && typeof last.drawdown_pct === "number" ? last.drawdown_pct : 0);
-
-    var sparkVals = app.equity.slice(-16).map(function (e) { return e.equity_usd; });
-    var sparkPts = sparklinePath(sparkVals, 90, 22);
-
-    function deltaClass(v) { if (v === null || v === undefined || Math.abs(v) < 1e-9) return "flat"; return v > 0 ? "good" : "bad"; }
-
-    // 1. Équité actuelle
-    var tile1 = h("div", { class: "stat-tile" }, [
-      h("div", { class: "stat-label" }, ["Équité actuelle", h("span", { class: "info-tip", tabindex: "0", "data-tip": "La valeur totale du portefeuille en ce moment : cash disponible + valeur de marché de toutes les positions." }, ["i"])]),
-      h("div", { class: "stat-value" }, [fmtUSD(eq)]),
-      h("div", { class: "stat-sub" }, [
-        unknown
-          ? h("span", { class: "delta flat" }, ["Données indisponibles (échec de chargement) — voir le bandeau ci-dessus"])
-          : h("span", { class: "delta " + deltaClass(totalPnl) }, [fmtUSD(totalPnl, { signed: true }) + " (" + fmtPct(totalPnlPct, { signed: true }) + ") depuis le départ"])
-      ])
-    ]);
-    if (sparkPts) {
-      var svg = svgEl("svg", { class: "spark", width: "100%", height: "22", viewBox: "0 0 90 22", preserveAspectRatio: "none" });
-      svg.appendChild(svgEl("polyline", { points: sparkPts, fill: "none", stroke: "var(--series-equity)", "stroke-width": "1.6", "stroke-linejoin": "round", "stroke-linecap": "round" }));
-      tile1.appendChild(svg);
-    }
-    grid.appendChild(tile1);
-
-    // 2. PnL du jour (24h glissantes)
-    grid.appendChild(h("div", { class: "stat-tile" }, [
-      h("div", { class: "stat-label" }, ["PnL du jour (24 h)", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Variation de l'équity sur les 24 dernières heures glissantes (pas le jour calendaire) — comparé au cycle le plus proche d'il y a 24 h." }, ["i"])]),
-      h("div", { class: "stat-value " + (dayPnl === null ? "" : deltaClass(dayPnl)) }, [dayPnl === null ? "—" : fmtUSD(dayPnl, { signed: true })]),
-      h("div", { class: "stat-sub" }, [unknown ? "Données indisponibles" : (dayPnl === null ? "Historique insuffisant" : (fmtPct(dayPnlPct, { signed: true }) + " · réf. " + relativeTime(dayRef.ts)))])
+    card.appendChild(h("div", { class: "wc-head" }, [
+      h("span", { class: "wc-emoji" }, [meta.emoji]),
+      h("span", { class: "wc-title" }, [meta.label]),
+      h("span", { class: "wallet-badge " + status.cls }, [status.label])
     ]));
 
-    // 3. PnL total
-    grid.appendChild(h("div", { class: "stat-tile" }, [
-      h("div", { class: "stat-label" }, ["PnL total", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Gain ou perte cumulé depuis le tout premier cycle du bot, comparé au capital de départ de 100 000 $." }, ["i"])]),
-      h("div", { class: "stat-value " + deltaClass(totalPnl) }, [totalPnl === null ? "—" : fmtUSD(totalPnl, { signed: true })]),
-      h("div", { class: "stat-sub" }, [unknown ? "Données indisponibles" : (fmtPct(totalPnlPct, { signed: true }) + " · capital initial 100 000 $")])
-    ]));
-
-    // 4. Drawdown courant
-    var ddSeverity = dd === null ? "flat" : (dd > 0.15 ? "bad" : (dd > 0.05 ? "warn" : "flat"));
-    grid.appendChild(h("div", { class: "stat-tile" }, [
-      h("div", { class: "stat-label" }, ["Drawdown courant", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Recul de l'équity actuelle par rapport à son plus haut historique. 0 % = l'équity est à son sommet. Les seuils du bot : réduction des tailles à 15 %, liquidation totale à 25 %." }, ["i"])]),
-      h("div", { class: "stat-value " + (ddSeverity === "bad" ? "num bad" : ddSeverity === "warn" ? "" : "") , style: ddSeverity === "warn" ? "color:var(--status-warning)" : "" }, [fmtPct(dd)]),
-      h("div", { class: "stat-sub" }, [unknown ? "Données indisponibles" : ("Pic historique : " + fmtUSD(last ? last.equity_peak_usd : (app.state ? app.state.equity_peak_usd : INITIAL_CASH)))])
-    ]));
-
-    // 5. Statut / fraîcheur
-    var lastRunTxt = app.state && app.state.last_run_completed_at;
-    var next = nextCronRun(new Date());
-    var freshBody = [];
-    if (lastRunTxt) {
-      var ageH = (Date.now() - new Date(lastRunTxt).getTime()) / 3600000;
-      freshBody = [
-        h("div", { class: "stat-value", style: "font-size:17px" }, [relativeTime(lastRunTxt)]),
-        h("div", { class: "stat-sub" }, ["Prochain cycle : ~" + fmtUTC(next) + (ageH > STALE_HOURS ? " · en retard" : "")])
-      ];
-    } else if (unknown) {
-      freshBody = [h("div", { class: "stat-value", style: "font-size:17px" }, ["Statut inconnu"]), h("div", { class: "stat-sub" }, ["Échec de chargement de state.json — impossible de savoir quand le bot a tourné pour la dernière fois"])];
+    if (eqInfo.unknown) {
+      card.appendChild(h("div", { class: "wc-pending" }, ["Données indisponibles — échec de chargement (voir bandeau ci-dessus)."]));
+    } else if (eqInfo.pending) {
+      card.appendChild(h("div", { class: "wc-pending" }, ["⏳ En attente du premier cycle de marché (aucun taux de change EUR/USD obtenu pour l'instant)."]));
     } else {
-      freshBody = [h("div", { class: "stat-value", style: "font-size:17px" }, ["Aucun cycle"]), h("div", { class: "stat-sub" }, ["En attente du premier cycle du bot"])];
+      var pnl = eqInfo.value - meta.capitalEur;
+      var pnlPct = pnl / meta.capitalEur;
+      var pnlCls = Math.abs(pnl) < 0.005 ? "flat" : (pnl > 0 ? "good" : "bad");
+      var last = latestEquityRecord(w);
+      var dd = last && typeof last.drawdown_pct === "number" ? last.drawdown_pct : 0;
+      card.appendChild(h("div", { class: "wc-value" }, [fmtEUR(eqInfo.value)]));
+      var pnlEl = h("div", { class: "wc-pnl num " + pnlCls }, [fmtEUR(pnl, { signed: true }) + " (" + fmtPct(pnlPct, { signed: true }) + ")"]);
+      card.appendChild(pnlEl);
+      var sparkVals = w.data.equity.slice(-16).map(function (e) { return eurOf(e, w); }).filter(function (v) { return v !== null; });
+      var sparkPts = sparklinePath(sparkVals, 100, 24);
+      if (sparkPts) {
+        var svg = svgEl("svg", { class: "wc-spark", width: "100%", height: "24", viewBox: "0 0 100 24", preserveAspectRatio: "none" });
+        svg.appendChild(svgEl("polyline", { points: sparkPts, fill: "none", stroke: "var(" + meta.colorVar + ")", "stroke-width": "1.8", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+        card.appendChild(svg);
+      }
+      card.appendChild(h("div", { class: "wc-sub" }, ["Drawdown courant : " + fmtPct(dd) + " · pic " + fmtEUR(last ? eurOf(last, w) === null ? eqInfo.value : (last.equity_peak_usd && fxRateFor(w, last) ? last.equity_peak_usd / fxRateFor(w, last) : eqInfo.value) : eqInfo.value)]));
     }
-    grid.appendChild(h("div", { class: "stat-tile" }, [
-      h("div", { class: "stat-label" }, ["Statut du bot", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Le bot tourne une fois par heure via GitHub Actions (minute 7). S'il n'a pas tourné depuis plus de 2 h, quelque chose ne va probablement pas." }, ["i"])])
-    ].concat(freshBody)));
+
+    card.appendChild(h("div", { class: "wc-risk" }, [
+      "Vol cible " + fmtPctRound(meta.risk.vol) + " · expo max " + fmtPctRound(meta.risk.expoMax) + " · " + meta.univers
+    ]));
+    return card;
+  }
+
+  function renderWalletCards() {
+    var grid = document.getElementById("walletCards");
+    clear(grid);
+    WALLET_IDS.forEach(function (id) { grid.appendChild(renderWalletCard(W[id])); });
   }
 
   /* =========================================================================
-     RENDU — Graphiques équity + drawdown (SVG maison, crosshair + tooltip + table)
+     RENDU — Graphique de comparaison (base 100, 3 wallets superposés)
      ========================================================================= */
   function niceNum(range, round) {
     if (!(range > 0)) range = 1;
@@ -945,7 +1141,6 @@
     }
     return niceFraction * Math.pow(10, exponent);
   }
-  // Calcule des graduations "rondes" (0 / 1 000 / 2 000, jamais 99 940 / 100 060…) pour un axe Y.
   function niceTicks(minV, maxV, tickCountTarget) {
     if (minV === maxV) { minV -= 1; maxV += 1; }
     var range = niceNum(maxV - minV, false);
@@ -957,35 +1152,404 @@
     return { min: niceMin, max: niceMax, step: step, ticks: ticks };
   }
 
-  var RANGE_MS = { "24h": 24 * 3600000, "7j": 7 * 24 * 3600000, "30j": 30 * 24 * 3600000, "tout": null };
-
-  function filteredEquity() {
-    if (!app.equity.length) return [];
-    var ms = RANGE_MS[currentRange];
-    if (!ms) return app.equity;
-    var cutoff = Date.now() - ms;
-    var out = app.equity.filter(function (e) { return new Date(e.ts).getTime() >= cutoff; });
-    return out.length >= 2 ? out : app.equity.slice(Math.max(0, app.equity.length - 2));
+  // Série indexée base 100 pour un wallet : [{t, idx, eur}], null si aucune donnée exploitable.
+  function walletIndexSeries(w) {
+    if (dataUnknown(w) || isPending(w) || !w.data.equity.length) return null;
+    var pts = [];
+    w.data.equity.forEach(function (e) {
+      var v = eurOf(e, w);
+      if (v !== null) pts.push({ t: new Date(e.ts).getTime(), eur: v, raw: e });
+    });
+    if (!pts.length) return null;
+    var base = pts[0].eur;
+    if (!(base > 0)) return null;
+    pts.forEach(function (p) { p.idx = (p.eur / base) * 100; });
+    return pts;
   }
 
-  function renderCharts() {
+  function renderCompareChart() {
+    var wrap = document.getElementById("compareChartWrap");
+    clear(wrap);
+    var series = {};
+    var anySeries = false;
+    WALLET_IDS.forEach(function (id) {
+      var s = walletIndexSeries(W[id]);
+      series[id] = s;
+      if (s) anySeries = true;
+    });
+
+    if (!anySeries) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["📈"]),
+        h("div", {}, ["Aucun wallet n'a encore de données de marché."]),
+        h("div", {}, ["Les 3 wallets sont en attente de leur premier cycle avec un taux de change disponible — la comparaison apparaîtra dès qu'au moins un wallet aura démarré."])
+      ]));
+      renderCompareTable(series);
+      renderCompareLegend(series);
+      return;
+    }
+
+    var W0 = 1000, H0 = 300, padL = 56, padR = 18, plotTop = 30, plotBottom = H0 - 34;
+    var plotW = W0 - padL - padR;
+
+    var allTimes = [];
+    WALLET_IDS.forEach(function (id) { if (series[id]) series[id].forEach(function (p) { allTimes.push(p.t); }); });
+    var tMin = Math.min.apply(null, allTimes), tMax = Math.max.apply(null, allTimes);
+    if (tMin === tMax) { tMin -= 3600000; tMax += 3600000; }
+
+    var allIdx = [100];
+    WALLET_IDS.forEach(function (id) { if (series[id]) series[id].forEach(function (p) { allIdx.push(p.idx); }); });
+    var idxMinRaw = Math.min.apply(null, allIdx), idxMaxRaw = Math.max.apply(null, allIdx);
+    if (idxMaxRaw - idxMinRaw < 1) { idxMinRaw -= 2; idxMaxRaw += 2; }
+    else { var extra = (idxMaxRaw - idxMinRaw) * 0.15; idxMinRaw -= extra; idxMaxRaw += extra; }
+    var ticksInfo = niceTicks(idxMinRaw, idxMaxRaw, 5);
+
+    function x(t) { return padL + ((t - tMin) / (tMax - tMin)) * plotW; }
+    function y(v) { return plotTop + (plotBottom - plotTop) - ((v - ticksInfo.min) / (ticksInfo.max - ticksInfo.min)) * (plotBottom - plotTop); }
+
+    var svg = svgEl("svg", { class: "chart-svg", viewBox: "0 0 " + W0 + " " + H0, role: "img", "aria-label": "Comparaison des trois wallets, équity indexée base 100" });
+
+    ticksInfo.ticks.forEach(function (val) {
+      if (val < ticksInfo.min - 1e-6 || val > ticksInfo.max + 1e-6) return;
+      var yy = y(val);
+      svg.appendChild(svgEl("line", { class: "gridline", x1: padL, x2: W0 - padR, y1: yy, y2: yy }));
+      var t = svgEl("text", { class: "axis-text", x: padL - 8, y: yy + 3.5, "text-anchor": "end" });
+      t.textContent = Math.round(val);
+      svg.appendChild(t);
+    });
+    var yBase = y(100);
+    svg.appendChild(svgEl("line", { class: "axis-baseline", x1: padL, x2: W0 - padR, y1: yBase, y2: yBase }));
+    var baseLabel = svgEl("text", { class: "axis-text axis-text-halo", x: W0 - padR, y: yBase - 10, "text-anchor": "end" });
+    baseLabel.textContent = "Base 100 (départ de chaque wallet)";
+    svg.appendChild(baseLabel);
+
+    var xTicks = 6;
+    for (var k = 0; k < xTicks; k++) {
+      var frac = k / (xTicks - 1);
+      var tt = tMin + (tMax - tMin) * frac;
+      var xx = x(tt);
+      var lbl = svgEl("text", { class: "axis-text", x: xx, y: H0 - 10, "text-anchor": k === 0 ? "start" : (k === xTicks - 1 ? "end" : "middle") });
+      lbl.textContent = new Date(tt).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", timeZone: DISPLAY_TZ });
+      svg.appendChild(lbl);
+    }
+
+    var crossLine = svgEl("line", { x1: 0, x2: 0, y1: plotTop, y2: plotBottom, stroke: "var(--text-muted)", "stroke-width": "1", visibility: "hidden" });
+    svg.appendChild(crossLine);
+    var crossDots = {};
+
+    WALLET_IDS.forEach(function (id) {
+      var s = series[id];
+      var colorVar = "var(" + WALLET_META[id].colorVar + ")";
+      if (!s) return;
+      if (s.length >= 2) {
+        var pts = s.map(function (p) { return x(p.t).toFixed(1) + "," + y(p.idx).toFixed(1); });
+        svg.appendChild(svgEl("path", { d: "M" + pts.join(" L"), fill: "none", stroke: colorVar, "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      } else {
+        svg.appendChild(svgEl("circle", { cx: x(s[0].t), cy: y(s[0].idx), r: 4, fill: colorVar, stroke: "var(--surface-1)", "stroke-width": "2" }));
+      }
+      var dot = svgEl("circle", { r: 4.5, fill: colorVar, stroke: "var(--surface-1)", "stroke-width": "2", visibility: "hidden" });
+      svg.appendChild(dot);
+      crossDots[id] = dot;
+    });
+
+    var hitRect = svgEl("rect", { x: padL, y: 0, width: plotW, height: H0, fill: "transparent" });
+    svg.appendChild(hitRect);
+    var tooltip = document.getElementById("compareTooltip");
+
+    function nearestPoint(s, t) {
+      var best = null, bestDiff = Infinity;
+      for (var i = 0; i < s.length; i++) {
+        var diff = Math.abs(s[i].t - t);
+        if (diff < bestDiff) { bestDiff = diff; best = s[i]; }
+      }
+      return best;
+    }
+    function showAt(clientX, clientY) {
+      var rect = svg.getBoundingClientRect();
+      var relX = ((clientX - rect.left) / rect.width) * W0;
+      var frac = (relX - padL) / plotW;
+      var t = tMin + frac * (tMax - tMin);
+      var xx2 = x(t);
+      crossLine.setAttribute("x1", xx2); crossLine.setAttribute("x2", xx2); crossLine.setAttribute("visibility", "visible");
+
+      clear(tooltip);
+      var anyDate = null;
+      var rows = [];
+      WALLET_IDS.forEach(function (id) {
+        var s = series[id];
+        var meta = WALLET_META[id];
+        if (!s) {
+          rows.push([meta.colorVar, meta.emoji + " " + meta.label, "en attente"]);
+          crossDots[id] && crossDots[id].setAttribute("visibility", "hidden");
+          return;
+        }
+        var p = nearestPoint(s, t);
+        anyDate = anyDate || p.t;
+        crossDots[id].setAttribute("cx", x(p.t)); crossDots[id].setAttribute("cy", y(p.idx)); crossDots[id].setAttribute("visibility", "visible");
+        rows.push([meta.colorVar, meta.emoji + " " + meta.label, fmtNum(p.idx, 1) + " (" + fmtEUR(p.eur) + ")"]);
+      });
+      tooltip.appendChild(h("div", { class: "tt-date" }, [anyDate ? fmtDateTime(anyDate) : "—"]));
+      rows.forEach(function (r) {
+        tooltip.appendChild(h("div", { class: "tt-row" }, [
+          h("span", { class: "k" }, [h("span", { class: "tt-key", style: "background:var(" + r[0] + ")" }), r[1]]),
+          h("span", { class: "v" }, [r[2]])
+        ]));
+      });
+      var areaEl = document.getElementById("compareChartArea");
+      var areaRect = areaEl.getBoundingClientRect();
+      var left = clientX - areaRect.left + 14;
+      var top = clientY - areaRect.top - 10;
+      if (left + 200 > areaRect.width) left = clientX - areaRect.left - 200 - 14;
+      tooltip.style.left = Math.max(0, left) + "px";
+      tooltip.style.top = Math.max(0, top) + "px";
+      tooltip.classList.add("show");
+    }
+    function hideTip() {
+      crossLine.setAttribute("visibility", "hidden");
+      WALLET_IDS.forEach(function (id) { crossDots[id] && crossDots[id].setAttribute("visibility", "hidden"); });
+      tooltip.classList.remove("show");
+    }
+    hitRect.addEventListener("pointermove", function (ev) { showAt(ev.clientX, ev.clientY); });
+    hitRect.addEventListener("pointerleave", hideTip);
+
+    wrap.appendChild(svg);
+    renderCompareTable(series);
+    renderCompareLegend(series);
+  }
+
+  function renderCompareLegend(series) {
+    var box = document.getElementById("compareLegend");
+    clear(box);
+    WALLET_IDS.forEach(function (id) {
+      var meta = WALLET_META[id];
+      var s = series[id];
+      var item = h("span", { class: "cl-item" + (s ? "" : " is-pending") }, [
+        h("span", { class: "cl-swatch", style: "background:var(" + meta.colorVar + ")" }),
+        h("span", { class: "cl-name" }, [meta.emoji + " " + meta.label])
+      ]);
+      if (s && s.length) {
+        var lastIdx = s[s.length - 1].idx;
+        var delta = lastIdx - 100;
+        var cls = Math.abs(delta) < 0.05 ? "flat" : (delta > 0 ? "good" : "bad");
+        item.appendChild(h("span", { class: "cl-value num " + cls }, [fmtPct(delta / 100, { signed: true })]));
+      } else {
+        item.appendChild(h("span", { class: "cl-value" }, ["en attente"]));
+      }
+      box.appendChild(item);
+    });
+  }
+
+  function renderCompareTable(series) {
+    var box = document.getElementById("compareTableWrap");
+    clear(box);
+    var rowsMap = {};
+    WALLET_IDS.forEach(function (id) {
+      var s = series[id];
+      if (!s) return;
+      s.forEach(function (p) {
+        var key = p.raw.ts;
+        rowsMap[key] = rowsMap[key] || {};
+        rowsMap[key][id] = p;
+      });
+    });
+    var keys = Object.keys(rowsMap).sort(function (a, b) { return new Date(b) - new Date(a); });
+    if (!keys.length) {
+      box.appendChild(h("div", { class: "empty-note" }, ["Aucune donnée à afficher."]));
+      return;
+    }
+    var rows = keys.map(function (ts) {
+      var row = rowsMap[ts];
+      return h("tr", {}, [
+        h("td", {}, [fmtDateTime(ts)])
+      ].concat(WALLET_IDS.map(function (id) {
+        var p = row[id];
+        return h("td", {}, [p ? (fmtNum(p.idx, 1) + " (" + fmtEUR(p.eur) + ")") : "—"]);
+      })));
+    });
+    var table = h("table", { class: "data-table" }, [
+      h("thead", {}, [h("tr", {}, [h("th", {}, ["Date"])].concat(WALLET_IDS.map(function (id) { return h("th", {}, [WALLET_META[id].emoji + " " + WALLET_META[id].label]); })))]),
+      h("tbody", {}, rows)
+    ]);
+    box.appendChild(h("div", { class: "table-scroll" }, [table]));
+  }
+
+  /* =========================================================================
+     RENDU — Vue par wallet : carte profil de risque
+     ========================================================================= */
+  function renderProfileCard(w) {
+    var meta = w.meta;
+    var box = document.getElementById("profileCard");
+    clear(box);
+    box.style.setProperty("--wallet-color", "var(" + meta.colorVar + ")");
+    box.appendChild(h("div", { class: "pc-head" }, [
+      h("span", {}, [meta.emoji]), h("span", {}, [meta.label]),
+      h("span", { class: "wallet-badge " + walletStatus(w).cls }, [walletStatus(w).label])
+    ]));
+    box.appendChild(h("p", { class: "pc-desc" }, [
+      "Profil de risque : ", h("strong", {}, ["vol cible " + fmtPctRound(meta.risk.vol) + " annualisée"]), ", exposition brute max ",
+      h("strong", {}, [fmtPctRound(meta.risk.expoMax)]), ", cap ", h("strong", {}, [fmtPctRound(meta.risk.cap) + " par actif"]),
+      ", univers : ", h("strong", {}, [meta.universLong]), "."
+    ]));
+    box.appendChild(h("p", { class: "pc-desc" }, [
+      "Coupe-circuits : gel des nouvelles entrées si perte glissante sur 24 h > ", h("strong", {}, [fmtPctRound(meta.breakers.freeze)]),
+      " · taille des positions divisée par deux si drawdown > ", h("strong", {}, [fmtPctRound(meta.breakers.half)]),
+      " · liquidation totale (« flatten ») si drawdown > ", h("strong", {}, [fmtPctRound(meta.breakers.flatten)]), "."
+    ]));
+
+    var fx = w.data.state && w.data.state.fx;
+    var fxLine;
+    if (dataUnknown(w)) {
+      fxLine = "Taux de change : indisponible (échec de chargement).";
+    } else if (isPending(w)) {
+      fxLine = "Taux de change EUR/USD : pas encore obtenu — ce wallet n'a pas commencé à trader.";
+    } else if (fx && typeof fx.last_rate === "number") {
+      fxLine = "Taux EUR/USD utilisé : " + fx.last_rate.toLocaleString("fr-FR", { minimumFractionDigits: 4, maximumFractionDigits: 4 }) +
+        (fx.last_rate_source ? " (" + fx.last_rate_source + ")" : "") +
+        (fx.last_rate_stale ? " — taux de la veille (réseau indisponible au dernier cycle, marqué comme tel)" : (fx.last_rate_ts ? " · " + relativeTime(fx.last_rate_ts) : "")) + ".";
+    } else {
+      fxLine = "Taux de change : information indisponible.";
+    }
+    box.appendChild(h("p", { class: "pc-fx" }, [fxLine]));
+  }
+
+  /* =========================================================================
+     RENDU — Navigation par onglets (vue wallet)
+     ========================================================================= */
+  function renderWalletTabs(activeId) {
+    var box = document.getElementById("walletTabs");
+    clear(box);
+    WALLET_IDS.forEach(function (id) {
+      var meta = WALLET_META[id];
+      var btn = h("button", { type: "button", "aria-current": id === activeId ? "true" : "false", style: "--tab-color:var(" + meta.colorVar + ")" }, [meta.emoji + " " + meta.label]);
+      btn.addEventListener("click", function () { location.hash = "#/wallet/" + id; });
+      box.appendChild(btn);
+    });
+  }
+
+  /* =========================================================================
+     RENDU — Bandeau KPI (vue wallet)
+     ========================================================================= */
+  function renderKpis(w) {
+    var grid = document.getElementById("kpiGrid");
+    clear(grid);
+    var meta = w.meta;
+    var eqInfo = currentEquityEur(w);
+    var unknown = !!eqInfo.unknown;
+    var pending = !!eqInfo.pending;
+    var eq = eqInfo.value;
+    var totalPnl = eq === null ? null : eq - meta.capitalEur;
+    var totalPnlPct = totalPnl === null ? null : totalPnl / meta.capitalEur;
+
+    var dayRef = equityAtEur(w, 24);
+    var dayPnl = (eq !== null && dayRef) ? eq - dayRef.value : null;
+    var dayPnlPct = dayPnl !== null && dayRef.value ? dayPnl / dayRef.value : null;
+
+    var last = latestEquityRecord(w);
+    var dd = (unknown || pending) ? null : (last && typeof last.drawdown_pct === "number" ? last.drawdown_pct : 0);
+
+    var sparkVals = w.data.equity.slice(-16).map(function (e) { return eurOf(e, w); }).filter(function (v) { return v !== null; });
+    var sparkPts = sparklinePath(sparkVals, 90, 22);
+
+    function deltaClass(v) { if (v === null || v === undefined || Math.abs(v) < 1e-9) return "flat"; return v > 0 ? "good" : "bad"; }
+    function degradedNote() {
+      if (unknown) return "Données indisponibles (échec de chargement) — voir le bandeau ci-dessus";
+      if (pending) return "En attente du premier cycle de marché (aucun taux de change obtenu pour l'instant)";
+      return null;
+    }
+
+    // 1. Équité actuelle
+    var tile1 = h("div", { class: "stat-tile" }, [
+      h("div", { class: "stat-label" }, ["Équité actuelle", h("span", { class: "info-tip", tabindex: "0", "data-tip": "La valeur totale du wallet en ce moment : cash disponible + valeur de marché de toutes les positions, convertie en euros." }, ["i"])]),
+      h("div", { class: "stat-value" }, [eq === null ? "—" : fmtEUR(eq)]),
+      h("div", { class: "stat-sub" }, [
+        degradedNote()
+          ? h("span", { class: "delta flat" }, [degradedNote()])
+          : h("span", { class: "delta " + deltaClass(totalPnl) }, [fmtEUR(totalPnl, { signed: true }) + " (" + fmtPct(totalPnlPct, { signed: true }) + ") depuis le départ"])
+      ])
+    ]);
+    if (sparkPts) {
+      var svg = svgEl("svg", { class: "spark", width: "100%", height: "22", viewBox: "0 0 90 22", preserveAspectRatio: "none" });
+      svg.appendChild(svgEl("polyline", { points: sparkPts, fill: "none", stroke: "var(" + meta.colorVar + ")", "stroke-width": "1.6", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      tile1.appendChild(svg);
+    }
+    grid.appendChild(tile1);
+
+    // 2. PnL du jour (24h glissantes)
+    grid.appendChild(h("div", { class: "stat-tile" }, [
+      h("div", { class: "stat-label" }, ["PnL du jour (24 h)", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Variation de l'équity sur les 24 dernières heures glissantes (pas le jour calendaire) — comparé au cycle le plus proche d'il y a 24 h." }, ["i"])]),
+      h("div", { class: "stat-value " + (dayPnl === null ? "" : deltaClass(dayPnl)) }, [dayPnl === null ? "—" : fmtEUR(dayPnl, { signed: true })]),
+      h("div", { class: "stat-sub" }, [degradedNote() || (dayPnl === null ? "Historique insuffisant" : (fmtPct(dayPnlPct, { signed: true }) + " · réf. " + relativeTime(dayRef.ts)))])
+    ]));
+
+    // 3. PnL total
+    grid.appendChild(h("div", { class: "stat-tile" }, [
+      h("div", { class: "stat-label" }, ["PnL total", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Gain ou perte cumulé depuis le tout premier cycle de ce wallet, comparé au capital de départ de 1 000 €." }, ["i"])]),
+      h("div", { class: "stat-value " + (totalPnl === null ? "" : deltaClass(totalPnl)) }, [totalPnl === null ? "—" : fmtEUR(totalPnl, { signed: true })]),
+      h("div", { class: "stat-sub" }, [degradedNote() || (fmtPct(totalPnlPct, { signed: true }) + " · capital initial " + fmtEUR(meta.capitalEur))])
+    ]));
+
+    // 4. Drawdown courant
+    var ddSeverity = dd === null ? "flat" : (dd > meta.breakers.flatten ? "bad" : (dd > meta.breakers.half ? "warn" : "flat"));
+    grid.appendChild(h("div", { class: "stat-tile" }, [
+      h("div", { class: "stat-label" }, ["Drawdown courant", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Recul de l'équity actuelle par rapport à son plus haut historique. 0 % = l'équity est à son sommet. Seuils de CE wallet : taille réduite à " + fmtPctRound(meta.breakers.half) + ", liquidation totale à " + fmtPctRound(meta.breakers.flatten) + "." }, ["i"])]),
+      h("div", { class: "stat-value " + (ddSeverity === "bad" ? "num bad" : ""), style: ddSeverity === "warn" ? "color:var(--status-warning)" : "" }, [dd === null ? "—" : fmtPct(dd)]),
+      h("div", { class: "stat-sub" }, [degradedNote() || ("Pic historique : " + (last ? fmtEUR(eurOf(last, w) !== null ? (last.equity_peak_usd && fxRateFor(w, last) ? last.equity_peak_usd / fxRateFor(w, last) : eq) : eq) : fmtEUR(eq)))])
+    ]));
+
+    // 5. Statut / fraîcheur
+    var lastRunTxt = w.data.state && w.data.state.last_run_completed_at;
+    var next = nextCronRun(new Date());
+    var freshBody = [];
+    if (lastRunTxt) {
+      var ageH = (Date.now() - new Date(lastRunTxt).getTime()) / 3600000;
+      freshBody = [
+        h("div", { class: "stat-value", style: "font-size:17px" }, [relativeTime(lastRunTxt)]),
+        h("div", { class: "stat-sub" }, ["Prochain cycle : ~" + fmtUTC(next) + (ageH > STALE_HOURS ? " · en retard" : "")])
+      ];
+    } else if (unknown) {
+      freshBody = [h("div", { class: "stat-value", style: "font-size:17px" }, ["Statut inconnu"]), h("div", { class: "stat-sub" }, ["Échec de chargement de state.json — impossible de savoir quand le bot a tourné pour la dernière fois"])];
+    } else {
+      freshBody = [h("div", { class: "stat-value", style: "font-size:17px" }, ["Aucun cycle"]), h("div", { class: "stat-sub" }, ["En attente du premier cycle du bot pour ce wallet"])];
+    }
+    grid.appendChild(h("div", { class: "stat-tile" }, [
+      h("div", { class: "stat-label" }, ["Statut du bot", h("span", { class: "info-tip", tabindex: "0", "data-tip": "Le bot tourne une fois par heure via GitHub Actions (minute 7) pour les 3 wallets en même temps. S'il n'a pas tourné depuis plus de 2 h, quelque chose ne va probablement pas." }, ["i"])])
+    ].concat(freshBody)));
+  }
+
+  /* =========================================================================
+     RENDU — Graphiques équity + drawdown détaillés (vue wallet)
+     ========================================================================= */
+  var RANGE_MS = { "24h": 24 * 3600000, "7j": 7 * 24 * 3600000, "30j": 30 * 24 * 3600000, "tout": null };
+
+  function filteredEquity(w) {
+    if (!w.data.equity.length) return [];
+    var ms = RANGE_MS[w.ui.currentRange];
+    if (!ms) return w.data.equity;
+    var cutoff = Date.now() - ms;
+    var out = w.data.equity.filter(function (e) { return new Date(e.ts).getTime() >= cutoff; });
+    return out.length >= 2 ? out : w.data.equity.slice(Math.max(0, w.data.equity.length - 2));
+  }
+
+  function renderCharts(w) {
     var wrap = document.getElementById("chartsWrap");
     clear(wrap);
-    var data = filteredEquity();
+    var meta = w.meta;
+    var rawData = filteredEquity(w);
+    var data = rawData.map(function (e) { return { ts: e.ts, eur: eurOf(e, w), cash_eur: (typeof e.cash_usd === "number" && fxRateFor(w, e)) ? e.cash_usd / fxRateFor(w, e) : null, drawdown_pct: e.drawdown_pct, gross_exposure_pct: e.gross_exposure_pct }; })
+      .filter(function (d) { return d.eur !== null; });
 
     if (!data.length) {
       wrap.appendChild(h("div", { class: "chart-empty" }, [
         h("div", { class: "icon" }, ["📈"]),
         h("div", {}, ["Aucune donnée d'équity pour l'instant."]),
-        h("div", {}, ["Le bot n'a pas encore complété de cycle — la courbe apparaîtra dès le premier run."])
+        h("div", {}, [isPending(w) ? "Ce wallet est en attente de son premier cycle de marché (taux de change EUR/USD pas encore disponible)." : "Le bot n'a pas encore complété de cycle pour ce wallet — la courbe apparaîtra dès le premier run."])
       ]));
       renderChartTable([]);
       return;
     }
 
-    var W = 1000, H1 = 300, H2 = 150, padL = 62, padR = 18;
-    var plotW = W - padL - padR;
-    // Zone de tracé : réserve 34px en haut (titre) et de la place en bas pour l'axe X (uniquement sous le drawdown).
+    var W0 = 1000, H1 = 300, H2 = 150, padL = 62, padR = 18;
+    var plotW = W0 - padL - padR;
     var plotTop1 = 34, plotBottom1 = H1 - 14;
     var plotTop2 = 34, plotBottom2 = H2 - 28;
 
@@ -993,11 +1557,11 @@
     var tMin = times[0], tMax = times[times.length - 1];
     if (tMin === tMax) { tMin -= 3600000; tMax += 3600000; }
 
-    var eqValsRaw = data.map(function (d) { return d.equity_usd; });
-    var eqMinRaw = Math.min(INITIAL_CASH, Math.min.apply(null, eqValsRaw));
-    var eqMaxRaw = Math.max(INITIAL_CASH, Math.max.apply(null, eqValsRaw));
+    var eqValsRaw = data.map(function (d) { return d.eur; });
+    var eqMinRaw = Math.min(meta.capitalEur, Math.min.apply(null, eqValsRaw));
+    var eqMaxRaw = Math.max(meta.capitalEur, Math.max.apply(null, eqValsRaw));
     if (eqMaxRaw - eqMinRaw < 1) {
-      var padAmt = Math.max(50, Math.abs(eqMinRaw) * 0.002);
+      var padAmt = Math.max(10, Math.abs(eqMinRaw) * 0.01);
       eqMinRaw -= padAmt; eqMaxRaw += padAmt;
     } else {
       var extra = (eqMaxRaw - eqMinRaw) * 0.12;
@@ -1016,45 +1580,40 @@
     function y1(v) { return plotTop1 + (plotBottom1 - plotTop1) - ((v - eqMin) / (eqMax - eqMin)) * (plotBottom1 - plotTop1); }
     function y2(v) { return plotTop2 + ((v - 0) / (ddMax - 0)) * (plotBottom2 - plotTop2); }
 
-    // ---- SVG équity ----
-    var svg1 = svgEl("svg", { class: "chart-svg", viewBox: "0 0 " + W + " " + H1, role: "img", "aria-label": "Courbe d'équity" });
+    var svg1 = svgEl("svg", { class: "chart-svg", viewBox: "0 0 " + W0 + " " + H1, role: "img", "aria-label": "Courbe d'équity de " + meta.label });
     eqTicksInfo.ticks.forEach(function (val) {
       if (val < eqMin - 1e-6 || val > eqMax + 1e-6) return;
       var yy = y1(val);
-      svg1.appendChild(svgEl("line", { class: "gridline", x1: padL, x2: W - padR, y1: yy, y2: yy }));
+      svg1.appendChild(svgEl("line", { class: "gridline", x1: padL, x2: W0 - padR, y1: yy, y2: yy }));
       var t = svgEl("text", { class: "axis-text", x: padL - 8, y: yy + 3.5, "text-anchor": "end" });
-      t.textContent = fmtUSDCompact(val);
+      t.textContent = fmtEUR(val, { decimals: 0 });
       svg1.appendChild(t);
     });
-    // ligne des 100 000 $ de départ (uniquement si distincte d'un tick déjà tracé, pour éviter la redite)
-    var yBase = y1(INITIAL_CASH);
-    svg1.appendChild(svgEl("line", { class: "axis-baseline", x1: padL, x2: W - padR, y1: yBase, y2: yBase }));
-    // Halo (contour couleur surface) pour rester lisible même quand la courbe le traverse.
-    var baseLabel = svgEl("text", { class: "axis-text axis-text-halo", x: W - padR, y: yBase - 12, "text-anchor": "end" });
-    baseLabel.textContent = "Capital initial : 100 000 $";
+    var yBase = y1(meta.capitalEur);
+    svg1.appendChild(svgEl("line", { class: "axis-baseline", x1: padL, x2: W0 - padR, y1: yBase, y2: yBase }));
+    var baseLabel = svgEl("text", { class: "axis-text axis-text-halo", x: W0 - padR, y: yBase - 12, "text-anchor": "end" });
+    baseLabel.textContent = "Capital initial : " + fmtEUR(meta.capitalEur, { decimals: 0 });
     svg1.appendChild(baseLabel);
 
-    // aire + ligne équity
     if (data.length >= 2) {
-      var areaPts = data.map(function (d) { return x(new Date(d.ts).getTime()).toFixed(1) + "," + y1(d.equity_usd).toFixed(1); });
+      var areaPts = data.map(function (d) { return x(new Date(d.ts).getTime()).toFixed(1) + "," + y1(d.eur).toFixed(1); });
       var areaPath = "M" + x(tMin).toFixed(1) + "," + plotBottom1 + " L" + areaPts.join(" L") + " L" + x(tMax).toFixed(1) + "," + plotBottom1 + " Z";
-      svg1.appendChild(svgEl("path", { d: areaPath, fill: "var(--series-equity)", opacity: "0.10", stroke: "none" }));
+      svg1.appendChild(svgEl("path", { d: areaPath, fill: "var(" + meta.colorVar + ")", opacity: "0.10", stroke: "none" }));
       var linePath = "M" + areaPts.join(" L");
-      svg1.appendChild(svgEl("path", { d: linePath, fill: "none", stroke: "var(--series-equity)", "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      svg1.appendChild(svgEl("path", { d: linePath, fill: "none", stroke: "var(" + meta.colorVar + ")", "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
     } else {
       var d0 = data[0];
-      svg1.appendChild(svgEl("circle", { cx: x(times[0]), cy: y1(d0.equity_usd), r: 4, fill: "var(--series-equity)", stroke: "var(--surface-1)", "stroke-width": "2" }));
+      svg1.appendChild(svgEl("circle", { cx: x(times[0]), cy: y1(d0.eur), r: 4, fill: "var(" + meta.colorVar + ")", stroke: "var(--surface-1)", "stroke-width": "2" }));
     }
     var titleLabel = svgEl("text", { class: "axis-text", x: padL, y: 16 });
-    titleLabel.textContent = "Équity ($)";
+    titleLabel.textContent = "Équity (€)";
     svg1.appendChild(titleLabel);
 
-    // ---- SVG drawdown ----
-    var svg2 = svgEl("svg", { class: "chart-svg", viewBox: "0 0 " + W + " " + H2, role: "img", "aria-label": "Drawdown depuis le pic" });
+    var svg2 = svgEl("svg", { class: "chart-svg", viewBox: "0 0 " + W0 + " " + H2, role: "img", "aria-label": "Drawdown depuis le pic" });
     ddTicksInfo.ticks.forEach(function (dv) {
       if (dv < -1e-6 || dv > ddMax + 1e-6) return;
       var yy2 = y2(dv);
-      svg2.appendChild(svgEl("line", { class: "gridline", x1: padL, x2: W - padR, y1: yy2, y2: yy2 }));
+      svg2.appendChild(svgEl("line", { class: "gridline", x1: padL, x2: W0 - padR, y1: yy2, y2: yy2 }));
       var t2 = svgEl("text", { class: "axis-text", x: padL - 8, y: yy2 + 3.5, "text-anchor": "end" });
       t2.textContent = fmtPct(dv, { decimals: ddDecimals });
       svg2.appendChild(t2);
@@ -1071,20 +1630,18 @@
     titleLabel2.textContent = "Drawdown (%)";
     svg2.appendChild(titleLabel2);
 
-    // axe des X (sous le graphe du bas)
     var xTicks = Math.min(6, data.length);
     for (var k = 0; k < xTicks; k++) {
       var frac = xTicks === 1 ? 0 : k / (xTicks - 1);
       var tt = tMin + (tMax - tMin) * frac;
       var xx = x(tt);
       var lbl = svgEl("text", { class: "axis-text", x: xx, y: H2 - 8, "text-anchor": k === 0 ? "start" : (k === xTicks - 1 ? "end" : "middle") });
-      lbl.textContent = formatAxisDate(new Date(tt));
+      lbl.textContent = formatAxisDate(w, new Date(tt));
       svg2.appendChild(lbl);
     }
 
-    // ---- crosshair overlay (partagé) ----
     var crossLine1 = svgEl("line", { class: "crosshair", x1: 0, x2: 0, y1: plotTop1, y2: plotBottom1, stroke: "var(--text-muted)", "stroke-width": "1", "stroke-dasharray": "0", visibility: "hidden" });
-    var crossDot1 = svgEl("circle", { r: 4.5, fill: "var(--series-equity)", stroke: "var(--surface-1)", "stroke-width": "2", visibility: "hidden" });
+    var crossDot1 = svgEl("circle", { r: 4.5, fill: "var(" + meta.colorVar + ")", stroke: "var(--surface-1)", "stroke-width": "2", visibility: "hidden" });
     svg1.appendChild(crossLine1); svg1.appendChild(crossDot1);
     var crossLine2 = svgEl("line", { x1: 0, x2: 0, y1: plotTop2, y2: plotBottom2, stroke: "var(--text-muted)", "stroke-width": "1", visibility: "hidden" });
     var crossDot2 = svgEl("circle", { r: 4.5, fill: "var(--series-drawdown)", stroke: "var(--surface-1)", "stroke-width": "2", visibility: "hidden" });
@@ -1098,10 +1655,10 @@
 
     function nearestIndex(clientX, svgRoot) {
       var rect = svgRoot.getBoundingClientRect();
-      var relX = ((clientX - rect.left) / rect.width) * W;
+      var relX = ((clientX - rect.left) / rect.width) * W0;
       var frac = (relX - padL) / plotW;
       var t = tMin + frac * (tMax - tMin);
-      var lo = 0, hi = times.length - 1, best = 0, bestDiff = Infinity;
+      var hi = times.length - 1, best = 0, bestDiff = Infinity;
       for (var idx = 0; idx <= hi; idx++) {
         var diff = Math.abs(times[idx] - t);
         if (diff < bestDiff) { bestDiff = diff; best = idx; }
@@ -1112,15 +1669,15 @@
       var d = data[idx];
       var xx2 = x(times[idx]);
       crossLine1.setAttribute("x1", xx2); crossLine1.setAttribute("x2", xx2); crossLine1.setAttribute("visibility", "visible");
-      crossDot1.setAttribute("cx", xx2); crossDot1.setAttribute("cy", y1(d.equity_usd)); crossDot1.setAttribute("visibility", "visible");
+      crossDot1.setAttribute("cx", xx2); crossDot1.setAttribute("cy", y1(d.eur)); crossDot1.setAttribute("visibility", "visible");
       crossLine2.setAttribute("x1", xx2); crossLine2.setAttribute("x2", xx2); crossLine2.setAttribute("visibility", "visible");
       crossDot2.setAttribute("cx", xx2); crossDot2.setAttribute("cy", y2(typeof d.drawdown_pct === "number" ? d.drawdown_pct : 0)); crossDot2.setAttribute("visibility", "visible");
 
       clear(tooltip);
       tooltip.appendChild(h("div", { class: "tt-date" }, [fmtDateTime(d.ts)]));
       var rows = [
-        ["var(--series-equity)", "Équity", fmtUSD(d.equity_usd)],
-        ["var(--text-muted)", "Cash", fmtUSD(d.cash_usd)],
+        ["var(" + meta.colorVar + ")", "Équity", fmtEUR(d.eur)],
+        ["var(--text-muted)", "Cash", d.cash_eur === null ? "—" : fmtEUR(d.cash_eur)],
         ["var(--series-drawdown)", "Drawdown", fmtPct(d.drawdown_pct || 0)],
         ["var(--text-muted)", "Exposition brute", fmtPct(d.gross_exposure_pct || 0)]
       ];
@@ -1159,8 +1716,8 @@
     renderChartTable(data);
   }
 
-  function formatAxisDate(d) {
-    if (currentRange === "24h") return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: DISPLAY_TZ });
+  function formatAxisDate(w, d) {
+    if (w.ui.currentRange === "24h") return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: DISPLAY_TZ });
     return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", timeZone: DISPLAY_TZ });
   }
 
@@ -1174,8 +1731,8 @@
     var rows = data.slice().reverse().map(function (d) {
       return h("tr", {}, [
         h("td", {}, [fmtDateTime(d.ts)]),
-        h("td", {}, [fmtUSD(d.equity_usd)]),
-        h("td", {}, [fmtUSD(d.cash_usd)]),
+        h("td", {}, [fmtEUR(d.eur)]),
+        h("td", {}, [d.cash_eur === null ? "—" : fmtEUR(d.cash_eur)]),
         h("td", {}, [fmtPct(d.gross_exposure_pct || 0)]),
         h("td", {}, [fmtPct(d.drawdown_pct || 0)])
       ]);
@@ -1188,28 +1745,34 @@
   }
 
   /* =========================================================================
-     RENDU — Positions
+     RENDU — Positions (vue wallet)
      ========================================================================= */
-  function renderPositions() {
+  function renderPositions(w) {
     var box = document.getElementById("positionsWrap");
     clear(box);
-    if (positionsUnknown()) {
+    if (positionsUnknown(w)) {
       box.appendChild(h("div", { class: "empty-note" }, [
-        "Données indisponibles — échec du chargement de state.json (voir le bandeau ci-dessus). Impossible de savoir ce que détient le bot en ce moment."
+        "Données indisponibles — échec du chargement de state.json (voir le bandeau ci-dessus). Impossible de savoir ce que détient ce wallet en ce moment."
       ]));
       return;
     }
-    var positions = (app.state && app.state.positions) || {};
+    if (isPending(w)) {
+      box.appendChild(h("div", { class: "empty-note" }, [
+        "En attente du premier cycle de marché — ce wallet n'a pas encore été initialisé (aucun taux de change EUR/USD obtenu)."
+      ]));
+      return;
+    }
+    var positions = (w.data.state && w.data.state.positions) || {};
     var symbols = Object.keys(positions);
     if (!symbols.length) {
       box.appendChild(h("div", { class: "empty-note" }, [
-        "Aucune position ouverte actuellement — portefeuille 100 % cash (" + fmtUSD(app.state ? app.state.cash_usd : INITIAL_CASH) + ")."
+        "Aucune position ouverte actuellement — portefeuille 100 % cash (" + fmtUSD(w.data.state ? w.data.state.cash_usd : 0) + ")."
       ]));
       return;
     }
     var rows = symbols.map(function (sym) {
       var p = positions[sym];
-      var mark = markPriceFor(sym, p.qty);
+      var mark = markPriceFor(w, sym, p.qty);
       var pnl = mark !== null ? (mark - p.prix_moyen) * p.qty : null;
       var pnlPct = pnl !== null && p.prix_moyen ? (mark - p.prix_moyen) / p.prix_moyen : null;
       var cls = pnl === null ? "flat" : (pnl > 0 ? "good" : (pnl < 0 ? "bad" : "flat"));
@@ -1229,15 +1792,17 @@
   }
 
   /* =========================================================================
-     RENDU — Journal des trades
+     RENDU — Journal des trades (vue wallet)
      ========================================================================= */
-  function renderTrades() {
+  function renderTrades(w) {
     var box = document.getElementById("tradesWrap");
     clear(box);
-    var trades = app.trades.slice(0, 50);
+    var trades = w.data.trades.slice(0, 50);
     if (!trades.length) {
       box.appendChild(h("div", { class: "empty-note" }, [
-        "Aucun trade exécuté pour l'instant — le bot est à plat. Cette table se remplira automatiquement dès le premier fill."
+        isPending(w)
+          ? "En attente du premier cycle de marché — ce wallet n'a pas encore commencé à trader."
+          : "Aucun trade exécuté pour l'instant — le bot est à plat sur ce wallet. Cette table se remplira automatiquement dès le premier fill."
       ]));
       return;
     }
@@ -1273,12 +1838,11 @@
   }
 
   /* =========================================================================
-     RENDU — Métriques de performance
+     RENDU — Métriques de performance (vue wallet)
      ========================================================================= */
   function miniBarRow(label, value, maxAbs) {
     var pctOfMax = maxAbs > 0 ? Math.min(1, Math.abs(value) / maxAbs) * 50 : 0;
     var cls = value >= 0 ? "good" : "bad";
-    var style = value >= 0 ? ("width:" + pctOfMax + "%") : ("width:" + pctOfMax + "%");
     return h("div", { class: "mini-bar-row" }, [
       h("span", {}, [label]),
       h("span", { class: "mini-bar-track" }, [
@@ -1289,17 +1853,17 @@
     ]);
   }
 
-  function renderMetrics() {
+  function renderMetrics(w) {
     var grid = document.getElementById("metricsGrid");
     clear(grid);
 
-    var sharpe = computeSharpe();
-    var sortino = computeSortino();
-    var tm = computeTradeMetrics();
-    var mdd = maxDrawdown();
-    var expoLast = latestEquityRecord();
-    var tip = timeInPositionPct();
-    var unknownData = dataUnknown();
+    var sharpe = computeSharpe(w);
+    var sortino = computeSortino(w);
+    var tm = computeTradeMetrics(w);
+    var mdd = maxDrawdown(w);
+    var expoLast = latestEquityRecord(w);
+    var tip = timeInPositionPct(w);
+    var unknownData = dataUnknown(w) || isPending(w);
 
     function tile(label, tipText, valueNode, note, wide) {
       var t = h("div", { class: "metric-tile" + (wide ? " wide" : "") }, [
@@ -1312,7 +1876,7 @@
 
     grid.appendChild(tile("Ratio de Sharpe", "Rendement ajusté du risque : plus il est élevé, mieux le bot est rémunéré pour le risque pris. Annualisé avec √8760 (données horaires 24/7, taux sans risque = 0) — convention documentée ici, non comparable directement à un Sharpe journalier.",
       sharpe === null ? "—" : fmtNum(sharpe, 2),
-      sharpe === null ? "Historique trop court ou variance nulle" : "Annualisé ×√8760, sur " + computeReturns().length + " rendements horaires"));
+      sharpe === null ? "Historique trop court ou variance nulle" : "Annualisé ×√8760, sur " + computeReturns(w).length + " rendements horaires"));
 
     grid.appendChild(tile("Ratio de Sortino", "Comme le Sharpe, mais ne pénalise que la volatilité des baisses (pas des hausses) — souvent plus pertinent pour juger une stratégie qui suit la tendance.",
       sortino === null ? "—" : fmtNum(sortino, 2),
@@ -1330,31 +1894,27 @@
       tm.expectancy === null ? "—" : fmtUSD(tm.expectancy, { signed: true }),
       tm.n === 0 ? "Aucun trade clôturé" : "Sur " + tm.n + " trade(s) clôturé(s)"));
 
-    grid.appendChild(tile("Drawdown maximum", "Le plus grand recul observé entre un sommet d'équity et le creux suivant, sur tout l'historique enregistré.",
+    grid.appendChild(tile("Drawdown maximum", "Le plus grand recul observé entre un sommet d'équity et le creux suivant, sur tout l'historique enregistré de ce wallet.",
       unknownData ? "—" : fmtPct(mdd),
-      unknownData ? "Indisponible" : "Seuils du bot : /2 taille à 15 %, liquidation à 25 %"));
+      unknownData ? "Indisponible" : "Seuils de ce wallet : /2 taille à " + fmtPctRound(w.meta.breakers.half) + ", liquidation à " + fmtPctRound(w.meta.breakers.flatten)));
 
-    grid.appendChild(tile("Exposition brute", "Somme des valeurs absolues des positions rapportée à l'équity. 0 % = tout cash, 80 % = plafond maximal autorisé par le bot.",
+    grid.appendChild(tile("Exposition brute", "Somme des valeurs absolues des positions rapportée à l'équity. 0 % = tout cash, " + fmtPctRound(w.meta.risk.expoMax) + " = plafond maximal autorisé pour ce wallet.",
       expoLast ? fmtPct(expoLast.gross_exposure_pct || 0) : "—",
       tip === null ? "" : ("En position " + fmtPct(tip, { decimals: 0 }) + " du temps observé")));
 
-    // PnL réalisé (officiel, tenu par le grand livre du bot) vs PnL latent (positions encore ouvertes) —
-    // séparation explicite demandée : de l'argent "encaissé" (ventes clôturées) contre un gain/perte
-    // sur le papier qui peut encore changer avant d'être vendu.
-    var realizedCum = (!positionsUnknown() && app.state && typeof app.state.realized_pnl_cumulative_usd === "number")
-      ? app.state.realized_pnl_cumulative_usd : null;
-    var assetsForLatent = pnlByAsset();
-    var latentTotal = positionsUnknown() ? null : assetsForLatent.reduce(function (a, x) { return a + x.latent; }, 0);
+    var realizedCum = (!positionsUnknown(w) && !isPending(w) && w.data.state && typeof w.data.state.realized_pnl_cumulative_usd === "number")
+      ? w.data.state.realized_pnl_cumulative_usd : null;
+    var assetsForLatent = pnlByAsset(w);
+    var latentTotal = (positionsUnknown(w) || isPending(w)) ? null : assetsForLatent.reduce(function (a, x) { return a + x.latent; }, 0);
 
-    grid.appendChild(tile("PnL réalisé cumulé", "Gain ou perte définitivement encaissé sur les ventes déjà clôturées, tenu par le grand livre (ledger) du bot lui-même — la valeur officielle de state.json, pas un recalcul. Ne change plus une fois la vente faite.",
+    grid.appendChild(tile("PnL réalisé cumulé", "Gain ou perte définitivement encaissé sur les ventes déjà clôturées de ce wallet, tenu par le grand livre (ledger) du bot lui-même — la valeur officielle de state.json, pas un recalcul. En dollars (comptabilité interne du wallet). Ne change plus une fois la vente faite.",
       realizedCum === null ? "—" : h("span", { class: "num " + (realizedCum > 0 ? "good" : realizedCum < 0 ? "bad" : "flat") }, [fmtUSD(realizedCum, { signed: true })]),
       realizedCum === null ? "Indisponible" : "Depuis le tout premier trade clôturé (realized_pnl_cumulative_usd)"));
 
-    grid.appendChild(tile("PnL latent (positions ouvertes)", "Gain ou perte « sur le papier » des positions encore détenues, au prix actuel implicite. Ce n'est PAS de l'argent encaissé — ça peut encore monter ou redescendre avant la vente.",
+    grid.appendChild(tile("PnL latent (positions ouvertes)", "Gain ou perte « sur le papier » des positions encore détenues, au prix actuel implicite, en dollars. Ce n'est PAS de l'argent encaissé — ça peut encore monter ou redescendre avant la vente.",
       latentTotal === null ? "—" : h("span", { class: "num " + (latentTotal > 0 ? "good" : latentTotal < 0 ? "bad" : "flat") }, [fmtUSD(latentTotal, { signed: true })]),
-      latentTotal === null ? "Indisponible" : ((app.state && app.state.positions && Object.keys(app.state.positions).length) ? "Sur " + Object.keys(app.state.positions).length + " position(s) ouverte(s)" : "Aucune position ouverte")));
+      latentTotal === null ? "Indisponible" : ((w.data.state && w.data.state.positions && Object.keys(w.data.state.positions).length) ? "Sur " + Object.keys(w.data.state.positions).length + " position(s) ouverte(s)" : "Aucune position ouverte")));
 
-    // PnL par actif
     var assets = assetsForLatent;
     var assetBody;
     if (!assets.length) {
@@ -1364,13 +1924,12 @@
       assetBody = h("div", { class: "mini-bars" }, assets.slice(0, 8).map(function (a) { return miniBarRow(a.symbol, a.total, maxAbsA); }));
     }
     var tileAsset = h("div", { class: "metric-tile wide" }, [
-      h("div", { class: "m-label" }, ["PnL par actif", h("span", { class: "info-tip", tabindex: "0", "data-tip": "PnL réalisé (trades clôturés) + PnL latent (positions encore ouvertes), par symbole." }, ["i"])]),
+      h("div", { class: "m-label" }, ["PnL par actif", h("span", { class: "info-tip", tabindex: "0", "data-tip": "PnL réalisé (trades clôturés) + PnL latent (positions encore ouvertes), par symbole, en dollars." }, ["i"])]),
       assetBody
     ]);
     grid.appendChild(tileAsset);
 
-    // PnL par stratégie
-    var strats = pnlByStrategy();
+    var strats = pnlByStrategy(w);
     var stratBody;
     if (!strats.length) {
       stratBody = h("div", { class: "m-note" }, ["Aucun trade clôturé pour l'instant."]);
@@ -1379,24 +1938,23 @@
       stratBody = h("div", { class: "mini-bars" }, strats.map(function (s) { return miniBarRow(STRATEGY_LABELS[s.strategy] || s.strategy, s.pnl, maxAbsS); }));
     }
     var tileStrat = h("div", { class: "metric-tile wide" }, [
-      h("div", { class: "m-label" }, ["PnL par stratégie", h("span", { class: "info-tip", tabindex: "0", "data-tip": "PnL réalisé uniquement (ventes clôturées), groupé par stratégie ayant généré l'ordre. N'inclut pas le PnL latent des positions encore ouvertes." }, ["i"])]),
+      h("div", { class: "m-label" }, ["PnL par stratégie", h("span", { class: "info-tip", tabindex: "0", "data-tip": "PnL réalisé uniquement (ventes clôturées), groupé par stratégie ayant généré l'ordre, en dollars. N'inclut pas le PnL latent des positions encore ouvertes." }, ["i"])]),
       stratBody
     ]);
     grid.appendChild(tileStrat);
   }
 
   /* =========================================================================
-     RENDU — Décisions
+     RENDU — Décisions (vue wallet)
      ========================================================================= */
-  function groupDecisionsByRun() {
+  function groupDecisionsByRun(w) {
     var byRun = {};
     var order = [];
-    app.decisions.forEach(function (d) {
+    w.data.decisions.forEach(function (d) {
       var key = d.run_id || d.ts;
       if (!byRun[key]) { byRun[key] = []; order.push(key); }
       byRun[key].push(d);
     });
-    // order[] déjà décroissant car app.decisions est trié desc et on pousse à la première rencontre
     return order.map(function (k) { return { run_id: k, items: byRun[k] }; });
   }
 
@@ -1412,16 +1970,18 @@
     return "Pas de trade";
   }
 
-  function renderDecisions() {
+  function renderDecisions(w) {
     var wrap = document.getElementById("decisionsWrap");
     var more = document.getElementById("decisionsMore");
     clear(wrap); clear(more);
-    var groups = groupDecisionsByRun();
+    var groups = groupDecisionsByRun(w);
     if (!groups.length) {
-      wrap.appendChild(h("div", { class: "empty-note" }, ["Aucune décision journalisée pour l'instant."]));
+      wrap.appendChild(h("div", { class: "empty-note" }, [
+        isPending(w) ? "En attente du premier cycle de marché pour ce wallet." : "Aucune décision journalisée pour l'instant."
+      ]));
       return;
     }
-    var shown = groups.slice(0, app.decisionsShown);
+    var shown = groups.slice(0, w.ui.decisionsShown);
     shown.forEach(function (g, gi) {
       var counts = { trade: 0, notrade: 0, dataissue: 0 };
       g.items.forEach(function (d) { counts[decisionTone(d)]++; });
@@ -1460,10 +2020,61 @@
       });
       wrap.appendChild(details);
     });
-    if (groups.length > app.decisionsShown) {
-      more.appendChild(h("button", { class: "subtle-btn" }, ["Afficher plus de cycles (" + (groups.length - app.decisionsShown) + " restants)"]));
-      more.lastChild.addEventListener("click", function () { app.decisionsShown += DECISIONS_RUNS_PAGE; renderDecisions(); });
+    if (groups.length > w.ui.decisionsShown) {
+      more.appendChild(h("button", { class: "subtle-btn" }, ["Afficher plus de cycles (" + (groups.length - w.ui.decisionsShown) + " restants)"]));
+      more.lastChild.addEventListener("click", function () { w.ui.decisionsShown += DECISIONS_RUNS_PAGE; renderDecisions(w); });
     }
+  }
+
+  /* =========================================================================
+     ROUTAGE
+     ========================================================================= */
+  function parseRoute() {
+    var hh = location.hash || "";
+    var m = hh.match(/^#\/wallet\/([a-z]+)/);
+    if (m && WALLET_META[m[1]]) return { view: "wallet", id: m[1] };
+    return { view: "overview", id: null };
+  }
+
+  function renderOverviewView() {
+    renderGlobalAlerts();
+    renderWalletCards();
+    renderCompareChart();
+  }
+
+  function renderWalletView(id) {
+    var w = W[id];
+    renderWalletTabs(id);
+    renderProfileCard(w);
+    renderWalletAlerts(w);
+    renderKpis(w);
+    document.querySelectorAll(".range-controls button[data-range]").forEach(function (b) {
+      b.setAttribute("aria-pressed", b.getAttribute("data-range") === w.ui.currentRange ? "true" : "false");
+    });
+    renderCharts(w);
+    renderPositions(w);
+    renderTrades(w);
+    renderMetrics(w);
+    renderDecisions(w);
+    var tblBtn = document.getElementById("btnTableToggle");
+    tblBtn.setAttribute("aria-pressed", w.ui.tableViewOn ? "true" : "false");
+    tblBtn.textContent = w.ui.tableViewOn ? "Voir le graphique" : "Voir en tableau";
+    document.getElementById("chartsWrap").hidden = w.ui.tableViewOn;
+    document.getElementById("chartTableWrap").hidden = !w.ui.tableViewOn;
+  }
+
+  function renderRoute() {
+    route = parseRoute();
+    var ov = document.getElementById("viewOverview");
+    var wv = document.getElementById("viewWallet");
+    if (route.view === "wallet") {
+      ov.hidden = true; wv.hidden = false;
+      renderWalletView(route.id);
+    } else {
+      ov.hidden = false; wv.hidden = true;
+      renderOverviewView();
+    }
+    window.scrollTo(0, 0);
   }
 
   /* =========================================================================
@@ -1471,28 +2082,36 @@
      ========================================================================= */
   function renderAll() {
     renderHeaderStatus();
-    renderAlerts();
-    renderKpis();
-    renderCharts();
-    renderPositions();
-    renderTrades();
-    renderMetrics();
-    renderDecisions();
+    renderRoute();
   }
+
+  window.addEventListener("hashchange", renderRoute);
 
   document.querySelectorAll(".range-controls button[data-range]").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      currentRange = btn.getAttribute("data-range");
+      if (route.view !== "wallet") return;
+      var w = W[route.id];
+      w.ui.currentRange = btn.getAttribute("data-range");
       document.querySelectorAll(".range-controls button[data-range]").forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
-      renderCharts();
+      renderCharts(w);
     });
   });
   document.getElementById("btnTableToggle").addEventListener("click", function () {
-    tableViewOn = !tableViewOn;
-    this.setAttribute("aria-pressed", tableViewOn ? "true" : "false");
-    this.textContent = tableViewOn ? "Voir le graphique" : "Voir en tableau";
-    document.getElementById("chartsWrap").parentElement.querySelector("#chartsWrap").hidden = tableViewOn;
-    document.getElementById("chartTableWrap").hidden = !tableViewOn;
+    if (route.view !== "wallet") return;
+    var w = W[route.id];
+    w.ui.tableViewOn = !w.ui.tableViewOn;
+    this.setAttribute("aria-pressed", w.ui.tableViewOn ? "true" : "false");
+    this.textContent = w.ui.tableViewOn ? "Voir le graphique" : "Voir en tableau";
+    document.getElementById("chartsWrap").hidden = w.ui.tableViewOn;
+    document.getElementById("chartTableWrap").hidden = !w.ui.tableViewOn;
+  });
+  var compareTableOn = false;
+  document.getElementById("btnCompareTableToggle").addEventListener("click", function () {
+    compareTableOn = !compareTableOn;
+    this.setAttribute("aria-pressed", compareTableOn ? "true" : "false");
+    this.textContent = compareTableOn ? "Voir le graphique" : "Voir en tableau";
+    document.getElementById("compareChartWrap").hidden = compareTableOn;
+    document.getElementById("compareTableWrap").hidden = !compareTableOn;
   });
   document.getElementById("btnRefresh").addEventListener("click", function () { loadAll(); });
 
