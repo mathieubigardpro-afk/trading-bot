@@ -83,6 +83,7 @@ class ExchangeSim:
         qty_steps: Optional[Dict[str, float]] = None,
         fee_taker_bps_by_symbol: Optional[Dict[str, float]] = None,
         slippage_penalty_bps_by_symbol: Optional[Dict[str, float]] = None,
+        max_quote_age_seconds_by_symbol: Optional[Dict[str, float]] = None,
     ):
         if fee_taker_bps < 0 or slippage_penalty_bps < 0:
             raise ValueError("fee_taker_bps et slippage_penalty_bps doivent être >= 0")
@@ -90,6 +91,12 @@ class ExchangeSim:
         self.slippage_penalty_bps = float(slippage_penalty_bps)
         self.max_quote_age_seconds = float(max_quote_age_seconds)
         self.min_notional_usd = float(min_notional_usd)
+        # Seuil de fraîcheur À L'EXÉCUTION, par symbole — permet un seuil actions/ETF plus large
+        # (quotes Yahoo gratuites structurellement différées ~15-20 min) sans toucher au défaut
+        # `max_quote_age_seconds` (crypto, temps réel, INCHANGÉ). Symbole absent -> défaut ci-dessus.
+        self.max_quote_age_seconds_by_symbol: Dict[str, float] = dict(
+            max_quote_age_seconds_by_symbol or {}
+        )
         self.qty_steps: Dict[str, float] = dict(DEFAULT_QTY_STEPS)
         if qty_steps:
             self.qty_steps.update(qty_steps)
@@ -103,6 +110,9 @@ class ExchangeSim:
 
     def step_for(self, symbol: str) -> float:
         return self.qty_steps.get(symbol, DEFAULT_UNKNOWN_SYMBOL_STEP)
+
+    def max_quote_age_seconds_for(self, symbol: str) -> float:
+        return float(self.max_quote_age_seconds_by_symbol.get(symbol, self.max_quote_age_seconds))
 
     def fee_taker_bps_for(self, symbol: str) -> float:
         return float(self.fee_taker_bps_by_symbol.get(symbol, self.fee_taker_bps))
@@ -127,6 +137,7 @@ class ExchangeSim:
 
         quote_source = getattr(quote, "source", None) if quote is not None else None
         quote_ts = getattr(quote, "ts", None) if quote is not None else None
+        quote_delayed = bool(getattr(quote, "delayed", False)) if quote is not None else False
 
         def reject(reason: str) -> Reject:
             return Reject(
@@ -138,6 +149,7 @@ class ExchangeSim:
                 reason=reason,
                 quote_source=quote_source,
                 quote_ts=quote_ts,
+                quote_delayed=quote_delayed,
             )
 
         if side_u not in ("BUY", "SELL"):
@@ -161,9 +173,10 @@ class ExchangeSim:
         except Exception as exc:  # noqa: BLE001 — on transforme toute erreur de parsing en rejet
             return reject(f"horodatage de quote illisible ({quote.ts!r}): {exc}")
 
-        if age_seconds > self.max_quote_age_seconds:
+        max_age_for_symbol = self.max_quote_age_seconds_for(symbol)
+        if age_seconds > max_age_for_symbol:
             return reject(
-                f"quote périmée ({age_seconds:.1f}s > seuil {self.max_quote_age_seconds:.0f}s)"
+                f"quote périmée ({age_seconds:.1f}s > seuil {max_age_for_symbol:.0f}s)"
             )
         if age_seconds < -5.0:
             # tolérance légère au décalage d'horloge ; au-delà, quote incohérente/dans le futur
@@ -210,4 +223,5 @@ class ExchangeSim:
             slippage_usd=slippage_usd,
             quote_source=quote_source,
             quote_ts=quote_ts,
+            quote_delayed=quote_delayed,
         )

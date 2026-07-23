@@ -20,6 +20,7 @@ class Quote:
     mid: float
     ts: str        # ISO8601 UTC, horodatage côté source
     source: str     # "binance" | "coinbase" | "yahoo" | "yahoo_synthetic_spread" | ...
+    delayed: bool = False  # cf. bot/feeds/types.py:Quote.delayed — propagé jusqu'au Fill/Reject
 
 
 @dataclass
@@ -41,6 +42,7 @@ class Fill:
     quote_source: str
     quote_ts: str
     realized_pnl_usd: Optional[float] = None   # renseigné uniquement pour SELL (par le Ledger)
+    quote_delayed: bool = False   # cf. bot/feeds/types.py:Quote.delayed — écart vs prix "idéal"
 
     @property
     def slippage_bps_implicit(self) -> float:
@@ -63,3 +65,4 @@ class Reject:
     reason: str
     quote_source: Optional[str] = None
     quote_ts: Optional[str] = None
+    quote_delayed: bool = False   # cf. bot/feeds/types.py:Quote.delayed

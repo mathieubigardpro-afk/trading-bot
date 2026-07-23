@@ -9,6 +9,7 @@ si `EQUITY_SYNTHETIC_SPREAD_ENABLED` est explicitement activé dans
 
 from __future__ import annotations
 
+import dataclasses
 import datetime as _dt
 import logging
 
@@ -22,6 +23,17 @@ logger = logging.getLogger(__name__)
 
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+
+# Symboles internes (`bot.config.EQUITIES_SP100_UNIVERSE`) dont le ticker Yahoo diffère du
+# symbole interne — sans cette table, Yahoo ne reconnaît pas le symbole interne et le
+# renvoie absent de `quoteResponse.result` (échec silencieux, systématique, pour CE
+# symbole uniquement). Même correctif déjà appliqué côté historique journalier, cf.
+# `bot/feeds/daily.py:YFINANCE_TICKER_OVERRIDES`/`STOOQ_TICKER_OVERRIDES` — resynchronisé ici.
+_YAHOO_TICKER_OVERRIDES = {"BRK.B": "BRK-B"}
+
+
+def _yahoo_ticker_for(symbol: str) -> str:
+    return _YAHOO_TICKER_OVERRIDES.get(symbol, symbol)
 
 _HTTP_TIMEOUT_SECONDS = 10
 # Yahoo renvoie des erreurs (401/999) sans User-Agent de navigateur plausible.
@@ -108,12 +120,18 @@ def get_prices_equity(symbols: list[str]) -> dict[str, Quote | None]:
         return {}
 
     max_age = cfg.STALENESS_MAX_SECONDS_EQUITY
+    # Seuil "temps réel plausible" (cf. bot/config.py) : au-delà, la quote actions/ETF est
+    # tout de même utilisée (dans la limite de `max_age` ci-dessus) mais marquée `delayed=True`
+    # — jamais rejetée silencieusement, jamais présentée comme temps réel. Repli 300s si absent
+    # de `cfg` (compat tests qui construisent un `cfg` minimal).
+    realtime_threshold = getattr(cfg, "EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS", 300)
     result: dict[str, Quote | None] = {sym: None for sym in symbols}
 
+    query_symbols = [_yahoo_ticker_for(sym) for sym in symbols]
     try:
         resp = _session.get(
             YAHOO_QUOTE_URL,
-            params={"symbols": ",".join(symbols)},
+            params={"symbols": ",".join(query_symbols)},
             timeout=_HTTP_TIMEOUT_SECONDS,
         )
         resp.raise_for_status()
@@ -125,7 +143,7 @@ def get_prices_equity(symbols: list[str]) -> dict[str, Quote | None]:
 
     by_symbol = {row.get("symbol"): row for row in rows if isinstance(row, dict)}
     for sym in symbols:
-        row = by_symbol.get(sym)
+        row = by_symbol.get(_yahoo_ticker_for(sym))
         if row is None:
             logger.warning("yahoo v7 quote: pas de résultat pour %s", sym)
             continue
@@ -135,6 +153,16 @@ def get_prices_equity(symbols: list[str]) -> dict[str, Quote | None]:
             if not _quote_is_fresh(quote_ts, max_age):
                 logger.warning("yahoo quote périmée pour %s", sym)
                 quote = None
+            else:
+                age_seconds = (_now_utc() - quote_ts).total_seconds()
+                if age_seconds > realtime_threshold:
+                    logger.info(
+                        "yahoo quote différée pour %s (%.0fs, seuil temps réel %.0fs) — "
+                        "utilisée quand même (seuil de fraîcheur actions/ETF %.0fs), "
+                        "marquée delayed=true",
+                        sym, age_seconds, realtime_threshold, max_age,
+                    )
+                    quote = dataclasses.replace(quote, delayed=True)
         result[sym] = quote
 
     return result
@@ -146,7 +174,7 @@ def get_history_equity(symbol: str, n_hours: int) -> pd.DataFrame:
     `HistoryUnavailableError` si moins de `n_hours` bougies valides ne sont
     obtenues (aucun fallback alternatif prévu par l'architecture pour les
     actions)."""
-    url = YAHOO_CHART_URL.format(symbol=symbol)
+    url = YAHOO_CHART_URL.format(symbol=_yahoo_ticker_for(symbol))
     try:
         resp = _session.get(
             url,

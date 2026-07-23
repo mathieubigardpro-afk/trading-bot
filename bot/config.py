@@ -51,11 +51,53 @@ SLIPPAGE_PENALTY_BPS = 5    # 0.05%, appliqué contre le sens de l'ordre, en plu
 # notional inférieur à quelques dollars de toute façon) tout en restant praticable aux
 # montants réels de ce produit. Documenté explicitement — décision assumée, pas un oubli.
 MIN_NOTIONAL_USD = 5.0
-MAX_QUOTE_AGE_SECONDS = 120.0  # âge maximum d'une quote pour être utilisée par ExchangeSim
+MAX_QUOTE_AGE_SECONDS = 120.0  # âge maximum d'une quote pour être utilisée par ExchangeSim (crypto,
+# défaut générique — INCHANGÉ, cf. correctif incident production ci-dessous). Les actions/ETF
+# utilisent `MAX_QUOTE_AGE_SECONDS_EQUITY` à la place (par-symbole, cf. bot/runner.py:
+# `_exchange_for_wallet`, défini plus bas une fois `STALENESS_MAX_SECONDS_EQUITY` connu) : sans
+# ce seuil dédié, une quote actions/ETF acceptée côté feeds (STALENESS_MAX_SECONDS_EQUITY=1500s)
+# serait quand même rejetée à l'EXÉCUTION par ce seuil-ci (120s), ce qui aurait rendu le
+# correctif ci-dessous inopérant en pratique.
 
 # --- Fraîcheur des prix (feeds — distinct de MAX_QUOTE_AGE_SECONDS ci-dessus utilisé par ExchangeSim) ---
-STALENESS_MAX_SECONDS_CRYPTO = 300   # 5 min
-STALENESS_MAX_SECONDS_EQUITY = 300   # 5 min (pendant heures de marché uniquement)
+STALENESS_MAX_SECONDS_CRYPTO = 300   # 5 min — Binance/Coinbase sont réellement temps réel, INCHANGÉ.
+
+# --- CORRECTIF INCIDENT PRODUCTION (2026-07-23T18/T19, marché NYSE ouvert 15h07 ET) ---
+# Diagnostic confirmé par les journaux commités (state/wallets/*/decisions.jsonl) : les 103
+# actions + 9 ETF des 3 wallets ont eu `quote_available=false` à 100% aux DEUX cycles, alors
+# que le marché était ouvert et que la poche crypto (Binance/Coinbase, seuil 300s) a tradé
+# normalement au même moment — écartant un bug de parsing/timezone générique (le même code de
+# fraîcheur fonctionne pour la crypto) et une panne de source pure et simple (aucun code
+# d'erreur HTTP observable dans les journaux, taux d'échec parfaitement uniforme sur TOUT le
+# panel, y compris les titres les plus liquides comme AAPL, cycle après cycle).
+# Cause structurelle : `bot/feeds/equities.py` interroge Yahoo Finance GRATUIT (aucune clé
+# API, aucun abonnement) — le NBBO bid/ask de ce flux est soumis aux accords d'affichage
+# différé imposés aux non-abonnés (SIP "non-professional/display-only"), qui retardent les
+# actions NYSE/NASDAQ d'environ 15-20 minutes. L'ancien seuil `STALENESS_MAX_SECONDS_EQUITY`
+# (300s = 5 min, recopié tel quel du calibrage crypto lors de l'intégration §11
+# ARCHITECTURE.md) était donc STRUCTURELLEMENT inatteignable pour cette source gratuite en
+# conditions réelles de marché ouvert — chaque quote, aussi "fraîche" soit-elle du point de vue
+# de Yahoo, arrivait déjà périmée au sens de ce seuil. `docs/ARCHITECTURE.md` §8 signalait déjà
+# cette hypothèse comme jamais mesurée empiriquement ; c'est désormais chose faite.
+# Décision assumée (documentée ARCHITECTURE.md §5.1 et §12) : les stratégies actions/ETF
+# câblées ici (xs_momentum_sp100, dual_momentum_etf) sont MENSUELLES — trader sur un prix
+# différé de 15-20 min est méthodologiquement praticable pour ce produit (écart de l'ordre de
+# quelques dixièmes de %, négligeable face à un horizon mensuel). Le seuil crypto ci-dessus
+# (300s côté feeds) et `MAX_QUOTE_AGE_SECONDS` (120s côté ExchangeSim, cf. plus bas) NE
+# BOUGENT PAS : la poche crypto tourne en cycle horaire actif sur un flux réellement temps réel.
+STALENESS_MAX_SECONDS_EQUITY = 1500   # 25 min (pendant heures de marché uniquement)
+# En-deçà de ce seuil, une quote actions/ETF plus vieille que
+# EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS est tout de même utilisée mais journalisée
+# honnêtement comme `delayed=true` (cf. bot/feeds/types.py:Quote.delayed) — jamais présentée en
+# journal comme un prix temps réel alors qu'elle ne l'est pas. Réutilise le seuil crypto (300s)
+# comme frontière "temps réel plausible / clairement différé" : sous 300s, la quote actions
+# pourrait légitimement être quasi temps réel (marché calme, Yahoo parfois plus rapide que le
+# délai réglementaire théorique) ; au-delà, on l'assume différée par construction.
+EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS = STALENESS_MAX_SECONDS_CRYPTO  # 300 s
+# Seuil de fraîcheur À L'EXÉCUTION (ExchangeSim) pour les actions/ETF — distinct de
+# MAX_QUOTE_AGE_SECONDS (120s, crypto, INCHANGÉ ci-dessus) ; aligné sur STALENESS_MAX_SECONDS_EQUITY
+# pour ne jamais rejeter à l'exécution une quote déjà acceptée côté feeds.
+MAX_QUOTE_AGE_SECONDS_EQUITY = STALENESS_MAX_SECONDS_EQUITY  # 1500 s (25 min)
 
 # --- FX EUR/USD (nouveau, multi-wallets) ---
 # Deux sources gratuites sans clé, testables depuis des runners GitHub Actions ; fallback

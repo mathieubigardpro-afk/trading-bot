@@ -398,7 +398,15 @@ def get_history(symbol: str, n_hours: int) -> pd.DataFrame:
   no-trade strict par défaut (poser `EQUITY_SYNTHETIC_SPREAD_ENABLED = False` dans `config.py`).
   `get_history` utilise
   `GET https://query1.finance.yahoo.com/v8/finance/chart/<SYM>?interval=1h&range=730d` (bornage
-  Yahoo ~2 ans en horaire), même règle d'exclusion de la dernière bougie.
+  Yahoo ~2 ans en horaire), même règle d'exclusion de la dernière bougie. Le symbole interne
+  `"BRK.B"` (S&P100) est mappé vers le ticker Yahoo réel `"BRK-B"`
+  (`_YAHOO_TICKER_OVERRIDES`) avant toute requête — sans ce mapping, Yahoo ne reconnaît pas
+  `"BRK.B"` et le renvoie systématiquement absent de la réponse (cf. §12, correctif secondaire).
+  **Fraîcheur (`STALENESS_MAX_SECONDS_EQUITY`, 25 min depuis le correctif §12) :** au-delà du
+  seuil "temps réel plausible" (`EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS`, 300s) mais en-deçà du
+  seuil de fraîcheur, la quote est quand même utilisée mais marquée `delayed=True`
+  (`bot.feeds.types.Quote.delayed`), propagée jusqu'à `decisions.jsonl`/`trades.jsonl`
+  (`quote_delayed`) — jamais présentée comme temps réel alors qu'elle ne l'est pas.
 - `bot/feeds/calendar.py` :
 
 ```python
@@ -690,6 +698,13 @@ def combine_strategies(
   à revoir une fois des statistiques de backtest walk-forward disponibles.
 - `EQUITY_SYNTHETIC_SPREAD_ENABLED` : décision à trancher après mesure empirique de la
   disponibilité réelle des champs bid/ask Yahoo Finance en conditions de marché ouvert.
+  L'incident production 2026-07-23T18/T19 (cf. §12) apporte un début de réponse au seuil de
+  fraîcheur (cause racine la plus probable, corrigée), mais PAS à cette question précise : les
+  journaux commités ne permettent pas de distinguer, pour une quote rejetée, "bid/ask absent"
+  de "bid/ask présent mais trop vieux" (les deux aboutissent au même `quote_available: false`,
+  `quote_ts: null` en décision — cf. §12, limite de journalisation identifiée). Si le prochain
+  cycle en conditions réelles montre encore des rejets côté bid/ask malgré le correctif de
+  fraîcheur, `EQUITY_SYNTHETIC_SPREAD_ENABLED` reste l'option de repli à activer explicitement.
 - Panel exact des megacaps actions (`SYMBOLS_EQUITY`) proposé ici à titre de valeur par défaut,
   modifiable dans `bot/config.py` sans impact sur le reste de l'architecture.
 
@@ -1130,3 +1145,111 @@ ordre actions/ETF hors séance régulière NYSE (marché fermé simulé un week-
 NO_TRADE` partout sur ces classes, positions conservées, crypto continue de trader), et la poche
 crypto quasi-passive achète bien BTC quand son historique mocké le place au-dessus de sa SMA200
 journalière.
+
+---
+
+## 12. Addendum — incident production poches actions/ETF gelées (2026-07-23T18/T19)
+
+### 12.1 Symptôme
+
+Cycles `2026-07-23T18` et `2026-07-23T19` (marché NYSE confirmé OUVERT, 15h07 ET) : les 103
+actions (`xs_momentum_sp100`) et 9 ETF (`dual_momentum_etf`) des 3 wallets ont TOUS reçu
+`decision=NO_TRADE`, `quote_available=false`, `quote_age_seconds=null`, raison "prix
+indisponible/périmé ce cycle" — taux d'échec de 100%, uniforme sur tout le panel (y compris les
+titres les plus liquides, AAPL en tête), aux deux cycles consécutifs, sur les 3 wallets. La poche
+crypto (Binance/Coinbase) a, au même moment, tradé normalement (BUY/SELL XLM, cf. §12.4).
+
+### 12.2 Diagnostic
+
+Cause racine confirmée par les journaux commités + la config : `bot.feeds.equities` interroge
+Yahoo Finance **gratuit** (aucune clé API, aucun abonnement). Le NBBO bid/ask de ce flux est
+soumis aux accords d'affichage différé réservés aux non-abonnés (SIP "non-professional/
+display-only"), qui retardent les actions NYSE/NASDAQ d'environ 15-20 minutes. L'ancien seuil
+`STALENESS_MAX_SECONDS_EQUITY` (300s = 5 min, recopié tel quel du calibrage crypto lors de
+l'intégration §11) était donc structurellement inatteignable pour cette source gratuite en
+conditions réelles de marché ouvert : chaque quote, aussi "fraîche" soit-elle vue de Yahoo,
+arrivait déjà périmée au sens de ce seuil — ce qui explique un taux d'échec de 100% parfaitement
+uniforme (un problème de rate limiting ou de panne réseau intermittente aurait, lui, produit un
+taux d'échec partiel/irrégulier selon le symbole/le cycle). §8 signalait déjà cette hypothèse
+comme jamais mesurée empiriquement (`EQUITY_SYNTHETIC_SPREAD_ENABLED`) ; l'incident production en
+apporte la première mesure réelle.
+
+**Limite de journalisation identifiée en creux** : `decisions.jsonl` ne permet PAS de distinguer,
+pour une quote rejetée, "requête Yahoo en échec total", "bid/ask absent/invalide" et "bid/ask
+valide mais quote trop vieille" — les trois aboutissent au même `quote_available: false,
+quote_ts: null` (`bot/feeds/equities.py` réinitialise la quote à `None` avant de la retourner à
+l'appelant dans les trois cas). Le diagnostic ci-dessus s'appuie donc sur l'uniformité et la
+config plutôt que sur un code d'erreur explicite — non contredit par les faits disponibles, mais
+pas prouvé par un accès réseau réel (bloqué dans l'environnement d'investigation, cf. §0.2/§0.3).
+
+Bug secondaire identifié et corrigé au passage (indépendant de la cause racine, n'affecte qu'1
+symbole sur 112) : le symbole interne `"BRK.B"` n'était jamais mappé vers le ticker Yahoo réel
+`"BRK-B"` côté `bot/feeds/equities.py` (contrairement à `bot/feeds/daily.py`, qui avait déjà ce
+mapping pour yfinance/stooq) — Yahoo renvoyait donc systématiquement "pas de résultat" pour ce
+symbole, quel que soit le seuil de fraîcheur.
+
+### 12.3 Correctif
+
+Décision assumée : les stratégies actions/ETF câblées (`xs_momentum_sp100`, `dual_momentum_etf`)
+sont **mensuelles** (rebalancement une fois par mois, cf. leurs docstrings) — trader sur un prix
+Yahoo différé de 15-20 min est méthodologiquement praticable pour ce produit (écart de l'ordre de
+quelques dixièmes de %, négligeable face à un horizon mensuel).
+
+- `bot.config.STALENESS_MAX_SECONDS_EQUITY` : `300s` (5 min) -> `1500s` (25 min), avec
+  `EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS = 300s` comme frontière "temps réel plausible /
+  clairement différé" pour le marquage honnête ci-dessous.
+- `bot.feeds.types.Quote` (et son duplicata duck-typé `bot.sim.fills.Quote`) gagnent un champ
+  `delayed: bool = False`. `bot.feeds.equities.get_prices_equity` le positionne à `True` dès que
+  l'âge de la quote dépasse `EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS` (tout en restant sous
+  `STALENESS_MAX_SECONDS_EQUITY`) — jamais pour la crypto (Binance/Coinbase, temps réel).
+- **Second verrou identifié et corrigé** : `bot.sim.exchange.ExchangeSim` applique, À
+  L'EXÉCUTION, un seuil de fraîcheur INDÉPENDANT de celui des feeds
+  (`config.MAX_QUOTE_AGE_SECONDS`, 120s, câblé uniformément pour tous les symboles par
+  `bot.runner._exchange_for_wallet` avant ce correctif). Sans intervention, ce second seuil
+  aurait continué à rejeter, À L'EXÉCUTION, toute quote actions/ETF différée pourtant acceptée
+  côté feeds — rendant le correctif ci-dessus inopérant en pratique. `ExchangeSim` accepte
+  désormais `max_quote_age_seconds_by_symbol` (override par symbole) ;
+  `bot.runner._exchange_for_wallet` y câble `config.MAX_QUOTE_AGE_SECONDS_EQUITY` (=
+  `STALENESS_MAX_SECONDS_EQUITY`, 1500s) pour tout `config.SYMBOLS_EQUITY`. Le seuil crypto par
+  défaut (`MAX_QUOTE_AGE_SECONDS = 120s`) **ne bouge pas**.
+  `Fill`/`Reject` gagnent un champ `quote_delayed: bool = False`, propagé jusqu'à
+  `trades.jsonl`, et `decisions.jsonl` gagne un champ `quote_delayed` — l'écart potentiel vs un
+  prix "idéal" instantané reste ainsi visible et honnête en journal, jamais dissimulé.
+- Correctif secondaire : `bot/feeds/equities.py` mappe désormais `"BRK.B"` -> `"BRK-B"`
+  (`_YAHOO_TICKER_OVERRIDES`) avant toute requête Yahoo (`get_prices_equity` ET
+  `get_history_equity`), symétrique au mapping déjà présent dans `bot/feeds/daily.py`.
+
+Non modifié, sur instruction explicite : `STALENESS_MAX_SECONDS_CRYPTO` (300s) et
+`MAX_QUOTE_AGE_SECONDS` (120s, défaut crypto). Non tranché par ce correctif :
+`EQUITY_SYNTHETIC_SPREAD_ENABLED` (cf. §8).
+
+Tests : `bot/tests/test_equities.py` (reproduit le symptôme sous l'ancien seuil 300s, valide
+l'acceptation + marquage `delayed` sous le nouveau seuil 1500s, valide le rejet au-delà de 25
+min, valide le mapping `BRK.B`), `bot/tests/test_exchange.py` (reproduit le second verrou
+d'exécution à 120s, valide l'override par symbole, la propagation de `quote_delayed`, et le
+câblage réel `bot.runner._exchange_for_wallet`).
+
+### 12.4 Point noté pour supervision (non corrigé, hors périmètre de ce correctif) — aller-retour XLM T18/T19 (wallet agressif)
+
+`XLM` acheté au cycle T18 (`quasi_passif_crypto` signal 0.3, poids cible 18%, tendance SMA200
+"on", vol de panier calculable) puis intégralement revendu au cycle T19 suivant (poids cible
+retombé à 0%), soit un aller-retour en 1h avec double frais (`state/wallets/agressif/
+trades.jsonl`). Cause exacte identifiée dans `decisions.jsonl` : à T19, SEULS `XLM` et `XRP`
+(parmi les 12 cryptos de l'univers agressif) portent la mention "historique horaire clôturé
+insuffisant/indisponible — signal non calculable ce cycle" — càd que
+`bot.feeds.get_history_crypto("XLM", ...)` a échoué à fournir assez de bougies horaires
+clôturées CE cycle précis (Binance primaire / Coinbase fallback, panne transitoire d'un seul
+cycle). Les autres cryptos de l'univers (BTC, ETH, SOL, BNB, HBAR, ICP, UNI...) gardent des
+signaux non nuls normaux ce même cycle (ex. UNI signal 0.3 inchangé) — ce n'est donc PAS un
+échec de calcul de vol du panier entier (qui aurait mis tout le monde à 0 simultanément), ni un
+franchissement réel de la SMA200, ni du bruit de marché autour de la moyenne mobile : c'est
+`bot.strategies.quasi_passif_crypto._is_trend_on()` qui, recevant un historique vide/insuffisant
+pour XLM CE cycle (`_daily_closes(history.get("XLM"))` vide), retourne `None` ("donnée
+insuffisante"), excluant XLM de `eligible` et forçant son poids cible à 0.0 (`weights` initialisé
+à 0.0 pour tout le mapping, jamais réécrit pour les symboles hors `eligible`) — comportement
+pessimiste voulu par design ("aucune exposition ce cycle, jamais de signal extrapolé"), mais dont
+l'effet de bord (flatten forcé sur un simple raté de fetch d'UN cycle, suivi probable d'un rachat
+au cycle suivant une fois l'historique de nouveau disponible) mérite d'être suivi : un signal qui
+"tient" une ou deux heures avant de retomber à 0 faute de donnée (plutôt que de conserver le
+dernier signal connu) génère des allers-retours evitables et des frais/slippage non nécessaires.
+Non corrigé ici sur instruction explicite (note de supervision uniquement).

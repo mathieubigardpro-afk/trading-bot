@@ -141,6 +141,113 @@ def test_get_prices_equity_empty_symbol_list_returns_empty_dict():
 
 
 # ---------------------------------------------------------------------------
+# Correctif incident production (2026-07-23T18/T19) : quotes Yahoo gratuites
+# structurellement différées (~15-20 min, accords d'affichage différé non-abonné) —
+# reproduit ici le symptôme observé en production (100% des actions/ETF rejetées
+# "prix indisponible/périmé" alors que le marché était ouvert) puis vérifie le correctif
+# (seuil de fraîcheur actions/ETF élargi + marqueur `delayed` honnête).
+# ---------------------------------------------------------------------------
+
+
+def test_get_prices_equity_15min_delayed_quote_was_rejected_under_old_5min_staleness(monkeypatch):
+    """Documente précisément la cause racine : avec l'ANCIEN seuil (300s = 5 min, celui utilisé
+    en production lors de l'incident), une quote Yahoo différée de 15 min (typique du flux
+    gratuit en marché ouvert) était rejetée à 100% — exactement le symptôme observé dans
+    `state/wallets/*/decisions.jsonl` (quote_available=false, quote_age_seconds=null) pour les
+    103 actions + 9 ETF, aux deux cycles T18/T19, malgré un marché ouvert."""
+    monkeypatch.setattr(equities_mod.cfg, "STALENESS_MAX_SECONDS_EQUITY", 300)  # ancien seuil
+    old_time = int((_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(minutes=15)).timestamp())
+    payload = _quote_payload(market_time=old_time)
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    assert result["AAPL"] is None  # symptôme production reproduit sous l'ancien seuil
+
+
+def test_get_prices_equity_15min_delayed_quote_accepted_and_marked_delayed_under_new_threshold(monkeypatch):
+    """Avec le nouveau seuil actions/ETF (25 min, `bot.config.STALENESS_MAX_SECONDS_EQUITY`),
+    la même quote différée de 15 min est désormais acceptée — et marquée honnêtement
+    `delayed=True` puisqu'elle dépasse le seuil "temps réel plausible" (300s)."""
+    monkeypatch.setattr(equities_mod.cfg, "STALENESS_MAX_SECONDS_EQUITY", 1500)  # nouveau seuil
+    monkeypatch.setattr(equities_mod.cfg, "EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS", 300)
+    old_time = int((_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(minutes=15)).timestamp())
+    payload = _quote_payload(market_time=old_time)
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    q = result["AAPL"]
+    assert q is not None
+    assert q.delayed is True
+    assert q.source == "yahoo"
+
+
+def test_get_prices_equity_quote_older_than_25min_still_rejected(monkeypatch):
+    """Le nouveau seuil élargi (25 min) n'est pas un chèque en blanc : une quote encore plus
+    vieille (30 min) reste rejetée, no-trade strict."""
+    monkeypatch.setattr(equities_mod.cfg, "STALENESS_MAX_SECONDS_EQUITY", 1500)
+    old_time = int((_dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(minutes=30)).timestamp())
+    payload = _quote_payload(market_time=old_time)
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    assert result["AAPL"] is None
+
+
+def test_get_prices_equity_fresh_quote_not_marked_delayed(monkeypatch):
+    """Une quote fraîche (< seuil temps réel plausible, 300s) n'est jamais marquée `delayed`."""
+    monkeypatch.setattr(equities_mod.cfg, "STALENESS_MAX_SECONDS_EQUITY", 1500)
+    monkeypatch.setattr(equities_mod.cfg, "EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS", 300)
+    payload = _quote_payload()  # market_time = maintenant par défaut
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    assert result["AAPL"] is not None
+    assert result["AAPL"].delayed is False
+
+
+# ---------------------------------------------------------------------------
+# Correctif bug secondaire : mapping ticker Yahoo pour BRK.B (symbole interne S&P100)
+# -> Yahoo attend "BRK-B", pas "BRK.B". Sans ce correctif, BRK.B était systématiquement
+# absent de la réponse Yahoo ("pas de résultat pour BRK.B"), quel que soit le seuil de
+# fraîcheur.
+# ---------------------------------------------------------------------------
+
+
+def test_get_prices_equity_brk_b_mapped_to_yahoo_ticker(monkeypatch):
+    captured_params = {}
+
+    def fake_get(url, params=None, timeout=None):
+        captured_params.update(params or {})
+        return FakeResponse(_quote_payload(symbol="BRK-B"))
+
+    monkeypatch.setattr(equities_mod._session, "get", fake_get)
+
+    result = equities_mod.get_prices_equity(["BRK.B"])
+
+    assert "BRK-B" in captured_params["symbols"]
+    assert result["BRK.B"] is not None
+    assert result["BRK.B"].source == "yahoo"
+
+
+def test_get_history_equity_brk_b_uses_yahoo_ticker_in_url(monkeypatch):
+    captured_urls = []
+
+    def fake_get(url, params=None, timeout=None):
+        captured_urls.append(url)
+        return FakeResponse(_chart_payload(10))
+
+    monkeypatch.setattr(equities_mod._session, "get", fake_get)
+
+    equities_mod.get_history_equity("BRK.B", 10)
+
+    assert captured_urls and captured_urls[0].endswith("/BRK-B")
+
+
+# ---------------------------------------------------------------------------
 # get_history_equity
 # ---------------------------------------------------------------------------
 

@@ -413,6 +413,13 @@ def _exchange_for_wallet(wallet_cfg: dict) -> ExchangeSim:
     # Correctif audit critique #2 : fractions d'action/ETF autorisées (cf.
     # bot/config.py:QTY_STEPS_EQUITIES — `ExchangeSim.qty_steps` fusionne cette table PAR-DESSUS
     # ses propres défauts crypto, `bot.sim.exchange.DEFAULT_QTY_STEPS`, laissés inchangés).
+    # Correctif incident production 2026-07-23T18/T19 : seuil de fraîcheur À L'EXÉCUTION dédié
+    # actions/ETF (`MAX_QUOTE_AGE_SECONDS_EQUITY`, 25 min — quotes Yahoo gratuites
+    # structurellement différées) — sans ce override par symbole, `max_quote_age_seconds`
+    # (120s, crypto, INCHANGÉ) rejetterait à l'exécution toute quote actions/ETF pourtant
+    # acceptée côté feeds (`bot.feeds.equities.get_prices_equity`), rendant ce correctif
+    # inopérant. Cf. bot/config.py et docs/ARCHITECTURE.md §5.1/§12.
+    max_quote_age_by_symbol = {sym: config.MAX_QUOTE_AGE_SECONDS_EQUITY for sym in config.SYMBOLS_EQUITY}
     return ExchangeSim(
         fee_taker_bps=config.FEE_TAKER_BPS,
         slippage_penalty_bps=config.SLIPPAGE_PENALTY_BPS,
@@ -421,6 +428,7 @@ def _exchange_for_wallet(wallet_cfg: dict) -> ExchangeSim:
         qty_steps=dict(config.QTY_STEPS_EQUITIES),
         fee_taker_bps_by_symbol=fee_by_symbol,
         slippage_penalty_bps_by_symbol=slippage_by_symbol,
+        max_quote_age_seconds_by_symbol=max_quote_age_by_symbol,
     )
 
 
@@ -616,6 +624,7 @@ def process_wallet(
             "price_mid_ideal": None,
             "quote_ts": None,
             "quote_age_seconds": None,
+            "quote_delayed": False,
             "strategy_signals": {},
             "poids_cible_brut": None,
             "poids_cible_apres_risk": None,
@@ -715,7 +724,7 @@ def process_wallet(
                 "run_id": run_id, "ts": now.isoformat(), "wallet_id": wallet_id,
                 "symbol": symbol, "asset_class": asset_class, "market_open": symbol_market_open,
                 "quote_available": False, "quote_source": None, "price_mid_ideal": None,
-                "quote_ts": None, "quote_age_seconds": None,
+                "quote_ts": None, "quote_age_seconds": None, "quote_delayed": False,
                 "strategy_signals": signals_for_symbol, "poids_cible_brut": None,
                 "poids_cible_apres_risk": None, "poids_actuel": current_w,
                 "decision": "NO_TRADE",
@@ -764,6 +773,8 @@ def process_wallet(
                 fills_this_cycle.append(result)
                 decision = side
                 reason = f"{base_reason} ; ordre exécuté ({side} qty={result.qty:.8f}, notional={result.notional_usd:.2f}$)"
+                if result.quote_delayed:
+                    reason += " [quote différée : écart possible vs prix idéal instantané, cf. quote_age_seconds]"
             else:
                 decision = "NO_TRADE"
                 reason = f"{base_reason} ; ordre {side} rejeté par ExchangeSim : {result.reason}"
@@ -773,7 +784,9 @@ def process_wallet(
             "symbol": symbol, "asset_class": asset_class, "market_open": symbol_market_open,
             "quote_available": True, "quote_source": quote.source,
             "price_mid_ideal": quote.mid, "quote_ts": quote.ts,
-            "quote_age_seconds": quote_age_seconds, "strategy_signals": signals_for_symbol,
+            "quote_age_seconds": quote_age_seconds,
+            "quote_delayed": bool(getattr(quote, "delayed", False)),
+            "strategy_signals": signals_for_symbol,
             "poids_cible_brut": raw, "poids_cible_apres_risk": final, "poids_actuel": current_w,
             "decision": decision, "reason": reason, "circuit_breakers_snapshot": cb_snapshot,
         })

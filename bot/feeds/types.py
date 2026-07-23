@@ -19,6 +19,13 @@ class Quote:
     Binance bookTicker — l'heure de réception de la réponse HTTP, qui est
     alors la meilleure approximation disponible et documentée comme telle
     dans le code de `crypto.py`).
+
+    `delayed` : `True` si cette quote, bien qu'utilisée (dans le seuil de fraîcheur), est connue
+    comme différée (au-delà de `config.EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS` pour les
+    actions/ETF, cf. `bot/feeds/equities.py`) — jamais mis à `True` pour la crypto (Binance/
+    Coinbase temps réel). Propagé jusqu'à `decisions.jsonl`/`trades.jsonl` (`quote_delayed`)
+    pour journaliser honnêtement l'écart potentiel vs un prix "idéal" instantané, cf.
+    `docs/ARCHITECTURE.md` §5.1/§12.
     """
 
     bid: float
@@ -26,6 +33,7 @@ class Quote:
     mid: float
     ts: str
     source: str
+    delayed: bool = False
 
 
 class HistoryUnavailableError(Exception):

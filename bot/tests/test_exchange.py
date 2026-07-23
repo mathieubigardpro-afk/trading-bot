@@ -18,10 +18,10 @@ from bot.sim.exchange import floor_to_step
 NOW = datetime(2026, 7, 22, 14, 0, 0, tzinfo=timezone.utc)
 
 
-def make_quote(bid, ask, ts=None, source="binance"):
+def make_quote(bid, ask, ts=None, source="binance", delayed=False):
     ts = ts or NOW.isoformat()
     mid = (bid + ask) / 2
-    return Quote(bid=bid, ask=ask, mid=mid, ts=ts, source=source)
+    return Quote(bid=bid, ask=ask, mid=mid, ts=ts, source=source, delayed=delayed)
 
 
 def make_sim(**kwargs):
@@ -267,6 +267,27 @@ def test_runner_exchange_for_wallet_wires_equity_etf_qty_steps():
     assert exchange.step_for("SPY") == pytest.approx(config.QTY_STEP_EQUITY_ETF)
     assert exchange.step_for("AAPL") == pytest.approx(config.QTY_STEP_EQUITY_ETF)
     # la crypto n'est pas affectée par ce câblage (steps crypto par défaut inchangés)
+
+
+def test_runner_exchange_for_wallet_wires_equity_max_quote_age_override():
+    """Correctif incident production 2026-07-23T18/T19 : `bot.runner._exchange_for_wallet`
+    doit câbler `config.MAX_QUOTE_AGE_SECONDS_EQUITY` (25 min) pour TOUT `config.SYMBOLS_EQUITY`
+    dans l'`ExchangeSim` réellement utilisé en production — sans ce câblage, une quote
+    actions/ETF acceptée côté feeds (`bot.feeds.equities`, seuil également élargi) serait quand
+    même rejetée ICI, à l'exécution, par le seuil crypto générique (120s), rendant le correctif
+    inopérant de bout en bout. Le seuil crypto par défaut reste, lui, inchangé."""
+    import bot.runner as runner
+    from bot import config
+
+    exchange = runner._exchange_for_wallet(config.wallet_config("equilibre"))
+
+    for sym in ("AAPL", "SPY", "BRK.B"):
+        assert exchange.max_quote_age_seconds_for(sym) == pytest.approx(
+            config.MAX_QUOTE_AGE_SECONDS_EQUITY
+        )
+    # la crypto n'est pas affectée par ce câblage (seuil par défaut 120s, INCHANGÉ).
+    assert exchange.max_quote_age_seconds_for("BTC") == pytest.approx(config.MAX_QUOTE_AGE_SECONDS)
+    assert config.MAX_QUOTE_AGE_SECONDS_EQUITY > config.MAX_QUOTE_AGE_SECONDS
     assert exchange.step_for("BTC") == pytest.approx(0.00001)
 
 
@@ -284,6 +305,94 @@ def test_per_symbol_fee_and_slippage_override_applies_only_to_matching_symbol():
     # Symbole absent du dict de palier : retombe sur les valeurs de base inchangées.
     assert sim.fee_taker_bps_for("BTC") == 10
     assert sim.slippage_penalty_bps_for("BTC") == 5
+
+
+# ---------------------------------------------------------------------------
+# Seuil de fraîcheur À L'EXÉCUTION par symbole — correctif incident production
+# 2026-07-23T18/T19 (actions/ETF Yahoo gratuit structurellement différées ~15-20 min).
+# ---------------------------------------------------------------------------
+
+def test_default_120s_threshold_still_rejects_a_900s_quote_for_unconfigured_symbol():
+    """Reproduit le second verrou (exécution) qui bloquerait encore les actions/ETF même
+    après un correctif purement côté feeds : sans override par symbole, une quote de 900s
+    (15 min, délai Yahoo typique) reste rejetée par le seuil crypto générique (120s)."""
+    sim = make_sim()  # pas de max_quote_age_seconds_by_symbol -> défaut 120s pour tous
+    old_ts = (NOW - timedelta(seconds=900)).isoformat()
+    quote = make_quote(bid=100.0, ask=100.2, ts=old_ts, source="yahoo", delayed=True)
+
+    result = sim.execute_order("BUY", "AAPL", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Reject)
+    assert "périmée" in result.reason
+
+
+def test_per_symbol_max_quote_age_override_accepts_delayed_equity_quote():
+    """Avec l'override actions/ETF (25 min), la même quote de 900s passe désormais — le seuil
+    crypto par défaut (120s, `max_quote_age_seconds`) reste inchangé pour les symboles non
+    listés dans l'override."""
+    sim = ExchangeSim(
+        fee_taker_bps=10, slippage_penalty_bps=5,
+        max_quote_age_seconds=120.0,
+        max_quote_age_seconds_by_symbol={"AAPL": 1500.0},
+    )
+    old_ts = (NOW - timedelta(seconds=900)).isoformat()
+    quote = make_quote(bid=100.0, ask=100.2, ts=old_ts, source="yahoo", delayed=True)
+
+    result = sim.execute_order("BUY", "AAPL", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Fill)
+    # Le symbole crypto non listé dans l'override garde le seuil par défaut (120s) inchangé.
+    assert sim.max_quote_age_seconds_for("BTC") == pytest.approx(120.0)
+    assert sim.max_quote_age_seconds_for("AAPL") == pytest.approx(1500.0)
+
+
+def test_per_symbol_override_still_rejects_beyond_its_own_threshold():
+    sim = ExchangeSim(
+        fee_taker_bps=10, slippage_penalty_bps=5,
+        max_quote_age_seconds_by_symbol={"AAPL": 1500.0},
+    )
+    too_old_ts = (NOW - timedelta(seconds=1600)).isoformat()
+    quote = make_quote(bid=100.0, ask=100.2, ts=too_old_ts, source="yahoo", delayed=True)
+
+    result = sim.execute_order("BUY", "AAPL", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Reject)
+    assert "périmée" in result.reason
+
+
+def test_fill_propagates_quote_delayed_flag():
+    sim = ExchangeSim(
+        fee_taker_bps=10, slippage_penalty_bps=5,
+        max_quote_age_seconds_by_symbol={"AAPL": 1500.0},
+    )
+    old_ts = (NOW - timedelta(seconds=900)).isoformat()
+    quote = make_quote(bid=100.0, ask=100.2, ts=old_ts, source="yahoo", delayed=True)
+
+    result = sim.execute_order("BUY", "AAPL", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Fill)
+    assert result.quote_delayed is True
+
+
+def test_fill_quote_delayed_false_by_default():
+    sim = make_sim()
+    quote = make_quote(bid=100.0, ask=100.2)  # delayed=False par défaut, fraîche
+
+    result = sim.execute_order("BUY", "BTC", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Fill)
+    assert result.quote_delayed is False
+
+
+def test_reject_propagates_quote_delayed_flag():
+    sim = make_sim()  # seuil par défaut 120s, symbole non couvert par un override
+    old_ts = (NOW - timedelta(seconds=900)).isoformat()
+    quote = make_quote(bid=100.0, ask=100.2, ts=old_ts, source="yahoo", delayed=True)
+
+    result = sim.execute_order("BUY", "AAPL", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Reject)
+    assert result.quote_delayed is True
 
 
 def test_per_symbol_fee_override_produces_higher_fees_than_base_rate():
