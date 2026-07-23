@@ -45,7 +45,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests pandas pyarrow
+          # yfinance : source primaire actions/ETF (stooq.com bloque/rate-limite les IP
+          # datacenter GitHub Actions — cf. commentaire dans tools/fetch_data.py — stooq
+          # reste en repli par ticker, aucune dépendance supplémentaire nécessaire pour lui).
+          pip install requests pandas pyarrow yfinance
 
       - name: Run fetch_data.py
         run: python tools/fetch_data.py

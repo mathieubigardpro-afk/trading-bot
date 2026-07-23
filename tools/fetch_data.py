@@ -59,6 +59,15 @@ import pandas as pd
 import requests
 from requests.adapters import HTTPAdapter
 
+try:
+    import yfinance as yf
+    _YFINANCE_AVAILABLE = True
+    _YFINANCE_IMPORT_ERROR: Optional[str] = None
+except ImportError as _exc:  # pragma: no cover — dépendance optionnelle défensive
+    yf = None  # type: ignore[assignment]
+    _YFINANCE_AVAILABLE = False
+    _YFINANCE_IMPORT_ERROR = str(_exc)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -106,6 +115,12 @@ STOOQ_TICKER_OVERRIDES = {
     "BRK.B": "brk-b",
 }
 
+# Overrides de symbole côté Yahoo/yfinance (ticker interne -> symbole Yahoo), même besoin
+# que ci-dessus mais notation Yahoo (tiret majuscule, pas de point).
+YFINANCE_TICKER_OVERRIDES = {
+    "BRK.B": "BRK-B",
+}
+
 CRYPTO_ARCHIVE_START = (2022, 1)  # première année-mois de l'archive bulk téléchargée
 CRYPTO_FULL_COVERAGE_REQUIRED_FROM = (2023, 7)  # fenêtre de complétude obligatoire
 
@@ -115,6 +130,23 @@ STOOQ_BASE = "https://stooq.com/q/d/l/"
 
 _HTTP_TIMEOUT_SECONDS = 30
 _USER_AGENT = "trading-bot-paper-data-fetcher/1.0 (+https://github.com/mathieubigardpro-afk/trading-bot)"
+
+# Actions/ETF (§ addendum post-run réel) : Yahoo Finance (via `yfinance`) est la source
+# PRIMAIRE. stooq.com a été testé en conditions réelles sur les runners GitHub Actions et y
+# renvoie des réponses vides/invalides pour 100% des tickers (122/122 échecs observés) —
+# vraisemblablement un blocage des IP datacenter GitHub ou un rate limiting agressif côté
+# stooq. stooq reste néanmoins en repli PAR TICKER (au cas où il ne s'agirait que d'un
+# rate limiting sensible à la cadence des requêtes), avec un User-Agent de navigateur
+# explicite et une pause d'au moins 1s entre deux requêtes séquentielles (jamais en
+# parallèle pour ce repli, contrairement à la phase yfinance qui peut paralléliser par lots).
+YFINANCE_BATCH_SIZE = 15
+YFINANCE_BATCH_PAUSE_SECONDS = 2.0
+YFINANCE_SINGLE_RETRY_PAUSE_SECONDS = 1.5
+STOOQ_FALLBACK_MIN_PAUSE_SECONDS = 1.0
+STOOQ_FALLBACK_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
 
 MAX_ATTEMPTS_DEFAULT = 5
 BASE_BACKOFF_SECONDS = 1.5
@@ -150,6 +182,7 @@ def fetch_with_retries(
     url: str,
     *,
     params: Optional[dict] = None,
+    headers: Optional[dict] = None,
     max_attempts: int = MAX_ATTEMPTS_DEFAULT,
     timeout: float = _HTTP_TIMEOUT_SECONDS,
     context: str = "",
@@ -171,7 +204,7 @@ def fetch_with_retries(
     last_error = "inconnue"
     for attempt in range(1, max_attempts + 1):
         try:
-            resp = session.get(url, params=params, timeout=timeout)
+            resp = session.get(url, params=params, headers=headers, timeout=timeout)
         except requests.RequestException as exc:
             last_error = f"{type(exc).__name__}: {exc}"
             if attempt >= max_attempts:
@@ -524,66 +557,258 @@ def process_crypto_symbol(
 
 
 # --------------------------------------------------------------------------------------
-# Actions / ETF : stooq.com (quotidien, prix ajustés)
+# Actions / ETF : Yahoo Finance (yfinance) en primaire, stooq.com en repli par ticker
 # --------------------------------------------------------------------------------------
+#
+# Historique (cf. addendum plus haut) : stooq.com a échoué à 122/122 tickers lors du
+# premier run réel sur les runners GitHub Actions ("réponse stooq vide/invalide" pour
+# chaque ticker) — vraisemblablement un blocage des IP datacenter ou un rate limiting
+# agressif, jamais reproductible dans cet environnement de développement (réseau bloqué
+# de toute façon par le proxy local). Yahoo Finance (via `yfinance`) est donc désormais la
+# source PRIMAIRE, avec repli séquentiel par ticker sur stooq (User-Agent navigateur, pause
+# >= 1s entre requêtes) pour le cas où le blocage ne serait qu'un rate limiting sensible à
+# la source/cadence des requêtes plutôt qu'un blocage total de stooq.
 
 
 @dataclass
 class DailySeriesResult:
     ticker: str
-    stooq_symbol: str
     status: str  # "OK" | "EMPTY" | "ERROR"
+    source: str  # "yfinance" | "stooq_fallback" | "FAILED"
     df: Optional[pd.DataFrame] = None
     error: Optional[str] = None
     rows: int = 0
+    symbol_used: Optional[str] = None  # symbole effectivement interrogé chez la source
 
 
 def _stooq_symbol_for(ticker: str) -> str:
     return STOOQ_TICKER_OVERRIDES.get(ticker, ticker).lower()
 
 
-def fetch_stooq_daily(session: requests.Session, ticker: str, max_attempts: int) -> DailySeriesResult:
+def _yfinance_symbol_for(ticker: str) -> str:
+    return YFINANCE_TICKER_OVERRIDES.get(ticker, ticker)
+
+
+def _clean_ohlcv_frame(df: pd.DataFrame) -> pd.DataFrame:
+    """Nettoyage commun (types numériques, drop NaN, dédoublonnage, tri) appliqué après
+    normalisation des colonnes, quelle que soit la source (yfinance ou stooq)."""
+    df = df.dropna(subset=["timestamp"]).copy()
+    for col in ("open", "high", "low", "close", "volume"):
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+    df = df.dropna(subset=["open", "high", "low", "close"])
+    df["volume"] = df["volume"].fillna(0.0)
+    df = df.drop_duplicates(subset="timestamp", keep="last").sort_values("timestamp").reset_index(drop=True)
+    return df
+
+
+def fetch_stooq_fallback(ticker: str, max_attempts: int) -> DailySeriesResult:
+    """Repli stooq PAR TICKER : session dédiée avec User-Agent de navigateur (distinct du
+    User-Agent identifiant le bot utilisé pour Binance/l'API interne), appelé de façon
+    strictement séquentielle par l'appelant (jamais en parallèle) avec une pause >= 1s
+    entre deux tickers pour respecter un éventuel rate limiting côté stooq."""
     stooq_symbol = _stooq_symbol_for(ticker)
+    # Session dédiée (plutôt que la session HTTP partagée du reste du script) : on ne veut
+    # pas que ce User-Agent "navigateur" fuite vers les autres sources (Binance, API stooq
+    # future éventuelle), et inversement.
+    fallback_session = requests.Session()
+    fallback_session.headers.update({"User-Agent": STOOQ_FALLBACK_USER_AGENT, "Accept": "text/csv,*/*"})
+
     result = fetch_with_retries(
-        session, STOOQ_BASE, params={"s": f"{stooq_symbol}.us", "i": "d"},
-        max_attempts=max_attempts, context=f"stooq {ticker}",
+        fallback_session, STOOQ_BASE, params={"s": f"{stooq_symbol}.us", "i": "d"},
+        max_attempts=max_attempts, context=f"stooq-fallback {ticker}",
     )
     if result.status != "OK":
-        return DailySeriesResult(ticker=ticker, stooq_symbol=stooq_symbol, status="ERROR", error=result.error or result.status)
+        return DailySeriesResult(
+            ticker=ticker, status="ERROR", source="stooq_fallback",
+            error=result.error or result.status, symbol_used=stooq_symbol,
+        )
 
     text = result.response.text
     if not text or text.strip().lower().startswith("no data") or "<html" in text[:200].lower():
-        return DailySeriesResult(ticker=ticker, stooq_symbol=stooq_symbol, status="EMPTY", error="réponse stooq vide/invalide (ticker inconnu ?)")
+        return DailySeriesResult(
+            ticker=ticker, status="EMPTY", source="stooq_fallback",
+            error="réponse stooq vide/invalide (ticker inconnu, ou blocage/rate limiting persistant)",
+            symbol_used=stooq_symbol,
+        )
 
     try:
         df = pd.read_csv(io.StringIO(text))
     except (pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
-        return DailySeriesResult(ticker=ticker, stooq_symbol=stooq_symbol, status="ERROR", error=f"CSV invalide: {exc}")
+        return DailySeriesResult(ticker=ticker, status="ERROR", source="stooq_fallback", error=f"CSV invalide: {exc}", symbol_used=stooq_symbol)
 
     expected_cols = {"Date", "Open", "High", "Low", "Close", "Volume"}
     if not expected_cols.issubset(set(df.columns)):
         return DailySeriesResult(
-            ticker=ticker, stooq_symbol=stooq_symbol, status="ERROR",
-            error=f"colonnes inattendues: {list(df.columns)}",
+            ticker=ticker, status="ERROR", source="stooq_fallback",
+            error=f"colonnes inattendues: {list(df.columns)}", symbol_used=stooq_symbol,
         )
 
     df = df.rename(columns={
         "Date": "timestamp", "Open": "open", "High": "high", "Low": "low",
         "Close": "close", "Volume": "volume",
     })[["timestamp", "open", "high", "low", "close", "volume"]]
-
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True, errors="coerce")
-    df = df.dropna(subset=["timestamp", "open", "high", "low", "close"])
-    for col in ("open", "high", "low", "close", "volume"):
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.dropna(subset=["open", "high", "low", "close"])
-    df["volume"] = df["volume"].fillna(0.0)
-    df = df.drop_duplicates(subset="timestamp", keep="last").sort_values("timestamp").reset_index(drop=True)
+    df = _clean_ohlcv_frame(df)
 
     if df.empty:
-        return DailySeriesResult(ticker=ticker, stooq_symbol=stooq_symbol, status="EMPTY", error="0 ligne exploitable après nettoyage")
+        return DailySeriesResult(ticker=ticker, status="EMPTY", source="stooq_fallback", error="0 ligne exploitable après nettoyage", symbol_used=stooq_symbol)
 
-    return DailySeriesResult(ticker=ticker, stooq_symbol=stooq_symbol, status="OK", df=df, rows=len(df))
+    return DailySeriesResult(ticker=ticker, status="OK", source="stooq_fallback", df=df, rows=len(df), symbol_used=stooq_symbol)
+
+
+def _normalize_yf_frame(raw: pd.DataFrame) -> pd.DataFrame:
+    """Normalise un DataFrame issu de `yfinance` (index Date, colonnes Open/High/Low/
+    Close/Volume — `auto_adjust=True` donc déjà ajusté des splits/dividendes, pas de
+    colonne "Adj Close" séparée) vers le schéma commun `timestamp,open,high,low,close,
+    volume` en UTC."""
+    df = raw.copy()
+    df = df.rename(columns={c: str(c).lower() for c in df.columns})
+    if not {"open", "high", "low", "close"}.issubset(set(df.columns)):
+        return pd.DataFrame(columns=["timestamp", "open", "high", "low", "close", "volume"])
+    if "volume" not in df.columns:
+        df["volume"] = 0.0
+
+    idx = df.index
+    if getattr(idx, "tz", None) is None:
+        # Index quotidien tz-naive : les données actions/ETF US de yfinance sont
+        # implicitement en heure de séance America/New_York — localisation explicite avant
+        # conversion UTC plutôt qu'une supposition silencieuse d'UTC (qui décalerait la
+        # date calendaire de la bougie journalière).
+        idx = idx.tz_localize("America/New_York", ambiguous="NaT", nonexistent="shift_forward")
+    df.index = idx.tz_convert("UTC")
+    df = df.reset_index()
+    df = df.rename(columns={df.columns[0]: "timestamp"})
+    df = df[["timestamp", "open", "high", "low", "close", "volume"]]
+    return _clean_ohlcv_frame(df)
+
+
+def _extract_yf_ticker_frame(batch_df: pd.DataFrame, yf_symbol: str, batch_len: int) -> Optional[pd.DataFrame]:
+    """Extrait le sous-DataFrame d'un ticker donné depuis le résultat (potentiellement
+    multi-tickers, colonnes MultiIndex `(ticker, champ)` avec `group_by="ticker"`) de
+    `yf.download()`. Gère aussi le cas où un seul ticker a été demandé (colonnes plates,
+    pas de MultiIndex, selon la version de `yfinance`)."""
+    if batch_df is None or batch_df.empty:
+        return None
+    if isinstance(batch_df.columns, pd.MultiIndex):
+        top_level = set(batch_df.columns.get_level_values(0))
+        if yf_symbol not in top_level:
+            return None
+        sub = batch_df[yf_symbol]
+        if not isinstance(sub, pd.DataFrame) or sub.dropna(how="all").empty:
+            return None
+        return sub
+    if batch_len == 1:
+        return batch_df
+    return None
+
+
+def fetch_yfinance_batch(tickers: List[str], batch_size: int, pause_between_batches: float, max_attempts: int) -> Dict[str, Optional[pd.DataFrame]]:
+    """Télécharge l'historique quotidien maximal (`period="max"`, `auto_adjust=True`) d'une
+    liste de tickers via `yfinance`, par lots raisonnables avec pause entre chaque lot
+    (limiter la cadence de requêtes vers Yahoo). Un lot entier retenté avec backoff en cas
+    d'échec réseau ; un ticker absent/vide du résultat d'un lot par ailleurs réussi est
+    laissé à `None` ici — il sera retenté individuellement par l'appelant."""
+    results: Dict[str, Optional[pd.DataFrame]] = {t: None for t in tickers}
+    if not _YFINANCE_AVAILABLE:
+        logger.warning("yfinance indisponible (%s) — repli direct sur stooq pour tous les tickers", _YFINANCE_IMPORT_ERROR)
+        return results
+
+    batches = [tickers[i:i + batch_size] for i in range(0, len(tickers), batch_size)]
+    for batch_idx, batch in enumerate(batches, start=1):
+        yf_symbols = [_yfinance_symbol_for(t) for t in batch]
+        batch_df: Optional[pd.DataFrame] = None
+        for attempt in range(1, max_attempts + 1):
+            try:
+                batch_df = yf.download(
+                    tickers=" ".join(yf_symbols), period="max", interval="1d",
+                    auto_adjust=True, group_by="ticker", threads=True,
+                    progress=False, timeout=30,
+                )
+                break
+            except Exception as exc:  # noqa: BLE001 — yfinance peut lever des exceptions variées
+                if attempt >= max_attempts:
+                    logger.error(
+                        "yfinance lot %d/%d (%s) : échec définitif après %d tentative(s) (%s)",
+                        batch_idx, len(batches), batch, attempt, exc,
+                    )
+                    batch_df = None
+                    break
+                delay = min(MAX_BACKOFF_SECONDS, BASE_BACKOFF_SECONDS * (2 ** (attempt - 1)))
+                logger.warning(
+                    "yfinance lot %d/%d (%s) : erreur (tentative %d/%d, %s) — nouvelle tentative dans %.1fs",
+                    batch_idx, len(batches), batch, attempt, max_attempts, exc, delay,
+                )
+                time.sleep(delay)
+
+        if batch_df is not None and not batch_df.empty:
+            for ticker, yf_symbol in zip(batch, yf_symbols):
+                sub = _extract_yf_ticker_frame(batch_df, yf_symbol, len(batch))
+                if sub is not None:
+                    normalized = _normalize_yf_frame(sub)
+                    if not normalized.empty:
+                        results[ticker] = normalized
+        else:
+            logger.warning("yfinance lot %d/%d (%s) : aucune donnée exploitable pour ce lot", batch_idx, len(batches), batch)
+
+        if batch_idx < len(batches):
+            time.sleep(pause_between_batches)
+
+    return results
+
+
+def fetch_yfinance_single(ticker: str, max_attempts: int) -> Optional[pd.DataFrame]:
+    """Repli/retry individuel `yfinance` pour un ticker absent/vide du téléchargement par
+    lot (ticker isolé qui a pu échouer indépendamment du reste de son lot)."""
+    if not _YFINANCE_AVAILABLE:
+        return None
+    yf_symbol = _yfinance_symbol_for(ticker)
+    for attempt in range(1, max_attempts + 1):
+        try:
+            hist = yf.Ticker(yf_symbol).history(period="max", interval="1d", auto_adjust=True)
+        except Exception as exc:  # noqa: BLE001
+            if attempt >= max_attempts:
+                logger.error("yfinance retry individuel %s : échec définitif après %d tentative(s) (%s)", ticker, attempt, exc)
+                return None
+            delay = min(MAX_BACKOFF_SECONDS, BASE_BACKOFF_SECONDS * (2 ** (attempt - 1)))
+            logger.warning("yfinance retry individuel %s : erreur (tentative %d/%d, %s) — nouvelle tentative dans %.1fs", ticker, attempt, max_attempts, exc, delay)
+            time.sleep(delay)
+            continue
+
+        if hist is None or hist.empty:
+            logger.warning("yfinance retry individuel %s : résultat vide (tentative %d/%d)", ticker, attempt, max_attempts)
+            if attempt >= max_attempts:
+                return None
+            time.sleep(YFINANCE_SINGLE_RETRY_PAUSE_SECONDS)
+            continue
+
+        normalized = _normalize_yf_frame(hist)
+        return normalized if not normalized.empty else None
+
+    return None
+
+
+def fetch_daily_series(ticker: str, yfinance_batch_results: Dict[str, Optional[pd.DataFrame]], max_attempts: int) -> DailySeriesResult:
+    """Résout la série quotidienne d'un ticker en combinant, dans l'ordre : (1) le résultat
+    du lot `yfinance` déjà téléchargé, (2) un retry `yfinance` individuel, (3) le repli
+    stooq par ticker. Ne retourne "FAILED" que si les trois étapes ont échoué."""
+    df = yfinance_batch_results.get(ticker)
+    if df is not None and not df.empty:
+        return DailySeriesResult(ticker=ticker, status="OK", source="yfinance", df=df, rows=len(df), symbol_used=_yfinance_symbol_for(ticker))
+
+    df = fetch_yfinance_single(ticker, max_attempts)
+    if df is not None and not df.empty:
+        return DailySeriesResult(ticker=ticker, status="OK", source="yfinance", df=df, rows=len(df), symbol_used=_yfinance_symbol_for(ticker))
+
+    time.sleep(max(STOOQ_FALLBACK_MIN_PAUSE_SECONDS, 1.0))  # pause avant le repli, cf. contrat stooq
+    stooq_result = fetch_stooq_fallback(ticker, max_attempts)
+    if stooq_result.status == "OK":
+        return stooq_result
+
+    return DailySeriesResult(
+        ticker=ticker, status="ERROR", source="FAILED",
+        error=f"yfinance et stooq (repli) ont tous deux échoué — dernière erreur stooq: {stooq_result.error}",
+        symbol_used=stooq_result.symbol_used,
+    )
 
 
 # --------------------------------------------------------------------------------------
@@ -657,47 +882,76 @@ def run_daily_universe(
     session: requests.Session, staging_dir: str, tickers: List[str], subdir: str,
     max_attempts: int, workers: int, min_years: float,
 ) -> dict:
+    """Résout l'historique quotidien de `tickers` (actions ou ETF) : yfinance par lots en
+    primaire (parallélisable en interne, pause entre lots), puis pour les tickers restés
+    sans donnée, un retry `yfinance` individuel suivi si besoin d'un repli stooq — cette
+    dernière étape est délibérément SÉQUENTIELLE (jamais de `ThreadPoolExecutor`) avec une
+    pause >= 1s entre chaque ticker, pour respecter un éventuel rate limiting côté stooq.
+
+    Un échec, même total, d'une des deux sources pour un sous-ensemble de tickers ne fait
+    JAMAIS échouer ce run : chaque ticker en échec est journalisé et documenté avec sa
+    raison précise dans le manifeste (`status` + `source` + `error`), le reste du pipeline
+    continue normalement (cf. mission : "l'échec partiel d'une source ne fait pas échouer
+    tout le job").
+    """
     results: Dict[str, dict] = {}
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(fetch_stooq_daily, session, t, max_attempts): t for t in tickers}
-        for fut in concurrent.futures.as_completed(futures):
-            ticker = futures[fut]
-            try:
-                res = fut.result()
-            except Exception as exc:  # noqa: BLE001
-                logger.error("%s %s : exception non gérée (%s)", subdir, ticker, exc)
-                results[ticker] = {"status": "ERROR", "error": str(exc)}
-                continue
+    logger.info(
+        "%s : phase 1/2 — téléchargement par lots yfinance (%d ticker(s), lots de %d, pause %.1fs)",
+        subdir, len(tickers), YFINANCE_BATCH_SIZE, YFINANCE_BATCH_PAUSE_SECONDS,
+    )
+    batch_results = fetch_yfinance_batch(tickers, YFINANCE_BATCH_SIZE, YFINANCE_BATCH_PAUSE_SECONDS, max_attempts)
 
-            if res.status == "OK" and res.df is not None and not res.df.empty:
-                out_path = os.path.join(staging_dir, "data", subdir, f"{ticker}.csv.gz")
-                write_gz_csv(res.df, out_path)
-                first_ts = pd.Timestamp(res.df["timestamp"].iloc[0])
-                last_ts = pd.Timestamp(res.df["timestamp"].iloc[-1])
-                span_years = (last_ts - first_ts).days / 365.25
-                entry = {
-                    "status": "OK",
-                    "stooq_symbol": res.stooq_symbol,
-                    "rows": res.rows,
-                    "first_ts": first_ts.isoformat(),
-                    "last_ts": last_ts.isoformat(),
-                    "span_years": round(span_years, 2),
-                }
-                if span_years < min_years:
-                    entry["warning"] = (
-                        f"historique disponible ({span_years:.1f} ans) inférieur au minimum visé "
-                        f"({min_years} ans) — probablement une introduction en bourse/cotation récente"
-                    )
-                results[ticker] = entry
-                logger.info("%s %s : OK (%d lignes, %.1f ans)", subdir, ticker, res.rows, span_years)
-            else:
-                results[ticker] = {
-                    "status": res.status,
-                    "stooq_symbol": res.stooq_symbol,
-                    "error": res.error,
-                }
-                logger.warning("%s %s : %s (%s)", subdir, ticker, res.status, res.error)
+    still_missing = [t for t in tickers if batch_results.get(t) is None]
+    if still_missing:
+        logger.info(
+            "%s : phase 2/2 — %d ticker(s) sans donnée après le lot yfinance, retry individuel "
+            "yfinance puis repli stooq séquentiel (pause >= %.1fs/ticker)",
+            subdir, len(still_missing), STOOQ_FALLBACK_MIN_PAUSE_SECONDS,
+        )
+
+    for ticker in tickers:
+        if batch_results.get(ticker) is not None:
+            res = DailySeriesResult(
+                ticker=ticker, status="OK", source="yfinance",
+                df=batch_results[ticker], rows=len(batch_results[ticker]),
+                symbol_used=_yfinance_symbol_for(ticker),
+            )
+        else:
+            # Séquentiel et déjà rythmé en interne (fetch_daily_series applique la pause
+            # avant tout repli stooq) — ne JAMAIS paralléliser cette branche.
+            res = fetch_daily_series(ticker, batch_results, max_attempts)
+
+        if res.status == "OK" and res.df is not None and not res.df.empty:
+            out_path = os.path.join(staging_dir, "data", subdir, f"{ticker}.csv.gz")
+            write_gz_csv(res.df, out_path)
+            first_ts = pd.Timestamp(res.df["timestamp"].iloc[0])
+            last_ts = pd.Timestamp(res.df["timestamp"].iloc[-1])
+            span_years = (last_ts - first_ts).days / 365.25
+            entry = {
+                "status": "OK",
+                "source": res.source,
+                "symbol_used": res.symbol_used,
+                "rows": res.rows,
+                "first_ts": first_ts.isoformat(),
+                "last_ts": last_ts.isoformat(),
+                "span_years": round(span_years, 2),
+            }
+            if span_years < min_years:
+                entry["warning"] = (
+                    f"historique disponible ({span_years:.1f} ans) inférieur au minimum visé "
+                    f"({min_years} ans) — probablement une introduction en bourse/cotation récente"
+                )
+            results[ticker] = entry
+            logger.info("%s %s : OK via %s (%d lignes, %.1f ans)", subdir, ticker, res.source, res.rows, span_years)
+        else:
+            results[ticker] = {
+                "status": res.status,
+                "source": res.source,
+                "symbol_used": res.symbol_used,
+                "error": res.error,
+            }
+            logger.warning("%s %s : %s via %s (%s)", subdir, ticker, res.status, res.source, res.error)
 
     return results
 
@@ -815,7 +1069,8 @@ def build_manifest(crypto_report: dict, equities_report: dict, etf_report: dict,
         "sources": {
             "crypto_bulk_archive": f"{BINANCE_VISION_BASE}/data/spot/monthly/klines/{{PAIR}}/1h/{{PAIR}}-1h-{{YYYY-MM}}.zip",
             "crypto_current_month_completion": f"{BINANCE_API_BASE}/api/v3/klines",
-            "equities_etf_daily": f"{STOOQ_BASE}?s={{ticker}}.us&i=d",
+            "equities_etf_daily_primary": "yfinance (yf.download / yf.Ticker.history, period=max, interval=1d, auto_adjust=True)",
+            "equities_etf_daily_fallback": f"stooq.com (`{STOOQ_BASE}?s={{ticker}}.us&i=d`, User-Agent navigateur, séquentiel, pause >= {STOOQ_FALLBACK_MIN_PAUSE_SECONDS}s/requête) — utilisé uniquement si yfinance échoue pour un ticker",
         },
         "crypto": crypto_report,
         "equities": equities_report,
@@ -825,10 +1080,20 @@ def build_manifest(crypto_report: dict, equities_report: dict, etf_report: dict,
             "crypto_excluded": len(crypto_report.get("excluded", {})),
             "equities_ok": sum(1 for v in equities_report.values() if v.get("status") == "OK"),
             "equities_failed": sum(1 for v in equities_report.values() if v.get("status") != "OK"),
+            "equities_by_source": _tally_by_source(equities_report),
             "etf_ok": sum(1 for v in etf_report.values() if v.get("status") == "OK"),
             "etf_failed": sum(1 for v in etf_report.values() if v.get("status") != "OK"),
+            "etf_by_source": _tally_by_source(etf_report),
         },
     }
+
+
+def _tally_by_source(report: Dict[str, dict]) -> Dict[str, int]:
+    tally: Dict[str, int] = {}
+    for entry in report.values():
+        src = entry.get("source", "inconnu")
+        tally[src] = tally.get(src, 0) + 1
+    return tally
 
 
 def build_report_md(manifest: dict) -> str:
@@ -847,8 +1112,9 @@ def build_report_md(manifest: dict) -> str:
         f"- Crypto horaire : archives bulk Binance (`{manifest['sources']['crypto_bulk_archive']}`), "
         f"complétées pour le mois en cours via l'API publique "
         f"(`{manifest['sources']['crypto_current_month_completion']}`).",
-        f"- Actions (S&P 100) et ETF, quotidien : stooq.com (`{manifest['sources']['equities_etf_daily']}`), "
-        "prix ajustés.",
+        f"- Actions (S&P 100) et ETF, quotidien, prix ajustés : primaire "
+        f"{manifest['sources']['equities_etf_daily_primary']} ; repli par ticker "
+        f"{manifest['sources']['equities_etf_daily_fallback']}.",
         "",
         "## Crypto",
         "",
@@ -880,25 +1146,27 @@ def build_report_md(manifest: dict) -> str:
     lines.append("## Actions (S&P 100)")
     lines.append("")
     lines.append(f"- **{counts['equities_ok']} ticker(s) OK**, **{counts['equities_failed']} échoué(s)/vide(s)**.")
+    lines.append(f"- Répartition par source : {counts['equities_by_source']}.")
     lines.append("")
     failed_eq = {k: v for k, v in manifest["equities"].items() if v.get("status") != "OK"}
     if failed_eq:
         lines.append("### Tickers actions en échec")
         lines.append("")
         for tick, info in sorted(failed_eq.items()):
-            lines.append(f"- **{tick}** : {info.get('status')} — {info.get('error')}")
+            lines.append(f"- **{tick}** (source tentée : {info.get('source')}) : {info.get('status')} — {info.get('error')}")
         lines.append("")
 
     lines.append("## ETF")
     lines.append("")
     lines.append(f"- **{counts['etf_ok']} ticker(s) OK**, **{counts['etf_failed']} échoué(s)/vide(s)**.")
+    lines.append(f"- Répartition par source : {counts['etf_by_source']}.")
     lines.append("")
     failed_etf = {k: v for k, v in manifest["etf"].items() if v.get("status") != "OK"}
     if failed_etf:
         lines.append("### Tickers ETF en échec")
         lines.append("")
         for tick, info in sorted(failed_etf.items()):
-            lines.append(f"- **{tick}** : {info.get('status')} — {info.get('error')}")
+            lines.append(f"- **{tick}** (source tentée : {info.get('source')}) : {info.get('status')} — {info.get('error')}")
         lines.append("")
 
     lines.append("## Format des fichiers")
