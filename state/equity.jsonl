@@ -2,3 +2,4 @@
 {"cash_usd": 100000.0, "circuit_breakers_active": [], "drawdown_pct": 0.0, "equity_peak_usd": 100000.0, "equity_usd": 100000.0, "exposures": {}, "gross_exposure_pct": 0, "run_id": "2026-07-22T16", "ts": "2026-07-22T16:04:06.693399+00:00"}
 {"cash_usd": 100000.0, "circuit_breakers_active": [], "drawdown_pct": 0.0, "equity_peak_usd": 100000.0, "equity_usd": 100000.0, "exposures": {}, "gross_exposure_pct": 0, "run_id": "2026-07-23T07", "ts": "2026-07-23T07:07:29.597854+00:00"}
 {"cash_usd": 100000.0, "circuit_breakers_active": [], "drawdown_pct": 0.0, "equity_peak_usd": 100000.0, "equity_usd": 100000.0, "exposures": {}, "gross_exposure_pct": 0, "run_id": "2026-07-23T08", "ts": "2026-07-23T08:15:07.434042+00:00"}
+{"cash_usd": 100000.0, "circuit_breakers_active": [], "drawdown_pct": 0.0, "equity_peak_usd": 100000.0, "equity_usd": 100000.0, "exposures": {}, "gross_exposure_pct": 0, "run_id": "2026-07-23T10", "ts": "2026-07-23T10:33:13.216898+00:00"}
