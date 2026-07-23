@@ -1,0 +1,50 @@
+name: Déploiement du dashboard (GitHub Pages)
+
+# Déclencheurs :
+#   - push sur main touchant dashboard/** : redéploie automatiquement dès que la page change.
+#   - workflow_dispatch : lancement manuel (ex. après un changement de configuration Pages).
+# Le dashboard lit ses données côté client directement depuis raw.githubusercontent.com
+# (state/*.json, *.jsonl) — inutile de redéployer à chaque cycle horaire du bot, seulement
+# quand dashboard/ lui-même change.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "dashboard/**"
+  workflow_dispatch: {}
+
+permissions:
+  pages: write
+  id-token: write
+  contents: read
+
+# Un seul déploiement Pages à la fois ; ne jamais annuler un déploiement en cours pour ne pas
+# laisser le site dans un état intermédiaire.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurer GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Uploader dashboard/ comme artefact Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+
+      - name: Déployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

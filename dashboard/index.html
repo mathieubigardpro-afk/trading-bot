@@ -201,6 +201,8 @@
   .gridline { stroke: var(--gridline); stroke-width: 1; }
   .axis-baseline { stroke: var(--baseline); stroke-width: 1; }
   .axis-text { fill: var(--text-muted); font-size: 11px; font-family: var(--font); }
+  /* Halo (contour couleur surface) : garde un libellé lisible même quand une ligne/aire de données le traverse. */
+  .axis-text-halo { paint-order: stroke fill; stroke: var(--surface-1); stroke-width: 3px; stroke-linejoin: round; }
   .chart-empty {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 6px; padding: 46px 20px; color: var(--text-muted); text-align: center; font-size: 13px;
@@ -995,7 +997,8 @@
     // ligne des 100 000 $ de départ (uniquement si distincte d'un tick déjà tracé, pour éviter la redite)
     var yBase = y1(INITIAL_CASH);
     svg1.appendChild(svgEl("line", { class: "axis-baseline", x1: padL, x2: W - padR, y1: yBase, y2: yBase }));
-    var baseLabel = svgEl("text", { class: "axis-text", x: W - padR, y: yBase - 6, "text-anchor": "end" });
+    // Halo (contour couleur surface) pour rester lisible même quand la courbe le traverse.
+    var baseLabel = svgEl("text", { class: "axis-text axis-text-halo", x: W - padR, y: yBase - 12, "text-anchor": "end" });
     baseLabel.textContent = "Capital initial : 100 000 $";
     svg1.appendChild(baseLabel);
 
