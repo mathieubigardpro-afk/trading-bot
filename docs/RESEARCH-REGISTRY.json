@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "_meta": {
+    "description": "Registre de TOUTES les stratégies/candidates jamais testées pour ce projet, quel que soit leur verdict final. Append-only : une entrée n'est JAMAIS supprimée, même après rejet ou mort (cf. docs/PROMOTION-RULES.md §3.3 -- une stratégie tuée compte dans K_total pour toute future tentative sur la même idée). L'honnêteté de ce fichier conditionne directement la validité du Deflated Sharpe Ratio (DSR) de toute future candidate : docs/PROMOTION-RULES.md §1.3 impose K_total = nombre de lignes ici + grille interne de la nouvelle candidate. Falsifier ou omettre une entrée ici revient à tricher sur le DSR de tout ce qui suit.",
+    "k_total_at_registry_init": 9,
+    "statuts_possibles": ["active", "ecartee", "rejetee", "en_incubation", "tuee"],
+    "note_statuts": "'rejetee' = verdict de l'audit walk-forward lui-même défavorable (Sharpe négatif et/ou ne bat pas son propre benchmark buy&hold, souvent de façon catastrophique). 'ecartee' = résultat techniquement 'ok' (Sharpe positif) mais décision de ne PAS déployer car nettement sous-performant le benchmark de sa classe -- nuance introduite dans docs/SELECTION-FINALE.md §1.3, reprise ici car importante : un Sharpe positif n'est pas un critère suffisant en soi. 'active' = déployée en production dans au moins un wallet réel au moment de l'écriture de ce registre.",
+    "avertissement_antecedent": "Les 9 entrées ci-dessous constituent la 1ère vague de recherche (RESEARCH-LOG.md), menée AVANT l'existence de docs/PROMOTION-RULES.md et du wallet labo. Elles n'ont donc PAS suivi le protocole Porte 1/Porte 2 formalisé -- notamment aucune n'a de DSR calculé sur un K_total inter-stratégies (chaque DSR historique, quand il existe, ne déflate que sur la grille interne à sa propre stratégie). Elles sont néanmoins intégrées ici intégralement car c'est leur existence, pas leur conformité au protocole, qui compte pour la validité du DSR des candidates futures.",
+    "sources_racine": "/home/claude/trading-bot/bt-final/*/results.json (8 stratégies auditées avec walk-forward + REPORT.md) et /home/claude/trading-bot/bt-final/quasi-passif-crypto/results.json (backtest complémentaire non audité, cf. docs/SELECTION-FINALE.md §2.2)",
+    "generated_at": "2026-07-23"
+  },
+  "strategies": [
+    {
+      "id": "donchian_ensemble_6majors",
+      "famille": "crypto_trend_following_donchian",
+      "date_test": "2026-07-23",
+      "statut": "ecartee",
+      "sharpe_oos": 0.3075,
+      "profit_factor_oos": 0.985,
+      "max_drawdown_oos_pct": 58.15,
+      "n_trades_oos_closed": 658,
+      "benchmark_sharpe_oos_aligned": 0.5495,
+      "walkforward": "9m IS / 3m OOS, 15 fenêtres",
+      "univers": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "dsr": null,
+      "raison": "Sharpe OOS positif (0.31) mais nettement inférieur au buy & hold équipondéré du même panier (0.55) sur la fenêtre OOS alignée -- destructeur de valeur ajustée du risque par rapport à ne rien faire d'actif. Non retenue pour la poche crypto, remplacée par le quasi-passif vol-targeté (cf. quasi_passif_crypto ci-dessous).",
+      "source": "bt-final/donchian-6/results.json"
+    },
+    {
+      "id": "ema_momentum_6majors",
+      "famille": "crypto_trend_following_ema",
+      "date_test": "2026-07-23",
+      "statut": "ecartee",
+      "sharpe_oos": 0.2369,
+      "profit_factor_oos": 0.932,
+      "max_drawdown_oos_pct": 50.69,
+      "n_trades_oos_closed": 460,
+      "benchmark_sharpe_oos_aligned": 0.5495,
+      "walkforward": "9m IS / 3m OOS, 15 fenêtres",
+      "univers": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "dsr": null,
+      "raison": "Même verdict que donchian_ensemble_6majors : Sharpe OOS positif (0.24) mais très inférieur au buy & hold équipondéré (0.55). Non retenue.",
+      "source": "bt-final/ema-momentum-6/results.json"
+    },
+    {
+      "id": "meanrev_rsi2_6majors",
+      "famille": "crypto_mean_reversion_rsi2",
+      "date_test": "2026-07-23",
+      "statut": "rejetee",
+      "sharpe_oos": -10.47,
+      "profit_factor_oos": 0.18,
+      "max_drawdown_oos_pct": 94.9,
+      "n_trades_oos_closed": 4148,
+      "benchmark_sharpe_oos_aligned": 0.819,
+      "walkforward": "9m IS / 3m OOS, 13 fenêtres",
+      "univers": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "dsr": null,
+      "raison": "Rejet catastrophique. MaxDD OOS 94.9% -- la queue de distribution du mean reversion en tendance forte, identifiée comme risque n°1 par rapport-recherche.md §2C, s'est matérialisée exactement comme redouté malgré le filtre de tendance SMA200 obligatoire et le stop ATR.",
+      "source": "bt-final/meanrev-rsi2-6/results.json"
+    },
+    {
+      "id": "ema_momentum_30univers",
+      "famille": "crypto_trend_following_ema_large_universe",
+      "date_test": "2026-07-23",
+      "statut": "rejetee",
+      "sharpe_oos": -0.286,
+      "profit_factor_oos": 0.505,
+      "max_drawdown_oos_pct": 81.07,
+      "n_trades_oos_closed": 983,
+      "benchmark_sharpe_oos_aligned": 0.278,
+      "walkforward": "9m IS / 3m OOS, 15 fenêtres",
+      "univers_size": 30,
+      "dsr": null,
+      "raison": "Sharpe OOS négatif, ne bat pas son propre benchmark buy & hold (lui-même faible, 0.28) sur la période. L'élargissement de l'univers à 30 cryptos (vs 6 majors) n'améliore pas le signal EMA -- la largeur d'univers ne sauve pas un signal qui ne marche pas sur le cœur liquide.",
+      "source": "bt-final/trend-30/results.json"
+    },
+    {
+      "id": "xs_momentum_30",
+      "famille": "crypto_cross_sectional_momentum",
+      "date_test": "2026-07-23",
+      "statut": "rejetee",
+      "sharpe_oos": -0.34,
+      "sharpe_oos_variantes": {
+        "univers_30_complet": -0.34,
+        "univers_15_restreint_majors_mids": -0.342
+      },
+      "profit_factor_oos": 0.792,
+      "n_trades_oos_closed_variantes": {
+        "univers_30_complet": 217,
+        "univers_15_restreint_majors_mids": 259
+      },
+      "walkforward": "9m IS / 3m OOS, 9 fenêtres",
+      "univers_size_variantes": [30, 15],
+      "dsr": null,
+      "raison": "Rejetée sur les 2 variantes testées (30 cryptos complet et 15 majors/mids restreint) : Sharpe négatif dans les deux cas, ne bat pas le benchmark buy & hold (lui-même négatif sur la période). Restreindre l'univers ne sauve pas le signal cross-sectionnel en crypto sur cette fenêtre.",
+      "source": "bt-final/xs-momentum-30/results.json"
+    },
+    {
+      "id": "meanrev_30",
+      "famille": "crypto_mean_reversion_rsi2_large_universe",
+      "date_test": "2026-07-23",
+      "statut": "rejetee",
+      "sharpe_oos": -11.14,
+      "sharpe_oos_variantes": {
+        "univers_30_complet": -11.14,
+        "univers_15_restreint_majors_mids": -10.05
+      },
+      "max_drawdown_oos_pct_variantes": {
+        "univers_30_complet": 96.39,
+        "univers_15_restreint_majors_mids": null
+      },
+      "n_trades_oos_closed_variantes": {
+        "univers_30_complet": 6707,
+        "univers_15_restreint_majors_mids": 5156
+      },
+      "walkforward": "9m IS / 3m OOS, 9 fenêtres",
+      "univers_size_variantes": [30, 15],
+      "dsr": null,
+      "raison": "Rejet catastrophique sur les 2 variantes (Sharpe -10 à -11, MaxDD jusqu'à 96%) -- même échec structurel que meanrev_rsi2_6majors, confirmé et amplifié à plus grande échelle d'univers. 6/6 stratégies actives crypto testées lors de cette vague sont soit rejetées soit sous-benchmark : aucune n'est retenue en production.",
+      "source": "bt-final/meanrev-30/results.json"
+    },
+    {
+      "id": "xs_momentum_sp100",
+      "famille": "equities_cross_sectional_momentum",
+      "date_test": "2026-07-23",
+      "statut": "active",
+      "sharpe_oos": 0.8227,
+      "profit_factor_oos": 1.0938,
+      "max_drawdown_oos_pct": 50.29,
+      "n_trades_oos_closed": 1758,
+      "benchmark_sharpe_oos_aligned": 0.5044,
+      "walkforward": "36m IS / 12m OOS, 27 fenêtres",
+      "univers": "S&P100, 103 titres, constituants actuels (biais du survivant documenté)",
+      "dsr": 0.9193,
+      "dsr_methode": "dsr_K216_conservative_all_windows_all_combos -- déflate sur les 216 combinaisons IS/fenêtres internes à CETTE stratégie uniquement (pas de K_total inter-stratégies, ce concept n'existait pas encore lors de ce test -- cf. avertissement_antecedent).",
+      "psr_prob_sharpe_gt_0": 0.99999,
+      "raison": "Seule stratégie active à edge net, robuste et statistiquement crédible sur les 8 stratégies auditées de cette vague. Retenue pour la poche actions des wallets équilibré/agressif (docs/SELECTION-FINALE.md §3). Réserves documentées : biais du survivant structurel, sensibilité aux coûts (profit factor <1 à 25 bps/côté), MaxDD 50.3% (krach dot-com) incompatible avec le profil prudent.",
+      "source": "bt-final/xs-momentum-sp100/results.json"
+    },
+    {
+      "id": "dual_momentum_multiclasse_etf",
+      "famille": "etf_dual_momentum_multiclasse",
+      "date_test": "2026-07-23",
+      "statut": "active",
+      "sharpe_oos": 0.6538,
+      "profit_factor_oos": 0.783,
+      "max_drawdown_oos_pct": 27.57,
+      "n_trades_oos_total": 130,
+      "n_trades_oos_closed": 91,
+      "benchmark_sharpe_oos_aligned_60_40": 1.0778,
+      "walkforward": "36m IS / 12m OOS, 18 fenêtres",
+      "univers": ["SPY", "QQQ", "IWM", "EFA", "EEM", "VNQ", "GLD", "DBC", "IEF"],
+      "dsr": null,
+      "raison": "RETENUE AVEC RÉSERVE MAJEURE : ne bat le 60/40 SPY/IEF sur AUCUN des 3 axes mesurés (Sharpe, CAGR, MaxDD). Test de significativité (Jobson-Korkie/Memmel) p=0.069-0.089 -- écart non significatif statistiquement, ET de toute façon défavorable à la stratégie active. Gardée pour sa diversification structurelle (8 classes d'actifs vs 2 pour le 60/40) et sa faible corrélation au BTC, avec un critère d'échec chiffré explicite (docs/SELECTION-FINALE.md §5) : bascule vers 60/40 statique si sous-performance nette sur 3 mois réels. N'a jamais passé de Porte 2 labo (antécédent, cf. _meta).",
+      "source": "bt-final/dual-momentum-etf/results.json"
+    },
+    {
+      "id": "quasi_passif_crypto",
+      "famille": "crypto_vol_targeted_trend_filter",
+      "date_test": "2026-07-23",
+      "statut": "active",
+      "sharpe_oos": null,
+      "sharpe_backtest_non_audite": {
+        "prudent_btc_eth": 1.24,
+        "equilibre_6majors": 1.47,
+        "agressif_12diversifie": 1.49,
+        "agressif_30univers_comparaison": 1.15
+      },
+      "max_drawdown_pct_backtest": {
+        "prudent_btc_eth": 8.0,
+        "equilibre_6majors": 16.4,
+        "agressif_12diversifie": 33.4,
+        "agressif_30univers_comparaison": 30.3
+      },
+      "walkforward": "AUCUN -- exécution unique du moteur commun, pas de split IS/OOS",
+      "univers": "dépend du wallet : BTC+ETH (prudent), 6 majors V1 (équilibré), 12 diversifié (agressif)",
+      "dsr": null,
+      "raison": "Base de la poche crypto des 3 wallets réels, en remplacement des 6 stratégies actives rejetées/écartées ci-dessus (long/flat vol-targeté + filtre SMA200, aucun paramètre optimisé sur ces données). NIVEAU DE RIGUEUR DÉLIBÉRÉMENT INFÉRIEUR aux 8 autres entrées de ce registre : ni walk-forward, ni audit adversarial, ni test de significativité (docs/SELECTION-FINALE.md §2.2, explicite). Sharpe élevé (1.15-1.49) expliqué par une exposition brute réalisée faible (12-48%) -- le mécanisme de vol-targeting laisse le book majoritairement en cash la majorité du temps, pas un signal miracle. N'a jamais passé de Porte 1 ni de Porte 2 telles que définies dans docs/PROMOTION-RULES.md -- antécédent explicitement non conforme (cf. _meta et PROMOTION-RULES.md §5), à retester avec le protocole complet avant de lui accorder plus de capital (critère d'échec déjà posé dans docs/SELECTION-FINALE.md §5).",
+      "source": "bt-final/quasi-passif-crypto/results.json"
+    }
+  ]
+}
