@@ -1,5 +1,5 @@
 {
-  "cash_usd": 728.99974547205,
+  "cash_usd": 934.91805928053,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
@@ -21,37 +21,43 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-23T18:05:52.744151+00:00"
+      },
+      {
+        "equity": 1142.10422347205,
+        "ts": "2026-07-23T19:40:28.114479+00:00"
       }
     ],
     "flatten_mode": false,
     "manual_review_required": false
   },
-  "equity_peak_ts": "2026-07-23T12:46:26.478286+00:00",
-  "equity_peak_usd": 1141.079,
+  "equity_peak_ts": "2026-07-23T19:40:28.114479+00:00",
+  "equity_peak_usd": 1142.10422347205,
   "fx": {
     "initial_rate": 1.141079,
     "last_rate": 1.1392,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-23T18:07:11.193368+00:00"
+    "last_rate_ts": "2026-07-23T19:41:09.803165+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-23T18:05:52.744151+00:00",
-  "last_run_id": "2026-07-23T18",
+  "last_run_completed_at": "2026-07-23T19:40:28.114479+00:00",
+  "last_run_id": "2026-07-23T19",
   "positions": {
     "UNI": {
       "prix_moyen": 3.7707669999999993,
       "qty": 54.5
-    },
-    "XLM": {
-      "prix_moyen": 0.18175779,
-      "qty": 1132.0
     }
   },
-  "realized_pnl_cumulative_usd": 0.0,
+  "realized_pnl_cumulative_usd": 0.16849552847998317,
   "schema_version": 1,
-  "state_hash_prev": "04c399f005c83b20f5d7036205fa26c2e7ea2960c16b2e05ffb19c4ce86c0085",
+  "state_hash_prev": "3edc30c561e82ce133d9721e6926923c59ae73725502cd5c1d2c1f2905d29551",
   "strategy_state": {},
-  "trade_history_for_breakers": [],
+  "trade_history_for_breakers": [
+    {
+      "realized_pnl_usd": 0.16849552847998317,
+      "symbol": "XLM",
+      "ts": "2026-07-23T19:40:28.114479+00:00"
+    }
+  ],
   "wallet_id": "agressif"
 }
