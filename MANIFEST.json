@@ -1,0 +1,1464 @@
+{
+  "counts": {
+    "crypto_excluded": 0,
+    "crypto_included": 30,
+    "equities_by_source": {
+      "FAILED": 1,
+      "yfinance": 103
+    },
+    "equities_failed": 1,
+    "equities_ok": 103,
+    "etf_by_source": {
+      "yfinance": 18
+    },
+    "etf_failed": 0,
+    "etf_ok": 18
+  },
+  "crypto": {
+    "archive_from": "2022-01",
+    "archive_to": "2026-06",
+    "excluded": {},
+    "full_coverage_required_from": "2023-07",
+    "included": {
+      "AAVE": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "AAVEUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "ADA": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "ADAUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "ALGO": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "ALGOUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "APT": {
+        "first_ts": "2022-10-19T01:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09"
+        ],
+        "months_ok": 45,
+        "pair": "APTUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 32422
+      },
+      "ARB": {
+        "first_ts": "2023-03-23T15:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-01",
+          "2023-02"
+        ],
+        "months_ok": 40,
+        "pair": "ARBUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 28688
+      },
+      "ATOM": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "ATOMUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "AVAX": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "AVAXUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "BCH": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "BCHUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "BNB": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "BNBUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "BTC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "BTCUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "DOGE": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "DOGEUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "DOT": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "DOTUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "ETC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "ETCUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "ETH": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "ETHUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "FIL": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "FILUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "HBAR": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "HBARUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "ICP": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "ICPUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "INJ": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "INJUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "LINK": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "LINKUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "LTC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "LTCUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "MANA": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "MANAUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "NEAR": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "NEARUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "OP": {
+        "first_ts": "2022-06-01T08:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05"
+        ],
+        "months_ok": 49,
+        "pair": "OPUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 35775
+      },
+      "SAND": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "SANDUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "SOL": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "SOLUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "TRX": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "TRXUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "UNI": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "UNIUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "VET": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "VETUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "XLM": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "XLMUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      },
+      "XRP": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-06-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 54,
+        "pair": "XRPUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 39407
+      }
+    }
+  },
+  "equities": {
+    "AAPL": {
+      "first_ts": "1980-12-12T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11493,
+      "source": "yfinance",
+      "span_years": 45.6,
+      "status": "OK",
+      "symbol_used": "AAPL"
+    },
+    "ABBV": {
+      "first_ts": "2013-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 3408,
+      "source": "yfinance",
+      "span_years": 13.55,
+      "status": "OK",
+      "symbol_used": "ABBV"
+    },
+    "ABT": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11681,
+      "source": "yfinance",
+      "span_years": 46.34,
+      "status": "OK",
+      "symbol_used": "ABT"
+    },
+    "ACN": {
+      "first_ts": "2001-07-19T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6288,
+      "source": "yfinance",
+      "span_years": 25.01,
+      "status": "OK",
+      "symbol_used": "ACN"
+    },
+    "ADBE": {
+      "first_ts": "1986-08-13T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 10061,
+      "source": "yfinance",
+      "span_years": 39.94,
+      "status": "OK",
+      "symbol_used": "ADBE"
+    },
+    "AIG": {
+      "first_ts": "1973-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13501,
+      "source": "yfinance",
+      "span_years": 53.55,
+      "status": "OK",
+      "symbol_used": "AIG"
+    },
+    "AMD": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11681,
+      "source": "yfinance",
+      "span_years": 46.34,
+      "status": "OK",
+      "symbol_used": "AMD"
+    },
+    "AMGN": {
+      "first_ts": "1983-06-17T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 10858,
+      "source": "yfinance",
+      "span_years": 43.1,
+      "status": "OK",
+      "symbol_used": "AMGN"
+    },
+    "AMT": {
+      "first_ts": "1998-02-27T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 7143,
+      "source": "yfinance",
+      "span_years": 28.39,
+      "status": "OK",
+      "symbol_used": "AMT"
+    },
+    "AMZN": {
+      "first_ts": "1997-05-15T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 7341,
+      "source": "yfinance",
+      "span_years": 29.19,
+      "status": "OK",
+      "symbol_used": "AMZN"
+    },
+    "AVGO": {
+      "first_ts": "2009-08-06T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 4265,
+      "source": "yfinance",
+      "span_years": 16.96,
+      "status": "OK",
+      "symbol_used": "AVGO"
+    },
+    "AXP": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "AXP"
+    },
+    "BA": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "BA"
+    },
+    "BAC": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13467,
+      "source": "yfinance",
+      "span_years": 53.41,
+      "status": "OK",
+      "symbol_used": "BAC"
+    },
+    "BK": {
+      "error": "yfinance et stooq (repli) ont tous deux échoué — dernière erreur stooq: réponse stooq vide/invalide (ticker inconnu, ou blocage/rate limiting persistant)",
+      "source": "FAILED",
+      "status": "ERROR",
+      "symbol_used": "bk"
+    },
+    "BKNG": {
+      "first_ts": "1999-03-31T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6869,
+      "source": "yfinance",
+      "span_years": 27.31,
+      "status": "OK",
+      "symbol_used": "BKNG"
+    },
+    "BLK": {
+      "first_ts": "1999-10-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6741,
+      "source": "yfinance",
+      "span_years": 26.81,
+      "status": "OK",
+      "symbol_used": "BLK"
+    },
+    "BMY": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "BMY"
+    },
+    "BRK.B": {
+      "first_ts": "1996-05-09T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 7598,
+      "source": "yfinance",
+      "span_years": 30.2,
+      "status": "OK",
+      "symbol_used": "BRK-B"
+    },
+    "C": {
+      "first_ts": "1977-01-03T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 12490,
+      "source": "yfinance",
+      "span_years": 49.54,
+      "status": "OK",
+      "symbol_used": "C"
+    },
+    "CAT": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "CAT"
+    },
+    "CHTR": {
+      "first_ts": "2010-01-05T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 4161,
+      "source": "yfinance",
+      "span_years": 16.54,
+      "status": "OK",
+      "symbol_used": "CHTR"
+    },
+    "CL": {
+      "first_ts": "1973-05-02T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13418,
+      "source": "yfinance",
+      "span_years": 53.22,
+      "status": "OK",
+      "symbol_used": "CL"
+    },
+    "CMCSA": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11681,
+      "source": "yfinance",
+      "span_years": 46.34,
+      "status": "OK",
+      "symbol_used": "CMCSA"
+    },
+    "COF": {
+      "first_ts": "1994-11-16T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 7971,
+      "source": "yfinance",
+      "span_years": 31.68,
+      "status": "OK",
+      "symbol_used": "COF"
+    },
+    "COP": {
+      "first_ts": "1981-12-31T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11228,
+      "source": "yfinance",
+      "span_years": 44.55,
+      "status": "OK",
+      "symbol_used": "COP"
+    },
+    "COST": {
+      "first_ts": "1986-07-09T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 10086,
+      "source": "yfinance",
+      "span_years": 40.04,
+      "status": "OK",
+      "symbol_used": "COST"
+    },
+    "CRM": {
+      "first_ts": "2004-06-23T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5555,
+      "source": "yfinance",
+      "span_years": 22.08,
+      "status": "OK",
+      "symbol_used": "CRM"
+    },
+    "CSCO": {
+      "first_ts": "1990-02-16T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 9172,
+      "source": "yfinance",
+      "span_years": 36.42,
+      "status": "OK",
+      "symbol_used": "CSCO"
+    },
+    "CVS": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13467,
+      "source": "yfinance",
+      "span_years": 53.41,
+      "status": "OK",
+      "symbol_used": "CVS"
+    },
+    "CVX": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "CVX"
+    },
+    "DE": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "DE"
+    },
+    "DHR": {
+      "first_ts": "1978-12-29T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11987,
+      "source": "yfinance",
+      "span_years": 47.56,
+      "status": "OK",
+      "symbol_used": "DHR"
+    },
+    "DIS": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "DIS"
+    },
+    "DOW": {
+      "first_ts": "2019-03-20T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 1845,
+      "source": "yfinance",
+      "span_years": 7.34,
+      "status": "OK",
+      "symbol_used": "DOW",
+      "warning": "historique disponible (7.3 ans) inférieur au minimum visé (8.0 ans) — probablement une introduction en bourse/cotation récente"
+    },
+    "DUK": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11681,
+      "source": "yfinance",
+      "span_years": 46.34,
+      "status": "OK",
+      "symbol_used": "DUK"
+    },
+    "EMR": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "EMR"
+    },
+    "F": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "F"
+    },
+    "FDX": {
+      "first_ts": "1978-04-12T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 12169,
+      "source": "yfinance",
+      "span_years": 48.27,
+      "status": "OK",
+      "symbol_used": "FDX"
+    },
+    "GD": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "GD"
+    },
+    "GE": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "GE"
+    },
+    "GILD": {
+      "first_ts": "1992-01-22T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 8685,
+      "source": "yfinance",
+      "span_years": 34.49,
+      "status": "OK",
+      "symbol_used": "GILD"
+    },
+    "GM": {
+      "first_ts": "2010-11-18T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 3940,
+      "source": "yfinance",
+      "span_years": 15.67,
+      "status": "OK",
+      "symbol_used": "GM"
+    },
+    "GOOG": {
+      "first_ts": "2004-08-19T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5515,
+      "source": "yfinance",
+      "span_years": 21.92,
+      "status": "OK",
+      "symbol_used": "GOOG"
+    },
+    "GOOGL": {
+      "first_ts": "2004-08-19T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5515,
+      "source": "yfinance",
+      "span_years": 21.92,
+      "status": "OK",
+      "symbol_used": "GOOGL"
+    },
+    "GS": {
+      "first_ts": "1999-05-04T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6846,
+      "source": "yfinance",
+      "span_years": 27.22,
+      "status": "OK",
+      "symbol_used": "GS"
+    },
+    "HD": {
+      "first_ts": "1981-09-22T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11298,
+      "source": "yfinance",
+      "span_years": 44.83,
+      "status": "OK",
+      "symbol_used": "HD"
+    },
+    "HON": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "HON"
+    },
+    "IBM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "IBM"
+    },
+    "INTC": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11681,
+      "source": "yfinance",
+      "span_years": 46.34,
+      "status": "OK",
+      "symbol_used": "INTC"
+    },
+    "INTU": {
+      "first_ts": "1993-03-12T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 8397,
+      "source": "yfinance",
+      "span_years": 33.36,
+      "status": "OK",
+      "symbol_used": "INTU"
+    },
+    "ISRG": {
+      "first_ts": "2000-06-16T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6562,
+      "source": "yfinance",
+      "span_years": 26.1,
+      "status": "OK",
+      "symbol_used": "ISRG"
+    },
+    "JNJ": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "JNJ"
+    },
+    "JPM": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11681,
+      "source": "yfinance",
+      "span_years": 46.34,
+      "status": "OK",
+      "symbol_used": "JPM"
+    },
+    "KHC": {
+      "first_ts": "2015-07-06T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 2778,
+      "source": "yfinance",
+      "span_years": 11.04,
+      "status": "OK",
+      "symbol_used": "KHC"
+    },
+    "KMI": {
+      "first_ts": "2011-02-11T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 3882,
+      "source": "yfinance",
+      "span_years": 15.44,
+      "status": "OK",
+      "symbol_used": "KMI"
+    },
+    "KO": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "KO"
+    },
+    "LIN": {
+      "first_ts": "1992-06-17T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 8583,
+      "source": "yfinance",
+      "span_years": 34.09,
+      "status": "OK",
+      "symbol_used": "LIN"
+    },
+    "LLY": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "LLY"
+    },
+    "LMT": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16245,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "LMT"
+    },
+    "LOW": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11681,
+      "source": "yfinance",
+      "span_years": 46.34,
+      "status": "OK",
+      "symbol_used": "LOW"
+    },
+    "MA": {
+      "first_ts": "2006-05-25T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5070,
+      "source": "yfinance",
+      "span_years": 20.16,
+      "status": "OK",
+      "symbol_used": "MA"
+    },
+    "MCD": {
+      "first_ts": "1966-07-05T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 15111,
+      "source": "yfinance",
+      "span_years": 60.05,
+      "status": "OK",
+      "symbol_used": "MCD"
+    },
+    "MDLZ": {
+      "first_ts": "2001-06-13T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6313,
+      "source": "yfinance",
+      "span_years": 25.11,
+      "status": "OK",
+      "symbol_used": "MDLZ"
+    },
+    "MDT": {
+      "first_ts": "1973-05-02T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13418,
+      "source": "yfinance",
+      "span_years": 53.22,
+      "status": "OK",
+      "symbol_used": "MDT"
+    },
+    "MET": {
+      "first_ts": "2000-04-05T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6612,
+      "source": "yfinance",
+      "span_years": 26.29,
+      "status": "OK",
+      "symbol_used": "MET"
+    },
+    "META": {
+      "first_ts": "2012-05-18T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 3563,
+      "source": "yfinance",
+      "span_years": 14.18,
+      "status": "OK",
+      "symbol_used": "META"
+    },
+    "MMM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "MMM"
+    },
+    "MO": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "MO"
+    },
+    "MRK": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "MRK"
+    },
+    "MS": {
+      "first_ts": "1993-02-23T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 8410,
+      "source": "yfinance",
+      "span_years": 33.4,
+      "status": "OK",
+      "symbol_used": "MS"
+    },
+    "MSFT": {
+      "first_ts": "1986-03-13T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 10167,
+      "source": "yfinance",
+      "span_years": 40.36,
+      "status": "OK",
+      "symbol_used": "MSFT"
+    },
+    "NEE": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13467,
+      "source": "yfinance",
+      "span_years": 53.41,
+      "status": "OK",
+      "symbol_used": "NEE"
+    },
+    "NFLX": {
+      "first_ts": "2002-05-23T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6079,
+      "source": "yfinance",
+      "span_years": 24.16,
+      "status": "OK",
+      "symbol_used": "NFLX"
+    },
+    "NKE": {
+      "first_ts": "1980-12-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11501,
+      "source": "yfinance",
+      "span_years": 45.63,
+      "status": "OK",
+      "symbol_used": "NKE"
+    },
+    "NVDA": {
+      "first_ts": "1999-01-22T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6916,
+      "source": "yfinance",
+      "span_years": 27.49,
+      "status": "OK",
+      "symbol_used": "NVDA"
+    },
+    "ORCL": {
+      "first_ts": "1986-03-12T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 10168,
+      "source": "yfinance",
+      "span_years": 40.36,
+      "status": "OK",
+      "symbol_used": "ORCL"
+    },
+    "PEP": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "PEP"
+    },
+    "PFE": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "PFE"
+    },
+    "PG": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "PG"
+    },
+    "PM": {
+      "first_ts": "2008-03-17T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 4616,
+      "source": "yfinance",
+      "span_years": 18.35,
+      "status": "OK",
+      "symbol_used": "PM"
+    },
+    "PYPL": {
+      "first_ts": "2015-07-06T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 2778,
+      "source": "yfinance",
+      "span_years": 11.04,
+      "status": "OK",
+      "symbol_used": "PYPL"
+    },
+    "QCOM": {
+      "first_ts": "1991-12-13T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 8711,
+      "source": "yfinance",
+      "span_years": 34.6,
+      "status": "OK",
+      "symbol_used": "QCOM"
+    },
+    "RTX": {
+      "first_ts": "1962-04-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16183,
+      "source": "yfinance",
+      "span_years": 64.3,
+      "status": "OK",
+      "symbol_used": "RTX"
+    },
+    "SBUX": {
+      "first_ts": "1992-06-26T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 8576,
+      "source": "yfinance",
+      "span_years": 34.07,
+      "status": "OK",
+      "symbol_used": "SBUX"
+    },
+    "SCHW": {
+      "first_ts": "1987-09-22T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 9781,
+      "source": "yfinance",
+      "span_years": 38.83,
+      "status": "OK",
+      "symbol_used": "SCHW"
+    },
+    "SO": {
+      "first_ts": "1981-12-31T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11228,
+      "source": "yfinance",
+      "span_years": 44.55,
+      "status": "OK",
+      "symbol_used": "SO"
+    },
+    "SPG": {
+      "first_ts": "1993-12-14T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 8205,
+      "source": "yfinance",
+      "span_years": 32.6,
+      "status": "OK",
+      "symbol_used": "SPG"
+    },
+    "T": {
+      "first_ts": "1983-11-21T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 10749,
+      "source": "yfinance",
+      "span_years": 42.66,
+      "status": "OK",
+      "symbol_used": "T"
+    },
+    "TGT": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13467,
+      "source": "yfinance",
+      "span_years": 53.41,
+      "status": "OK",
+      "symbol_used": "TGT"
+    },
+    "TJX": {
+      "first_ts": "1987-06-26T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 9841,
+      "source": "yfinance",
+      "span_years": 39.07,
+      "status": "OK",
+      "symbol_used": "TJX"
+    },
+    "TMO": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11681,
+      "source": "yfinance",
+      "span_years": 46.34,
+      "status": "OK",
+      "symbol_used": "TMO"
+    },
+    "TMUS": {
+      "first_ts": "2007-04-19T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 4845,
+      "source": "yfinance",
+      "span_years": 19.26,
+      "status": "OK",
+      "symbol_used": "TMUS"
+    },
+    "TSLA": {
+      "first_ts": "2010-06-29T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 4040,
+      "source": "yfinance",
+      "span_years": 16.06,
+      "status": "OK",
+      "symbol_used": "TSLA"
+    },
+    "TXN": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "TXN"
+    },
+    "UNH": {
+      "first_ts": "1984-10-17T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 10520,
+      "source": "yfinance",
+      "span_years": 41.76,
+      "status": "OK",
+      "symbol_used": "UNH"
+    },
+    "UNP": {
+      "first_ts": "1980-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 11733,
+      "source": "yfinance",
+      "span_years": 46.55,
+      "status": "OK",
+      "symbol_used": "UNP"
+    },
+    "UPS": {
+      "first_ts": "1999-11-10T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6713,
+      "source": "yfinance",
+      "span_years": 26.69,
+      "status": "OK",
+      "symbol_used": "UPS"
+    },
+    "USB": {
+      "first_ts": "1973-05-03T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13417,
+      "source": "yfinance",
+      "span_years": 53.22,
+      "status": "OK",
+      "symbol_used": "USB"
+    },
+    "V": {
+      "first_ts": "2008-03-19T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 4614,
+      "source": "yfinance",
+      "span_years": 18.34,
+      "status": "OK",
+      "symbol_used": "V"
+    },
+    "VZ": {
+      "first_ts": "1983-11-21T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 10749,
+      "source": "yfinance",
+      "span_years": 42.66,
+      "status": "OK",
+      "symbol_used": "VZ"
+    },
+    "WFC": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13647,
+      "source": "yfinance",
+      "span_years": 54.14,
+      "status": "OK",
+      "symbol_used": "WFC"
+    },
+    "WMT": {
+      "first_ts": "1972-08-25T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 13587,
+      "source": "yfinance",
+      "span_years": 53.91,
+      "status": "OK",
+      "symbol_used": "WMT"
+    },
+    "XOM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 16246,
+      "source": "yfinance",
+      "span_years": 64.55,
+      "status": "OK",
+      "symbol_used": "XOM"
+    }
+  },
+  "etf": {
+    "DBC": {
+      "first_ts": "2006-02-06T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5146,
+      "source": "yfinance",
+      "span_years": 20.45,
+      "status": "OK",
+      "symbol_used": "DBC"
+    },
+    "EEM": {
+      "first_ts": "2003-04-14T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5855,
+      "source": "yfinance",
+      "span_years": 23.27,
+      "status": "OK",
+      "symbol_used": "EEM"
+    },
+    "EFA": {
+      "first_ts": "2001-08-27T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6261,
+      "source": "yfinance",
+      "span_years": 24.9,
+      "status": "OK",
+      "symbol_used": "EFA"
+    },
+    "GLD": {
+      "first_ts": "2004-11-18T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5451,
+      "source": "yfinance",
+      "span_years": 21.67,
+      "status": "OK",
+      "symbol_used": "GLD"
+    },
+    "HYG": {
+      "first_ts": "2007-04-11T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 4851,
+      "source": "yfinance",
+      "span_years": 19.28,
+      "status": "OK",
+      "symbol_used": "HYG"
+    },
+    "IEF": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6033,
+      "source": "yfinance",
+      "span_years": 23.98,
+      "status": "OK",
+      "symbol_used": "IEF"
+    },
+    "IWM": {
+      "first_ts": "2000-05-26T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6576,
+      "source": "yfinance",
+      "span_years": 26.15,
+      "status": "OK",
+      "symbol_used": "IWM"
+    },
+    "LQD": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6033,
+      "source": "yfinance",
+      "span_years": 23.98,
+      "status": "OK",
+      "symbol_used": "LQD"
+    },
+    "QQQ": {
+      "first_ts": "1999-03-10T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6884,
+      "source": "yfinance",
+      "span_years": 27.36,
+      "status": "OK",
+      "symbol_used": "QQQ"
+    },
+    "SLV": {
+      "first_ts": "2006-04-28T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5089,
+      "source": "yfinance",
+      "span_years": 20.23,
+      "status": "OK",
+      "symbol_used": "SLV"
+    },
+    "SPY": {
+      "first_ts": "1993-01-29T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 8426,
+      "source": "yfinance",
+      "span_years": 33.47,
+      "status": "OK",
+      "symbol_used": "SPY"
+    },
+    "TLT": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6033,
+      "source": "yfinance",
+      "span_years": 23.98,
+      "status": "OK",
+      "symbol_used": "TLT"
+    },
+    "VNQ": {
+      "first_ts": "2004-09-29T04:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 5487,
+      "source": "yfinance",
+      "span_years": 21.81,
+      "status": "OK",
+      "symbol_used": "VNQ"
+    },
+    "XLE": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6936,
+      "source": "yfinance",
+      "span_years": 27.58,
+      "status": "OK",
+      "symbol_used": "XLE"
+    },
+    "XLF": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6936,
+      "source": "yfinance",
+      "span_years": 27.58,
+      "status": "OK",
+      "symbol_used": "XLF"
+    },
+    "XLK": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6936,
+      "source": "yfinance",
+      "span_years": 27.58,
+      "status": "OK",
+      "symbol_used": "XLK"
+    },
+    "XLU": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6936,
+      "source": "yfinance",
+      "span_years": 27.58,
+      "status": "OK",
+      "symbol_used": "XLU"
+    },
+    "XLV": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-07-22T04:00:00+00:00",
+      "rows": 6936,
+      "source": "yfinance",
+      "span_years": 27.58,
+      "status": "OK",
+      "symbol_used": "XLV"
+    }
+  },
+  "generated_at": "2026-07-23T07:27:37.724766+00:00",
+  "generation_duration_seconds": 199.9,
+  "sources": {
+    "crypto_bulk_archive": "https://data.binance.vision/data/spot/monthly/klines/{PAIR}/1h/{PAIR}-1h-{YYYY-MM}.zip",
+    "crypto_current_month_completion": "https://api.binance.com/api/v3/klines",
+    "equities_etf_daily_fallback": "stooq.com (`https://stooq.com/q/d/l/?s={ticker}.us&i=d`, User-Agent navigateur, séquentiel, pause >= 1.0s/requête) — utilisé uniquement si yfinance échoue pour un ticker",
+    "equities_etf_daily_primary": "yfinance (yf.download / yf.Ticker.history, period=max, interval=1d, auto_adjust=True)"
+  }
+}
