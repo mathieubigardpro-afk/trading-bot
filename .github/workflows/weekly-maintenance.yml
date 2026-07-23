@@ -1,0 +1,66 @@
+name: Weekly maintenance
+
+# Déclencheurs :
+#   - schedule : dimanche 22h UTC (cron '0 22 * * 0') -- après le cycle horaire habituel, hors
+#     des heures de marché US, laisse la semaine se terminer avant de mesurer la dérive.
+#   - workflow_dispatch : lancement manuel (rattrapage, debug).
+#   - push sur ce fichier lui-même OU sur tools/weekly_maintenance.py : run de validation
+#     immédiat dès le premier push (même convention que bot.yml/fetch-data.yml -- seul moyen de
+#     vérifier le pipeline sans attendre le prochain dimanche 22h ni dépendre de l'API GitHub,
+#     inaccessible depuis l'environnement qui a produit ce commit).
+on:
+  schedule:
+    - cron: "0 22 * * 0"
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/weekly_maintenance.py"
+      - ".github/workflows/weekly-maintenance.yml"
+
+permissions:
+  contents: write
+
+# Un seul run à la fois : la maintenance committe (jusqu'à 2 commits dédiés) sur `main`, jamais
+# en parallèle d'un autre run de maintenance (le cycle horaire du bot, lui, a son propre groupe
+# de concurrence indépendant dans bot.yml -- git_sync()/pull_rebase() gèrent déjà la coexistence
+# avec les commits horaires du bot).
+concurrency:
+  group: weekly-maintenance
+  cancel-in-progress: false
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 -- pull_rebase()/git_sync() ont besoin de l'historique complet,
+          # même convention que bot.yml/fetch-data.yml.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Dépendances complètes : pandas/numpy pour le moniteur de dérive et le simulateur de
+          # recalibrage (tools/weekly_maintenance.py), requests/pyarrow/yfinance pour le
+          # rafraîchissement des données réutilisant tools/fetch_data.py.
+          pip install pandas numpy requests pyarrow yfinance
+
+      - name: Configure git identity
+        run: |
+          git config user.name "Trading Bot"
+          git config user.email "bot@trading.local"
+
+      - name: Run weekly maintenance
+        run: python tools/weekly_maintenance.py
+
+# (touch: run de validation déclenché par le commit initial de cette capacité)

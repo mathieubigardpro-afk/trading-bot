@@ -188,3 +188,42 @@ donc être une session dédiée, distincte de toute évaluation de candidate.
 candidate suivant intégralement le protocole Porte 1 (cf. `docs/RESEARCH-BACKLOG.md` pour
 les idées les mieux priorisées -- momentum inverse-vol P0#3 est le candidat le plus simple
 à instrumenter en premier, changement incrémental d'une stratégie déjà validée).
+
+---
+
+## 2026-07-23 — Boucle MÉCANIQUE d'auto-amélioration : `tools/weekly_maintenance.py`
+
+**Contexte.** Mission dédiée à l'infrastructure (pas à une candidate ni à une décision de
+promotion) : construire la boucle hebdomadaire, gratuite, sur GitHub Actions, qui (a)
+signale la dérive backtest-vs-vécu de chaque stratégie sans jamais décider, et (b) recalibre
+de façon étroitement encadrée le seul paramètre de signal disponible pour
+`quasi_passif_crypto`. Aucune session d'évaluation de candidate n'a eu lieu dans cette même
+session, conformément à `docs/PROMOTION-RULES.md` §0.
+
+**Livré** :
+- `tools/weekly_maintenance.py` : moniteur de dérive (compare `bot/reporting/tracking.py`-style
+  métriques vécues, reconstruites depuis `state/wallets/*/decisions.jsonl`/`equity.jsonl`, aux
+  métriques OOS de `docs/RESEARCH-REGISTRY.json`) + recalibrage encadré de `REGIME_SMA_DAYS`
+  (walk-forward 9m IS / 3m OOS sur données rafraîchies via `tools/fetch_data.py`). Écrit
+  `docs/DRIFT-REPORT.md`. Ne prend aucune décision de promotion/rétrogradation/mort.
+- `docs/RECALIBRATION-SPEC.md` : pré-enregistrement, AVANT toute exécution réelle (réseau
+  bloqué en développement), de la grille `REGIME_SMA_DAYS ∈ [150, 175, 200, 225, 250]` --
+  **seul** paramètre retenu pour `quasi_passif_crypto` car c'est le seul qui ne relève PAS du
+  cadre de risque (`WALLETS[*]["risque"]`, hors de portée de la recherche par
+  `docs/PROMOTION-RULES.md` §4.3). Document séparé de `PROMOTION-RULES.md` (jamais touché ici,
+  volontairement, cf. §0 "gravé").
+- `.github/workflows/weekly-maintenance.yml` : cron dimanche 22h UTC, `workflow_dispatch`,
+  push de validation sur lui-même, permissions `contents: write`, timeout 60 min.
+- `tools/tests/test_weekly_maintenance.py` (57 tests, fixtures synthétiques uniquement) :
+  classification OK/SURVEILLER/ALERTE sur des cas construits (§2.1/§2.2/§3.1/§3.2), refus
+  structurel d'une valeur hors grille, refus d'une amélioration OOS <= 10 %, sanity du
+  simulateur de walk-forward, `main()` en mode `--skip-push`.
+
+**Point d'attention pour toute session future** : le simulateur de recalibrage (`simulate_
+daily_returns`) SIMPLIFIE le calcul de vol réalisée par rapport à la formule exacte de
+production (`_basket_vol_annualized`) pour rester rapide sur plusieurs années de données --
+documenté explicitement dans `docs/RECALIBRATION-SPEC.md` §2, n'invalide que la valeur
+absolue de ses chiffres, pas la comparaison relative entre valeurs de la grille (seul usage
+qui en est fait). `xs_momentum_sp100`/`dual_momentum_multiclasse_etf`/`quasi_passif_crypto`
+restent un antécédent hors du cadre formel §3 (cf. entrée du 2026-07-23 "Gouvernance") : le
+moniteur les évalue quand même à titre informatif, sans déclencher d'action automatique.
