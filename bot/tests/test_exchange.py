@@ -213,6 +213,64 @@ def test_qty_rounded_down_never_exceeds_requested():
 
 
 # ---------------------------------------------------------------------------
+# Régression audit critique #2 : sans qty_steps dédié, un symbole action/ETF hors des 6
+# megacaps historiques (`DEFAULT_QTY_STEPS`) retombe sur `DEFAULT_UNKNOWN_SYMBOL_STEP=1.0`
+# (lot entier) — une position typique de budget ~30-200$ sur un titre >30-40$/action se voit
+# alors arrondie à zéro et rejetée à coup sûr (vérifié empiriquement avec SPY sur `bot.runner`).
+# `bot.config.QTY_STEPS_EQUITIES`, fusionné par le constructeur `ExchangeSim(qty_steps=...)`
+# (câblé par `bot.runner._exchange_for_wallet`), doit lever ce blocage.
+# ---------------------------------------------------------------------------
+
+def test_unknown_equity_symbol_without_dedicated_qty_step_is_rejected_at_small_size():
+    """Caractérise le bug AVANT correctif (comportement par défaut d'ExchangeSim, sans passer
+    `qty_steps`) : SPY (hors DEFAULT_QTY_STEPS) sur une taille de position réaliste (~150$ /
+    450$/action = 0.33 action) est rejeté au pas grossier par défaut (1.0)."""
+    sim = make_sim()  # pas de qty_steps custom -> DEFAULT_UNKNOWN_SYMBOL_STEP=1.0 pour SPY
+    quote = make_quote(bid=449.5, ask=450.5)
+    result = sim.execute_order("BUY", "SPY", 0.33, quote, "dual_momentum_etf", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Reject)
+    assert "arrondie à zéro" in result.reason
+
+
+def test_equity_etf_qty_steps_from_config_allow_fractional_positions():
+    """Correctif : `bot.config.QTY_STEPS_EQUITIES` fournit un pas fractionnaire pour TOUT
+    `bot.config.SYMBOLS_EQUITY` (S&P100 + SPY + les 8 ETF risqués + IEF) -- la même position
+    SPY de ~150$ passe désormais."""
+    from bot import config
+
+    assert "SPY" in config.QTY_STEPS_EQUITIES
+    sim = make_sim(qty_steps=config.QTY_STEPS_EQUITIES)
+    quote = make_quote(bid=449.5, ask=450.5)
+    result = sim.execute_order("BUY", "SPY", 0.33, quote, "dual_momentum_etf", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Fill)
+    assert 0 < result.qty <= 0.33
+
+
+def test_equity_etf_qty_steps_cover_full_sp100_and_etf_universe():
+    from bot import config
+
+    for sym in config.SYMBOLS_EQUITY:
+        assert sym in config.QTY_STEPS_EQUITIES
+        assert config.QTY_STEPS_EQUITIES[sym] < 1.0  # fractionnaire, pas un lot entier
+
+
+def test_runner_exchange_for_wallet_wires_equity_etf_qty_steps():
+    """`bot.runner._exchange_for_wallet` doit câbler `config.QTY_STEPS_EQUITIES` dans
+    l'`ExchangeSim` réellement utilisé par le cycle de production (pas seulement disponible en
+    config sans être branché)."""
+    import bot.runner as runner
+    from bot import config
+
+    exchange = runner._exchange_for_wallet(config.wallet_config("equilibre"))
+    assert exchange.step_for("SPY") == pytest.approx(config.QTY_STEP_EQUITY_ETF)
+    assert exchange.step_for("AAPL") == pytest.approx(config.QTY_STEP_EQUITY_ETF)
+    # la crypto n'est pas affectée par ce câblage (steps crypto par défaut inchangés)
+    assert exchange.step_for("BTC") == pytest.approx(0.00001)
+
+
+# ---------------------------------------------------------------------------
 # Paliers de coûts par symbole (majors/mids/smalls) — multi-wallets, wallet agressif
 # ---------------------------------------------------------------------------
 

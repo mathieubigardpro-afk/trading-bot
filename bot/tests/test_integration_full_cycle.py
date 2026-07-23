@@ -8,7 +8,12 @@ les ordres qui en sortent sont COHÉRENTS avec le SPEC :
   - aucun ordre actions/ETF hors séance régulière NYSE (marché fermé -> NO_TRADE partout,
     positions conservées) ;
   - la poche crypto quasi-passive achète BTC quand son historique mocké le place au-dessus de
-    sa SMA200 journalière (filtre de tendance "on").
+    sa SMA200 journalière (filtre de tendance "on") ;
+  - CHAQUE poche non-cash d'un wallet dont la stratégie a émis des cibles brutes non nulles ce
+    cycle a réellement exécuté au moins un ordre BUY/SELL (pas seulement "un trade quelque
+    part" -- assertion ajoutée suite à l'audit qui a trouvé que cette suite ne détectait ni la
+    poche actions structurellement gelée par une no-trade band wallet-wide mal calibrée, ni les
+    rejets systématiques d'ordres actions/ETF faute de quantités fractionnaires).
 
 Aucun appel réseau réel : `get_prices`, `get_fx_rate`, `get_history` (crypto horaire),
 `prefetch_daily_history`/`get_daily_history` (actions/ETF journalier) sont tous substitués par
@@ -263,6 +268,47 @@ def test_full_cycle_market_open_produces_coherent_orders(tmp_path, monkeypatch):
         "BTC est au-dessus de sa SMA200 journalière mockée dans TOUS les wallets qui le "
         "suivent (prudent/équilibré/agressif) : au moins un achat BTC est attendu"
     )
+
+    # --- couverture décisive audit (findings critiques #1/#2, mission d'intégration §4) : ---
+    # "au moins un trade quelque part" ne suffit pas -- CHAQUE poche non-cash d'un wallet dont la
+    # stratégie a émis des cibles brutes non nulles ce cycle doit avoir RÉELLEMENT déployé une
+    # part de son capital (gross_exposure > 0), pas seulement la poche crypto. Sans cette
+    # assertion, une poche actions structurellement gelée (no-trade band wallet-wide, finding
+    # #1) ou des ordres actions/ETF systématiquement rejetés (pas de quantité fractionnaire,
+    # finding #2) passaient inaperçus derrière `any_trade_anywhere=True` porté par la seule
+    # poche crypto.
+    for wallet_cfg in config.WALLETS:
+        wallet_id = wallet_cfg["id"]
+        decisions = _read_jsonl(clone / config.wallet_decisions_jsonl(wallet_id))
+        executed_by_pocket: Dict[str, set] = {}
+        raw_signal_nonzero_by_pocket: Dict[str, bool] = {}
+        for d in decisions:
+            asset_class = d["asset_class"]
+            executed_by_pocket.setdefault(asset_class, set())
+            # `decision` in {"BUY", "SELL"} = ordre RÉELLEMENT EXÉCUTÉ par ExchangeSim (pas
+            # seulement une cible calculée par le RiskManager, cf. `poids_cible_apres_risk` qui
+            # peut être non nul alors même que l'ordre est ensuite rejeté par ExchangeSim -- ce
+            # que ce test doit précisément détecter, finding critique #2).
+            if d["decision"] in ("BUY", "SELL"):
+                executed_by_pocket[asset_class].add(d["symbol"])
+            if d.get("poids_cible_brut"):
+                raw_signal_nonzero_by_pocket[asset_class] = True
+
+        for pocket in wallet_cfg.get("pockets", []) or []:
+            asset_class = pocket.get("asset_class")
+            if asset_class == "cash" or not pocket.get("strategy_ref"):
+                continue
+            if not raw_signal_nonzero_by_pocket.get(asset_class):
+                continue  # signal brut nul ce cycle (ex. filtre de régime "off") : rien à exiger
+            deployed = executed_by_pocket.get(asset_class) or set()
+            assert deployed, (
+                f"wallet {wallet_id}: la poche '{asset_class}' (stratégie "
+                f"{pocket.get('strategy_ref')!r}) a émis des cibles brutes non nulles ce cycle "
+                "mais AUCUN ordre BUY/SELL n'a été réellement exécuté sur cette poche -- poche "
+                "structurellement gelée (no-trade band mal calibrée -> poids_cible_apres_risk "
+                "resté au poids actuel, et/ou ordres systématiquement rejetés par ExchangeSim "
+                "-- cf. findings critiques #1/#2 de l'audit)"
+            )
 
 
 def test_full_cycle_market_closed_blocks_equities_etf_orders_but_not_crypto(tmp_path, monkeypatch):

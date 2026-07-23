@@ -231,6 +231,36 @@ SYMBOLS_EQUITY = sorted(
     | {ETF_BOND_BOGEY}
 )
 
+# --- Pas de quantité (granularité d'exécution) actions/ETF — CORRECTIF AUDIT CRITIQUE #2 ---
+# `bot.sim.exchange.DEFAULT_QTY_STEPS` ne couvrait, côté actions, que 6 megacaps historiques
+# (pas=1.0, "lot entier") ; tout autre symbole (les 97 titres restants du S&P100 retenu, les 8
+# ETF de `ETF_RISKY_UNIVERSE`, `ETF_BOND_BOGEY`) retombait sur
+# `bot.sim.exchange.DEFAULT_UNKNOWN_SYMBOL_STEP = 1.0` (action entière). Or une position typique
+# sur un wallet de ~1000-1100$ pèse ~30-40$ (poche actions, top_k=10 équipondéré x 30-35% du
+# wallet) à ~120-200$ (poche ETF, top_k=3). Tout titre dont le cours dépasse ce budget (BKNG,
+# ISRG, TMO, LIN, COST, ADBE, CAT, GS, MA, V, UNH, SPY, QQQ... nombreux dans l'univers retenu)
+# ne peut alors JAMAIS être acheté (quantité arrondie à zéro par `floor_to_step`, ordre rejeté
+# par `ExchangeSim` — vérifié empiriquement : SPY à 18.3% d'un wallet de 1000€ rejeté "quantité
+# (0.3057) arrondie à zéro au pas réaliste (1.0)").
+#
+# Décision assumée (pas une "amélioration créative" des seuils SPEC, qui ne portent que sur les
+# PARAMÈTRES DE STRATÉGIE — momentum/lookback/top_k/etc. — jamais sur la granularité d'exécution
+# du simulateur, qui est un détail d'infrastructure `bot/sim` hors SPEC) : `bot.sim.ExchangeSim`
+# est un simulateur MAISON sans contrainte réelle de stepSize façon carnet d'ordres crypto — il
+# n'y a donc aucune raison de lui imposer artificiellement une granularité "lot entier" pour des
+# actions/ETF, alors que des courtiers réels praticables pour ce produit (Trading212, Revolut,
+# DEGIRO...) proposent des actions FRACTIONNAIRES. `QTY_STEP_EQUITY_ETF` (1/10 000e d'action)
+# reste néanmoins un pas PESSIMISTE et STRICTEMENT ARRONDI VERS LE BAS (`floor_to_step`, jamais
+# en faveur du bot) — il ne prétend reproduire aucun stepSize de courtier réel précis, seulement
+# lever le blocage structurel identifié par l'audit sans jamais accorder plus de quantité qu'une
+# règle de 4 décimales ne le permettrait. Couvre tout `SYMBOLS_EQUITY` (S&P100 + SPY + les 8 ETF
+# risqués + IEF) — y compris les 6 megacaps déjà présentes dans
+# `bot.sim.exchange.DEFAULT_QTY_STEPS` à pas=1.0, dont le pas est ici resserré pour la même
+# raison (AAPL/MSFT/... sont elles aussi part de l'univers `xs_momentum_sp100`, avec le même
+# budget par position que n'importe quel autre titre du S&P100 retenu).
+QTY_STEP_EQUITY_ETF = 0.0001
+QTY_STEPS_EQUITIES: dict[str, float] = {sym: QTY_STEP_EQUITY_ETF for sym in SYMBOLS_EQUITY}
+
 # ======================================================================================
 # --- Univers crypto resserré du wallet AGRESSIF (12 actifs diversifiés) ---
 # CHANGEMENT ADOPTÉ vs l'ancien univers 30 cryptos complet (cf. docs/SELECTION-FINALE.md §3 et

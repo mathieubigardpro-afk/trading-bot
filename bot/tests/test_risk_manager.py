@@ -144,6 +144,72 @@ def test_beyond_no_trade_band_trades():
 
 
 # ---------------------------------------------------------------------------
+# No-trade band PAR POCHE (`no_trade_band_by_symbol`) — régression audit critique #1 :
+# une poche actions équipondérée top_k=10 mise à l'échelle par capital_alloc_pct=35% donne un
+# poids intrinsèque de 3.5%/titre par rapport à l'équity TOTALE du wallet, TOUJOURS sous une
+# bande de 5% appliquée telle quelle -> gel silencieux et permanent de la poche entière. Le
+# correctif consiste à laisser l'appelant fournir `no_trade_band_by_symbol={symbole: alloc}`
+# pour que la bande RÉELLEMENT comparée devienne `no_trade_band * alloc` pour ce symbole.
+# ---------------------------------------------------------------------------
+
+def test_no_trade_band_by_symbol_unblocks_small_pocket_weight():
+    rm = RiskManager(vol_target_annualized=10.0, no_trade_band=0.05)
+    state = make_state(cash_usd=100_000.0, positions={})  # aucune position -> current_w = 0
+    prices = {"AAPL": FakeQuote(199.5, 200.5)}
+    history = flat_history({"AAPL": 200.0})
+    # Cible = 3.5% de l'équity (10 titres équipondérés x 35% d'alloc poche actions) : SANS
+    # correctif, `abs(0.035 - 0.0) < 0.05` bloque le trade (band brute wallet-wide, cf. test
+    # ci-dessus test_no_trade_band_filters_micro_adjustment qui vérifie l'inverse à dessein).
+    cibles_brutes = {"AAPL": 0.035}
+
+    # Sans mapping (comportement historique) : bloqué par la bande brute de 5%.
+    finales_sans, reasons_sans = rm.apply(cibles_brutes, dict(state), prices, history, now=NOW)
+    assert finales_sans["AAPL"] == pytest.approx(0.0, abs=1e-9)
+    assert "no-trade band" in reasons_sans["AAPL"]
+
+    # Avec mapping (alloc de poche = 35%) : bande réelle = 5% * 35% = 1.75% < écart de 3.5% ->
+    # le trade passe.
+    finales_avec, reasons_avec = rm.apply(
+        cibles_brutes, dict(state), prices, history, now=NOW,
+        no_trade_band_by_symbol={"AAPL": 0.35},
+    )
+    assert finales_avec["AAPL"] == pytest.approx(0.035, abs=1e-6)
+
+
+def test_no_trade_band_by_symbol_still_blocks_true_micro_adjustment_within_pocket_band():
+    # cap_per_asset_equity neutralisé (1.0), comme le fait réellement `bot.runner
+    # ._risk_manager_for_wallet` en production pour les poches actions/ETF — sinon le cap par
+    # actif (0.15 par défaut) interférerait avec ce test, qui porte spécifiquement sur la bande.
+    rm = RiskManager(vol_target_annualized=10.0, no_trade_band=0.05, cap_per_asset_equity=1.0)
+    positions = {"AAPL": {"qty": 100.0, "prix_moyen": 200.0}}  # 20_000$ sur 100_000$ -> 20%
+    state = make_state(cash_usd=80_000.0, positions=positions)
+    prices = {"AAPL": FakeQuote(199.5, 200.5)}
+    history = flat_history({"AAPL": 200.0})
+    # Écart d'1 point de % (20% -> 21%), bande réelle = 5% * 35% = 1.75% > 1% -> pas de trade.
+    cibles_brutes = {"AAPL": 0.21}
+    finales, reasons = rm.apply(
+        cibles_brutes, state, prices, history, now=NOW,
+        no_trade_band_by_symbol={"AAPL": 0.35},
+    )
+    assert finales["AAPL"] == pytest.approx(0.20, abs=1e-6)
+    assert "no-trade band" in reasons["AAPL"]
+
+
+def test_no_trade_band_by_symbol_symbol_absent_from_mapping_keeps_default_band():
+    rm = RiskManager(vol_target_annualized=10.0, no_trade_band=0.05)
+    state = make_state(cash_usd=100_000.0, positions={})
+    prices = {"BTC": FakeQuote(999.5, 1000.5)}
+    history = flat_history({"BTC": 1000.0})
+    cibles_brutes = {"BTC": 0.035}  # écart 3.5 points < bande brute 5%
+    finales, reasons = rm.apply(
+        cibles_brutes, state, prices, history, now=NOW,
+        no_trade_band_by_symbol={"AAPL": 0.35},  # BTC absent du mapping
+    )
+    assert finales["BTC"] == pytest.approx(0.0, abs=1e-9)
+    assert "no-trade band" in reasons["BTC"]
+
+
+# ---------------------------------------------------------------------------
 # Garde-fou prix indisponible
 # ---------------------------------------------------------------------------
 

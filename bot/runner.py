@@ -267,6 +267,38 @@ def _asset_class_of(symbol: str, crypto_universe) -> str:
     return "unknown"
 
 
+def _no_trade_band_scale_by_symbol(wallet_cfg: dict) -> Dict[str, float]:
+    """Correctif audit critique #1 (no-trade band appliquée wallet-wide au lieu de par poche,
+    cf. `bot/risk/manager.py.RiskManager.apply(no_trade_band_by_symbol=...)`).
+
+    `{symbole: capital_alloc_pct}` de la poche NON-CASH qui porte ce symbole, pour TOUT symbole
+    potentiellement tradable par CE wallet (crypto ET actions/ETF), couvrant le PLEIN univers
+    tradable de chaque poche — pas seulement les symboles ayant une cible non nulle ce cycle —
+    pour qu'une position déjà détenue mais sortie du top-k (cible retombée à 0) reste soumise à
+    la bande de SA poche, pas à un défaut wallet-wide implicite.
+
+    Un symbole tradable par deux poches distinctes du même wallet n'existe pas en pratique dans
+    le SPEC actuel (poches actions/ETF/crypto ont des univers disjoints), mais si cela devait
+    arriver, on garde l'alloc la PLUS PETITE (bande la plus étroite = comportement le plus
+    permissif au trade = le plus pessimiste vis-à-vis du risque de rester bloqué à tort).
+    """
+    scale: Dict[str, float] = {}
+    for pocket in wallet_cfg.get("pockets", []) or []:
+        ref = pocket.get("strategy_ref")
+        asset_class = pocket.get("asset_class")
+        alloc = float(pocket.get("capital_alloc_pct", 0.0) or 0.0)
+        if not ref or alloc <= 0:
+            continue
+        if asset_class == "crypto":
+            symbols = wallet_cfg.get("univers_crypto") or []
+        else:
+            symbols = POCKET_STRATEGY_TRADABLE_SYMBOLS.get(ref, [])
+        for sym in symbols:
+            prev = scale.get(sym)
+            scale[sym] = alloc if prev is None else min(prev, alloc)
+    return scale
+
+
 def _gather_daily_history(symbols: List[str]) -> Tuple[Dict[str, "object"], Set[str]]:
     """Récupère l'historique JOURNALIER clôturé (`bot.feeds.get_daily_history`) pour tous les
     `symbols` demandés (S&P100 + SPY + univers ETF risqué + IEF, UNION de tous les wallets, cf.
@@ -378,11 +410,15 @@ def _exchange_for_wallet(wallet_cfg: dict) -> ExchangeSim:
     slippage_by_symbol = {
         sym: config.COST_TIER_SLIPPAGE_PENALTY_BPS[config.cost_tier_of(sym)] for sym in universe
     }
+    # Correctif audit critique #2 : fractions d'action/ETF autorisées (cf.
+    # bot/config.py:QTY_STEPS_EQUITIES — `ExchangeSim.qty_steps` fusionne cette table PAR-DESSUS
+    # ses propres défauts crypto, `bot.sim.exchange.DEFAULT_QTY_STEPS`, laissés inchangés).
     return ExchangeSim(
         fee_taker_bps=config.FEE_TAKER_BPS,
         slippage_penalty_bps=config.SLIPPAGE_PENALTY_BPS,
         max_quote_age_seconds=config.MAX_QUOTE_AGE_SECONDS,
         min_notional_usd=config.MIN_NOTIONAL_USD,
+        qty_steps=dict(config.QTY_STEPS_EQUITIES),
         fee_taker_bps_by_symbol=fee_by_symbol,
         slippage_penalty_bps_by_symbol=slippage_by_symbol,
     )
@@ -418,10 +454,21 @@ def _risk_manager_for_wallet(wallet_cfg: dict) -> RiskManager:
         `capital_alloc_pct` non-cash de chaque wallet est strictement < 1.0, cf.
         `bot/config.py:WALLETS`) — 1.0 est le plafond trivial (100% de l'équity), pas une valeur
         inventée pour l'occasion.
-      - `cap_per_asset_crypto`, les circuit breakers (`cb_*`) et `no_trade_band` restent ceux du
-        profil du wallet, appliqués WALLET-WIDE comme le veut `docs/SELECTION-FINALE.md` §5
-        ("Drawdown wallet > cb_dd_flatten_pct... le circuit breaker existant s'applique") — c'est
-        la vraie valeur ajoutée de ce passage RiskManager "par-dessus".
+      - `cap_per_asset_crypto` et les circuit breakers (`cb_*`) restent ceux du profil du
+        wallet, appliqués WALLET-WIDE comme le veut `docs/SELECTION-FINALE.md` §5 ("Drawdown
+        wallet > cb_dd_flatten_pct... le circuit breaker existant s'applique") — c'est la vraie
+        valeur ajoutée de ce passage RiskManager "par-dessus".
+      - `no_trade_band=r["no_trade_band"]` (constructeur) reste le réglage de PROFIL (5%), mais
+        n'est plus appliqué wallet-wide TEL QUEL au niveau `apply()` : CORRECTIF AUDIT CRITIQUE
+        #1 — un book équipondéré `top_k=10` mis à l'échelle par `capital_alloc_pct=35%` donne un
+        poids intrinsèque de 3.5%/titre, toujours sous une bande de 5% wallet-wide, ce qui gelait
+        silencieusement la poche actions à 0% en permanence (constaté empiriquement, 103/103
+        décisions NO_TRADE malgré des cibles brutes non nulles). `process_wallet()` fournit donc
+        `no_trade_band_by_symbol=_no_trade_band_scale_by_symbol(wallet_cfg)` à `apply()` : la
+        bande RÉELLEMENT comparée pour un symbole devient `no_trade_band * capital_alloc_pct de
+        sa poche`, cohérent avec le fait que la cible elle-même est déjà mise à l'échelle par ce
+        même facteur dans `_combine_pockets()`. Voir docstring de tête de
+        `bot/risk/manager.py` (étape 6) pour le détail.
       - `vol_coldstart_scalar=1.0` (au lieu de la valeur du profil, 0.5) : COMPAGNON OBLIGÉ de
         `vol_target_annualized=50.0` ci-dessus, PAS un second réglage indépendant. Le flag
         "coldstart" de `bot.risk.vol_targeting.portfolio_vol_annualized` se déclenche dès qu'UN
@@ -640,8 +687,10 @@ def process_wallet(
     )
 
     risk_manager = _risk_manager_for_wallet(wallet_cfg)
+    no_trade_band_scale = _no_trade_band_scale_by_symbol(wallet_cfg)
     cibles_finales, reasons = risk_manager.apply(
-        cibles_brutes, working_state, prices, history_hourly, now=now
+        cibles_brutes, working_state, prices, history_hourly, now=now,
+        no_trade_band_by_symbol=no_trade_band_scale,
     )
 
     ledger = Ledger(cash_usd=cash_usd, positions=positions_in)

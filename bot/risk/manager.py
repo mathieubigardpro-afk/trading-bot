@@ -28,6 +28,20 @@ Pipeline appliqué à chaque cycle, dans cet ordre :
      est alors le poids ACTUEL inchangé (pas la valeur "cible" calculée), sauf en `flatten_mode`
      où le flatten est toujours exécuté indépendamment de la bande.
 
+     Bande PAR SYMBOLE (correctif audit — cf. `apply(..., no_trade_band_by_symbol=...)`) :
+     `no_trade_band` (ex. 5%) est un réglage de profil PENSÉ EN FRACTION DE LA POCHE qui porte
+     chaque actif, jamais de l'équity TOTALE du wallet. Un book équipondéré `top_k=10` mis à
+     l'échelle par `capital_alloc_pct=35%` donne un poids INTRINSÈQUE par titre de 3.5% de
+     l'équity du wallet — TOUJOURS sous une bande de 5% appliquée telle quelle au niveau
+     portefeuille, ce qui gelait silencieusement la poche actions à 0% en permanence (bug
+     constaté et corrigé). L'appelant (`bot/runner.py`) peut donc fournir
+     `no_trade_band_by_symbol: dict[symbole, alloc_de_la_poche_0..1]` : la bande RÉELLEMENT
+     appliquée à ce symbole devient alors `no_trade_band * no_trade_band_by_symbol[symbole]`
+     (bande exprimée en fraction de la poche, puis re-projetée en fraction d'équity totale via
+     le même facteur d'échelle que les cibles elles-mêmes). Un symbole absent du mapping garde
+     le comportement historique (`no_trade_band` brut, en fraction d'équity totale) — compatible
+     avec tous les appels existants qui n'ont jamais fourni ce paramètre.
+
 Notes de conception :
   - Le filtre de régime SMA200/ATR14 percentile (§3D du rapport de recherche, cité comme étape
     4 du pipeline générique dans `docs/ARCHITECTURE.md`) N'EST PAS implémenté dans ce module :
@@ -174,11 +188,18 @@ class RiskManager:
         prices: Optional[dict],
         history: Optional[dict],
         now: Optional[datetime] = None,
+        no_trade_band_by_symbol: Optional[Dict[str, float]] = None,
     ) -> Tuple[Dict[str, float], Dict[str, str]]:
+        """`no_trade_band_by_symbol` (optionnel) : voir docstring de tête de ce module, étape 6
+        ("Bande PAR SYMBOLE"). `{symbole: alloc}` avec `alloc` dans `[0, 1]` = part du capital
+        du wallet allouée à la POCHE qui porte ce symbole (`capital_alloc_pct`) ; la bande
+        effectivement appliquée à ce symbole est alors `self.no_trade_band * alloc` au lieu de
+        `self.no_trade_band` brut. Symbole absent -> comportement historique inchangé."""
         now = now or datetime.now(timezone.utc)
         prices = prices or {}
         history = history or {}
         cibles_brutes = dict(cibles_brutes or {})
+        no_trade_band_by_symbol = no_trade_band_by_symbol or {}
 
         # --- 1) équity courante + pic ---
         equity_now, poids_actuel = self._estimate_equity_and_weights(state, prices)
@@ -293,11 +314,13 @@ class RiskManager:
                 # Le flatten s'exécute toujours, même pour un écart < bande.
                 cibles_finales[symbol] = target
                 continue
-            if abs(target - current_w) < self.no_trade_band:
+            band_scale = no_trade_band_by_symbol.get(symbol)
+            band = self.no_trade_band if band_scale is None else self.no_trade_band * float(band_scale)
+            if abs(target - current_w) < band:
                 cibles_finales[symbol] = current_w
                 reasons[symbol] = (
                     reasons.get(symbol, "")
-                    + f" ; no-trade band : écart < {self.no_trade_band:.0%}, poids actuel conservé"
+                    + f" ; no-trade band : écart < {band:.2%} (poche), poids actuel conservé"
                 )
             else:
                 cibles_finales[symbol] = target

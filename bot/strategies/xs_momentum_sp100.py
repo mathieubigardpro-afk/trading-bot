@@ -102,17 +102,16 @@ formation) — exactement le contrat de `bot.feeds.daily.get_daily_history()` /
 `bot.strategies.*` pour tout signal calculé sur des clôtures quotidiennes (filtre SMA200
 crypto, momentum cross-sectionnel S&P100, dual-momentum ETF...)").
 
-**Constat d'intégration important (audité, pas supposé)** : à la date de cette mission,
-`bot/runner.py:process_wallet()` ne construit `history` qu'à partir de l'UNION des univers
-CRYPTO des 3 wallets (`bot.feeds.get_history`, bougies HORAIRES) — il n'appelle PAS
-`bot.feeds.daily.prefetch_daily_history()`/`get_daily_history()` pour les 103 tickers S&P100 ni
-pour `"SPY"`, et ne route donc aujourd'hui AUCUNE donnée actions vers `combine_strategies()`.
-Câbler cette récupération (et la fusionner dans le dict `history` passé aux stratégies) est un
-travail d'intégration dans `bot/runner.py`, explicitement HORS PÉRIMÈTRE de cette tâche (limitée
-à `bot/strategies/` + `bot/tests/`) — documenté ici pour le prochain agent d'intégration, avec
-le rappel du warmup nécessaire : `WARMUP_BUFFER_DAYS = 400` jours de bourse (>
-`skip_days + lookback_days` = 147, et > `SMA_DAYS` = 200, avec marge), cohérent avec
-`bot.feeds.daily.MIN_WARMUP_DAYS = 400`.
+**Mise à jour post-intégration (vérifié sur le code réel, pas supposé)** : ce constat décrivait
+l'état du dépôt AVANT la mission d'intégration des stratégies. Il n'est plus vrai aujourd'hui :
+`bot/runner.py:_gather_daily_history()` appelle bien `bot.feeds.daily.prefetch_daily_history()`
+puis `get_daily_history()` pour l'UNION des 103 tickers S&P100, `"SPY"`, l'univers ETF risqué et
+`IEF` (tous wallets confondus), et `_combine_pockets()` route ce `daily_history` vers
+`target_weights()` de ce module pour toute poche `asset_class="equities"` (`strategy_ref=
+"xs_momentum_sp100"`) — confirmé par lecture de `bot/runner.py` et par
+`bot/tests/test_integration_full_cycle.py` qui exerce ce chemin bout-en-bout avec des fixtures
+riches. Le warmup nécessaire (`WARMUP_BUFFER_DAYS = 400` jours de bourse, cf. définition ci-
+dessous) est câblé via `bot.config.HISTORY_N_HOURS`/`DAILY_MIN_WARMUP_DAYS` de `bot/runner.py`.
 
 --------------------------------------------------------------------------------------------
 Point dur (4) — market_hours_only : déjà spécifié au niveau runner, PAS de ce module
@@ -129,13 +128,14 @@ serait une responsabilité dupliquée et hors de la portée d'une fonction pure.
 
 **Vérification effectuée (pas supposée)** : `bot.feeds.calendar.is_us_market_open()` existe et
 est correctement implémenté (jours fériés NYSE 2026/2027, séance 09:30-16:00 America/New_York).
-**Mais, comme pour le point dur (3), `bot/runner.py:process_wallet()` ne l'utilise nulle part
-aujourd'hui** (le cycle multi-wallets actuel est 100% crypto, cf. constat ci-dessus) — le
-mécanisme de gating "marché fermé -> aucun ordre actions" décrit par ARCHITECTURE.md §7 N'EST
-PAS ENCORE câblé dans le cycle réel. C'est un gap d'intégration identique à celui du point dur
-(3), pas une lacune de ce module de stratégie — documenté ici pour le prochain agent
-d'intégration, qui devra reproduire pour les actions le même motif déjà utilisé par le code
-crypto (`market_open` dans `decisions.jsonl`, positions conservées hors séance).
+**Mise à jour post-intégration (vérifié sur le code réel, pas supposé)** :
+`bot/runner.py:process_wallet()` appelle bien `is_us_market_open(now)` (une fois par cycle,
+partagé entre wallets) et l'applique symbole par symbole via `_asset_class_of()` : tout ordre
+actions/ETF est bloqué (`decision="NO_TRADE"`, position conservée) quand le marché est fermé,
+tandis que la crypto reste 24/7 — mécanisme couvert explicitement par
+`bot/tests/test_integration_full_cycle.py::test_full_cycle_market_closed_blocks_equities_etf_orders_but_not_crypto`.
+Le gap décrit ci-dessus n'existe plus ; ce paragraphe est conservé pour mémoire (comportement
+attendu inchangé, seul l'état d'intégration a changé).
 
 --------------------------------------------------------------------------------------------
 Univers restreint aux wallets qui le portent (SPEC §3 : équilibré 35%, agressif 30%)
@@ -152,16 +152,20 @@ SPEC_EQUITIES_WALLETS` -> aucune cible émise (`{}`), jamais un `0.0` explicite 
 tort une position existante sur un wallet qui ne devrait simplement jamais en détenir.
 
 --------------------------------------------------------------------------------------------
-Limitation connue, partagée avec `quasi_passif_crypto` : pas de scaling par poche de capital
+Scaling par poche de capital : fait par le RUNNER, pas par ce module
 --------------------------------------------------------------------------------------------
-Les poids retournés somment à 1.0 au maximum parmi les titres sélectionnés (fraction de "la
-poche actions"), PAS à `capital_alloc_pct` (35%/30% du SPEC) fraction du capital TOTAL du
-wallet — `bot/config.py:WALLETS` ne définit aujourd'hui aucune notion de poche/allocation par
-classe d'actif (uniquement `univers_crypto`/`risque`, cf. bandeau `_meta` du SPEC : "à ajouter
-au schéma de config du bot"). Tant que ce schéma n'est pas étendu (hors périmètre de cette
-tâche), `combine_strategies()` traite le poids retourné comme une fraction de l'ÉQUITY TOTALE
-du wallet, pas de la seule poche actions — comportement partagé et déjà documenté par
-`quasi_passif_crypto` pour la poche crypto, pas une régression propre à ce module.
+**Mise à jour post-intégration (vérifié sur le code réel, pas supposé)** : les poids retournés
+par `target_weights()` ci-dessous somment à 1.0 au maximum parmi les titres sélectionnés
+(fraction de "la poche actions" SEULEMENT) — c'est intentionnel et INCHANGÉ. La mise à l'échelle
+par `capital_alloc_pct` (35% équilibré / 30% agressif, `bot/config.py:WALLETS[*]["pockets"]`)
+est faite par `bot/runner.py:_combine_pockets()`, PAS par ce module ni par
+`bot.strategies.combine_strategies()` (ce dernier reste un placeholder générique jamais câblé en
+production, cf. docstring de `bot/strategies/__init__.py`) : `_combine_pockets()` multiplie
+chaque poids intra-poche par le `capital_alloc_pct` de la poche correspondante avant de les
+combiner en une cible unique par symbole, en fraction de l'équity TOTALE du wallet. Ce module
+n'a donc besoin d'AUCUNE modification pour bénéficier de ce scaling — comportement partagé et
+déjà documenté par `quasi_passif_crypto`, confirmé par `bot/tests/test_integration_full_cycle.py`
+(assertion `gross_exposure_pct <= somme des capital_alloc_pct non-cash du wallet`).
 """
 
 from __future__ import annotations
