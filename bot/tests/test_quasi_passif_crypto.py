@@ -325,7 +325,12 @@ def test_unknown_wallet_id_returns_no_weights():
     assert STRATEGY.target_weights({"BTC": pd.DataFrame()}, state={}, profile=profile) == {}
 
 
-def test_insufficient_common_history_for_basket_vol_gives_zero_weight():
+def test_insufficient_common_history_for_basket_vol_freezes_instead_of_zeroing():
+    """Correctif ARCHITECTURE.md §12.4 : vol de panier non estimable -> les actifs "on" sont
+    GELÉS (omis du dict retourné, `bot.risk.manager.RiskManager.apply` conserve alors
+    `poids_actuel`), PAS mis à 0.0 explicite (qui forcerait une liquidation à tort, cf.
+    ancien comportement testé par `test_insufficient_common_history_for_basket_vol_gives_
+    zero_weight`, ci-dessous remplacé)."""
     n_days = REGIME_SMA_DAYS + 5
     btc_hist = make_complete_days_history(n_days=n_days, drift_per_hour=0.001, vol_per_hour=0.01, seed=1, start_price=60000.0)
     # ETH également "on" (assez de jours complets, tendance haussière) mais sur une plage
@@ -337,6 +342,97 @@ def test_insufficient_common_history_for_basket_vol_gives_zero_weight():
     )
 
     profile = _profile("prudent", ["BTC", "ETH"], vol_target=0.10, gross_exposure_max=0.40, cap_per_asset=0.20)
-    weights = STRATEGY.target_weights({"BTC": btc_hist, "ETH": eth_hist}, state={}, profile=profile)
+    state: dict = {}
+    weights = STRATEGY.target_weights({"BTC": btc_hist, "ETH": eth_hist}, state=state, profile=profile)
 
-    assert weights == {"BTC": 0.0, "ETH": 0.0}
+    assert weights == {}  # gelés, pas liquidés
+    counters = state["strategy_state"]["quasi_passif_crypto"]["missing_data_cycles"]
+    assert counters == {"BTC": 1, "ETH": 1}
+
+
+# ---------------------------------------------------------------------------------------
+# Correctif ARCHITECTURE.md §12.4 — gel (cas 3) vs sortie légitime (cas 1), garde-fou N cycles
+# ---------------------------------------------------------------------------------------
+
+
+def test_missing_history_for_one_symbol_freezes_only_that_symbol():
+    """Un SEUL symbole (BTC) a une donnée manquante ce cycle (moins de 200 jours complets) ;
+    ETH, lui, a un signal normal ("on") calculé. BTC doit être OMIS du dict (gelé), ETH garde
+    son poids normal — pas de contamination croisée."""
+    btc_hist = make_complete_days_history(
+        n_days=REGIME_SMA_DAYS - 1, drift_per_hour=0.001, vol_per_hour=0.001, seed=1, start_price=60000.0
+    )
+    eth_hist = make_complete_days_history(
+        n_days=REGIME_SMA_DAYS + 60, drift_per_hour=0.001, vol_per_hour=0.001, seed=2, start_price=2000.0
+    )
+    profile = _profile("prudent", ["BTC", "ETH"], vol_target=0.10, gross_exposure_max=0.40, cap_per_asset=0.20)
+    state: dict = {}
+
+    weights = STRATEGY.target_weights({"BTC": btc_hist, "ETH": eth_hist}, state=state, profile=profile)
+
+    assert "BTC" not in weights  # gelé (poids_actuel conservé par RiskManager)
+    assert weights["ETH"] > 0.0
+    counters = state["strategy_state"]["quasi_passif_crypto"]["missing_data_cycles"]
+    assert counters == {"BTC": 1}
+
+
+def test_symbol_recovering_data_resets_missing_counter():
+    profile = _profile("prudent", ["BTC"], vol_target=0.10, gross_exposure_max=0.40, cap_per_asset=0.20)
+    state: dict = {"strategy_state": {"quasi_passif_crypto": {"missing_data_cycles": {"BTC": 5}}}}
+    btc_hist = make_complete_days_history(
+        n_days=REGIME_SMA_DAYS + 60, drift_per_hour=0.001, vol_per_hour=0.001, seed=1, start_price=60000.0
+    )
+
+    weights = STRATEGY.target_weights({"BTC": btc_hist}, state=state, profile=profile)
+
+    assert weights["BTC"] > 0.0
+    assert state["strategy_state"]["quasi_passif_crypto"]["missing_data_cycles"] == {}
+
+
+def test_missing_data_for_max_cycles_liquidates_by_prudence():
+    """Garde-fou : au 24e cycle CONSÉCUTIF de donnée manquante pour un même symbole, la
+    position est liquidée par prudence (poids 0.0 explicite), pas gelée indéfiniment."""
+    from bot.strategies import MISSING_DATA_MAX_CYCLES_DEFAULT
+
+    btc_hist_missing = make_complete_days_history(
+        n_days=REGIME_SMA_DAYS - 1, drift_per_hour=0.001, vol_per_hour=0.001, seed=1, start_price=60000.0
+    )
+    profile = _profile("prudent", ["BTC"], vol_target=0.10, gross_exposure_max=0.40, cap_per_asset=0.20)
+    state: dict = {}
+
+    for cycle in range(1, MISSING_DATA_MAX_CYCLES_DEFAULT):
+        weights = STRATEGY.target_weights({"BTC": btc_hist_missing}, state=state, profile=profile)
+        assert "BTC" not in weights, f"cycle {cycle}: devrait encore être gelé"
+
+    weights = STRATEGY.target_weights({"BTC": btc_hist_missing}, state=state, profile=profile)
+    assert weights == {"BTC": 0.0}  # 24e cycle consécutif -> liquidation par prudence
+    assert state["strategy_state"]["quasi_passif_crypto"]["missing_data_cycles"] == {}
+
+
+def test_xlm_t18_t19_t20_scenario_position_survives_transient_history_gap():
+    """Reproduit EXACTEMENT le scénario production (ARCHITECTURE.md §12.4, wallet agressif,
+    2026-07-23T18/T19) : historique XLM présent à T18 (achat, tendance on), ABSENT à T19 (raté
+    de fetch transitoire), présent de nouveau à T20 — la position ne doit PAS être liquidée à
+    T19 (gelée), et le signal T20 doit être intact (identique à ce qu'il aurait été sans le
+    trou de données à T19, mémoire d'état correctement réinitialisée)."""
+    xlm_hist = make_complete_days_history(
+        n_days=REGIME_SMA_DAYS + 60, drift_per_hour=0.0006, vol_per_hour=0.002, seed=7, start_price=0.18
+    )
+    profile = _profile("agressif", ["XLM"], vol_target=0.275, gross_exposure_max=0.80, cap_per_asset=0.25)
+    state: dict = {}
+
+    # T18 : historique disponible -> XLM "on", poids normal (achat en production).
+    weights_t18 = STRATEGY.target_weights({"XLM": xlm_hist}, state=state, profile=profile)
+    assert weights_t18["XLM"] > 0.0
+    assert state["strategy_state"]["quasi_passif_crypto"]["missing_data_cycles"] == {}
+
+    # T19 : historique XLM absent ce cycle (raté de fetch transitoire, cf. get_history_crypto).
+    weights_t19 = STRATEGY.target_weights({"XLM": pd.DataFrame()}, state=state, profile=profile)
+    assert "XLM" not in weights_t19  # gelé : RiskManager conservera poids_actuel (pas de SELL)
+    assert state["strategy_state"]["quasi_passif_crypto"]["missing_data_cycles"] == {"XLM": 1}
+
+    # T20 : historique de nouveau disponible -> signal intact, identique à T18 (même série),
+    # compteur remis à zéro.
+    weights_t20 = STRATEGY.target_weights({"XLM": xlm_hist}, state=state, profile=profile)
+    assert weights_t20["XLM"] == pytest.approx(weights_t18["XLM"])
+    assert state["strategy_state"]["quasi_passif_crypto"]["missing_data_cycles"] == {}

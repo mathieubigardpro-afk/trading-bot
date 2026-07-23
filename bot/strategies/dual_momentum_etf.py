@@ -139,15 +139,28 @@ source de vérité pour `reference_date`, un momentum absolu ne peut jamais êtr
 --------------------------------------------------------------------------------------------
 Posture défensive (réseau bloqué en développement, ARCHITECTURE.md §0.2/§0.3)
 --------------------------------------------------------------------------------------------
-Comme `quasi_passif_crypto` : toute donnée insuffisante ou incohérente (moins de `top_k`
-actifs risqués éligibles, IEF absent/insuffisant, `profile` incomplet, wallet hors
-`ETF_POCKET_WALLETS`) se traduit TOUJOURS par une posture non investie (poids 0) plutôt que
+Comme `quasi_passif_crypto` : toute donnée insuffisante ou incohérente (`profile` incomplet,
+wallet hors `ETF_POCKET_WALLETS`) se traduit TOUJOURS par une posture non investie plutôt que
 par une extrapolation ou un remplacement créatif d'une valeur manquante. Si moins de `top_k`
 actifs risqués sont éligibles (mais au moins un), les slots disponibles se partagent 1.0
 également (`1 / nombre_de_slots_reellement_utilises`) plutôt que de laisser un reliquat de
 capital inventé arbitrairement — décision d'implémentation documentée pour un cas dégénéré non
 couvert explicitement par le SPEC (qui suppose implicitement les 8 ETF disponibles), PAS une
 réinterprétation des paramètres `top_k`/`lookback_months` eux-mêmes.
+
+--------------------------------------------------------------------------------------------
+Correctif ARCHITECTURE.md §12.4 (2026-07-23, incident XLM T18/T19) — gel vs liquidation
+--------------------------------------------------------------------------------------------
+Même correctif que `quasi_passif_crypto`/`xs_momentum_sp100` (voir leurs docstrings pour le
+contexte complet de l'incident) : "donnée insuffisante pour calculer un signal" (IEF/bogey
+absent, un ETF risqué sans historique exploitable ce cycle) N'EST PAS la même chose que "signal
+calculé, absolu négatif vs IEF" — seul le second cas est une vraie décision de sortie (poids
+0.0 explicite, cas 1/2, comportement INCHANGÉ). Le premier (IEF/bogey manquant, symbole risqué
+manquant CE cycle) est traité comme le cas 3 (donnée indisponible) : le(s) symbole(s) concernés
+sont GELÉS (omis du dict retourné) via `bot.strategies.apply_missing_data_policy` plutôt que mis
+à 0.0, avec le même garde-fou de liquidation par prudence au-delà de
+`bot.strategies.MISSING_DATA_MAX_CYCLES_DEFAULT` cycles consécutifs de donnée manquante pour un
+même symbole.
 """
 
 from __future__ import annotations
@@ -157,7 +170,7 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from bot.strategies import StrategyBase
+from bot.strategies import StrategyBase, apply_missing_data_policy
 
 # --- SPEC fixe (docs/config-strategies.json -> dual_momentum_multiclasse_etf) --------------
 RISKY_UNIVERSE: List[str] = ["SPY", "QQQ", "IWM", "EFA", "EEM", "VNQ", "GLD", "DBC"]
@@ -284,7 +297,7 @@ class DualMomentumETF(StrategyBase):
         history = history or {}
         wallet_id = profile.get("id")
 
-        weights: Dict[str, float] = {sym: 0.0 for sym in RISKY_UNIVERSE + [BOND_BOGEY]}
+        full_universe = RISKY_UNIVERSE + [BOND_BOGEY]
 
         if wallet_id not in ETF_POCKET_WALLETS:
             # Wallet sans poche ETF (agressif) ou wallet inconnu : pas d'extrapolation.
@@ -294,22 +307,34 @@ class DualMomentumETF(StrategyBase):
         ief_closes = _daily_closes(history.get(BOND_BOGEY))
         reference_date = _last_confirmed_month_end(ief_closes.index)
         if reference_date is None:
-            return weights
+            # Historique IEF insuffisant pour confirmer un mois-fin -> AUCUN symbole de la
+            # poche n'est décidable ce cycle (cas 3, donnée manquante) -> gel de la poche
+            # entière plutôt qu'un 0.0 explicite qui liquiderait à tort des positions tenues.
+            return apply_missing_data_policy(state, self.name, {}, full_universe)
 
         bogey_return = _total_return_asof(ief_closes, reference_date, LOOKBACK_MONTHS)
         if bogey_return is None:
-            return weights
+            # IEF (bogey) lui-même sans rendement calculable ce cycle -> même raisonnement,
+            # cas 3 pour la poche entière (le momentum absolu ne peut être évalué pour AUCUN
+            # actif risqué sans bogey).
+            return apply_missing_data_policy(state, self.name, {}, full_universe)
 
         # --- momentum relatif : rendement lookback_months de chaque actif risqué éligible ---
         returns: Dict[str, float] = {}
+        missing: List[str] = []
         for symbol in RISKY_UNIVERSE:
             closes = _daily_closes(history.get(symbol))
             ret = _total_return_asof(closes, reference_date, LOOKBACK_MONTHS)
             if ret is not None:
                 returns[symbol] = ret
+            else:
+                missing.append(symbol)
 
         if not returns:
-            return weights
+            # AUCUN actif risqué éligible ce cycle : IEF lui-même reste "computable" (bogey
+            # déjà validé ci-dessus) mais sa cible dépend du classement des actifs risqués, qui
+            # est ici indéterminé -> cas 3 pour la poche entière.
+            return apply_missing_data_policy(state, self.name, {}, full_universe)
 
         ranked = sorted(
             returns.items(),
@@ -317,9 +342,13 @@ class DualMomentumETF(StrategyBase):
         )
         selected = ranked[:TOP_K]
         num_slots = len(selected)
-        if num_slots == 0:
-            return weights
         slot_weight = 1.0 / num_slots
+
+        # Actifs risqués ÉLIGIBLES (rendement calculé, donnée disponible) : décision réelle ->
+        # 0.0 explicite par défaut (cas 1, "calculé mais pas retenu"), écrasé ci-dessous pour
+        # les slots sélectionnés (cas 2). IEF est toujours computable ici (bogey déjà validé).
+        weights: Dict[str, float] = {symbol: 0.0 for symbol in returns}
+        weights[BOND_BOGEY] = 0.0
 
         # --- momentum absolu vs bogey IEF : bascule refuge si l'actif sous-performe IEF ----
         for symbol, ret in selected:
@@ -328,4 +357,6 @@ class DualMomentumETF(StrategyBase):
             else:
                 weights[BOND_BOGEY] += slot_weight
 
-        return weights
+        # Actifs risqués NON éligibles (historique manquant/insuffisant ce cycle, cas 3) :
+        # gelés plutôt que mis à 0.0, garde-fou N cycles consécutifs inclus.
+        return apply_missing_data_policy(state, self.name, weights, missing)

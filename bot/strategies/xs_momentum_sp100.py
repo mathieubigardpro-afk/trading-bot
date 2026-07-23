@@ -177,7 +177,7 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
 from bot.feeds.calendar import NYSE_HOLIDAYS
-from bot.strategies import StrategyBase
+from bot.strategies import StrategyBase, apply_missing_data_policy
 
 # --- Univers SPEC (docs/config-strategies.json -> strategy_definitions.xs_momentum_sp100) ---
 UNIVERSE_SP100: List[str] = [
@@ -331,28 +331,41 @@ def _rank_and_select(
     top_k: int = TOP_K,
     skip_days: int = SKIP_DAYS,
     lookback_days: int = LOOKBACK_DAYS,
-) -> List[Tuple[str, float]]:
-    """Classement momentum cross-sectionnel à `decision_date`, restreint aux titres ÉLIGIBLES
-    (assez d'historique réel). Retourne les gagnants retenus (top `top_k`, puis momentum
-    strictement positif uniquement) triés par momentum décroissant — liste vide si aucun
-    candidat éligible n'a un momentum positif."""
+) -> Tuple[List[Tuple[str, float]], List[str]]:
+    """Classement momentum cross-sectionnel à `decision_date`. Retourne `(winners, missing)` :
+      - `winners` : titres retenus (top `top_k`, puis momentum strictement positif uniquement),
+        triés par momentum décroissant — liste vide si aucun candidat ÉLIGIBLE (cf. `missing`
+        ci-dessous) n'a de momentum positif — c'est une DÉCISION réelle (cas 1), pas une
+        absence de donnée.
+      - `missing` : titres de `universe` pour lesquels AUCUN score momentum n'a pu être calculé
+        CE cycle (historique absent — `closes.empty` — ou fenêtre `skip_days+lookback_days+1`
+        insuffisante jusqu'à `decision_date`, cf. `_momentum_as_of`) — cas 3 (donnée
+        indisponible, cf. `docs/ARCHITECTURE.md` §12.4), À NE JAMAIS TRAITER comme "momentum
+        non positif" (cas 1) : l'appelant doit geler ces titres via
+        `bot.strategies.apply_missing_data_policy`, pas leur assigner 0.0 directement.
+    """
     candidates: List[Tuple[str, float]] = []
+    missing: List[str] = []
     for symbol in universe:
         closes = _daily_closes(history.get(symbol))
         if closes.empty:
+            missing.append(symbol)
             continue
         mom = _momentum_as_of(closes, decision_date, skip_days, lookback_days)
         if mom is not None:
             candidates.append((symbol, mom))
+        else:
+            missing.append(symbol)
 
     if not candidates:
-        return []
+        return [], missing
 
     # Tri par momentum décroissant, tie-break alphabétique (déterminisme, absent du texte du
     # SPEC mais nécessaire pour un résultat reproductible en cas d'égalité exacte).
     candidates.sort(key=lambda t: (-t[1], t[0]))
     top = candidates[:top_k]
-    return [(sym, mom) for sym, mom in top if mom > 0.0]
+    winners = [(sym, mom) for sym, mom in top if mom > 0.0]
+    return winners, missing
 
 
 # ------------------------------------------------------------------------------------------
@@ -383,37 +396,48 @@ class XsMomentumSp100(StrategyBase):
             # wallet qui ne devrait simplement jamais en détenir (cf. docstring module).
             return {}
 
-        weights: Dict[str, float] = {symbol: 0.0 for symbol in UNIVERSE_SP100}
-
         spy_closes = _daily_closes(history.get(MARKET_FILTER_SYMBOL))
         if spy_closes.empty:
             # Aucune donnée SPY exploitable : ni le filtre de régime ni la date de décision ne
-            # sont calculables -> aucune décision informée ce cycle (positions existantes
-            # conservées par le RiskManager, cf. bot/risk/manager.py : "aucune cible brute
-            # fournie -> poids conservé"), PAS un 0.0 explicite qui forcerait une liquidation.
-            return {}
+            # sont calculables pour AUCUN titre de la poche -> cas 3 (donnée indisponible,
+            # ARCHITECTURE.md §12.4) pour la poche ENTIÈRE -- gelée (via
+            # `apply_missing_data_policy`, garde-fou N cycles inclus), PAS un 0.0 explicite qui
+            # forcerait une liquidation sur un simple raté de fetch SPY.
+            return apply_missing_data_policy(state, self.name, {}, UNIVERSE_SP100)
 
         # --- 1. filtre de régime marché, réévalué CHAQUE cycle (point dur 2) -----------------
         regime_on = _market_regime_on(spy_closes)
-        if regime_on is not True:
-            # `None` (SMA200 non calculable, historique SPY insuffisant) ou `False` (régime
-            # baissier confirmé) -> posture la plus prudente : 100% cash sur la poche actions.
-            return weights
+        if regime_on is None:
+            # SMA200 SPY non calculable (historique SPY insuffisant, PAS un régime baissier
+            # confirmé) -> cas 3 pour la poche entière, gelée (cf. ci-dessus) — distinct du cas
+            # `regime_on is False` juste en-dessous, qui reste une vraie décision (cas 1).
+            return apply_missing_data_policy(state, self.name, {}, UNIVERSE_SP100)
+        if regime_on is False:
+            # Régime baissier CONFIRMÉ (donnée disponible, décision réelle) -> coupe-circuit
+            # immédiat, 100% cash EXPLICITE sur toute la poche (cas 1, comportement INCHANGÉ,
+            # cf. point dur 2 de la docstring module).
+            return {symbol: 0.0 for symbol in UNIVERSE_SP100}
 
         # --- 2. date de décision = dernier jour de bourse confirmé du mois (point dur 1) -----
         decision_date = _decision_date(spy_closes.index)
         if decision_date is None:
             # Aucun mois-fin encore confirmé dans l'historique SPY disponible (warmup
-            # insuffisant) -> cash, jamais un rebalancement anticipé sur une date incertaine.
-            return weights
+            # insuffisant) -> cas 3, gelée (jamais un rebalancement anticipé sur une date
+            # incertaine, ni une liquidation forcée d'une position déjà détenue).
+            return apply_missing_data_policy(state, self.name, {}, UNIVERSE_SP100)
 
         # --- 3+4. classement + pondération équipondérée, figés jusqu'au prochain mois-fin ----
-        winners = _rank_and_select(UNIVERSE_SP100, history, decision_date)
-        if not winners:
-            return weights
+        winners, missing = _rank_and_select(UNIVERSE_SP100, history, decision_date)
 
-        w = 1.0 / len(winners)
-        for symbol, _mom in winners:
-            weights[symbol] = w
+        # Titres ÉLIGIBLES (score momentum calculé) : décision réelle -> 0.0 explicite par
+        # défaut (cas 1, "calculé mais pas retenu"), écrasé ci-dessous pour les gagnants (cas 2).
+        computable = [s for s in UNIVERSE_SP100 if s not in missing]
+        weights: Dict[str, float] = {symbol: 0.0 for symbol in computable}
+        if winners:
+            w = 1.0 / len(winners)
+            for symbol, _mom in winners:
+                weights[symbol] = w
 
-        return weights
+        # Titres NON éligibles (historique manquant/insuffisant ce cycle, cas 3) : gelés plutôt
+        # que mis à 0.0, garde-fou N cycles consécutifs via `apply_missing_data_policy`.
+        return apply_missing_data_policy(state, self.name, weights, missing)

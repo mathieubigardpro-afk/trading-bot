@@ -260,16 +260,26 @@ def test_asset_with_insufficient_warmup_is_excluded_from_ranking():
     assert len(spy_short) < MIN_WARMUP_TRADING_DAYS
     history["SPY"] = _bars(spy_short)
 
-    weights = STRATEGY.target_weights(history, state={}, profile=_profile("prudent"))
+    state: dict = {}
+    weights = STRATEGY.target_weights(history, state=state, profile=_profile("prudent"))
 
-    assert weights["SPY"] == 0.0
+    # Correctif ARCHITECTURE.md §12.4 : SPY (historique insuffisant CE cycle) est GELÉ (omis),
+    # pas mis à 0.0 explicite (qui forcerait une liquidation d'une éventuelle position SPY
+    # existante sur un simple warmup insuffisant, jamais une vraie décision de momentum absolu).
+    assert "SPY" not in weights
+    assert "SPY" in state["strategy_state"]["dual_momentum_etf"]["missing_data_cycles"]
     # QQQ/IWM/EFA prennent la relève comme top3 parmi les actifs éligibles restants.
     assert weights["QQQ"] == pytest.approx(1.0 / 3.0)
     assert weights["IWM"] == pytest.approx(1.0 / 3.0)
     assert weights["EFA"] == pytest.approx(1.0 / 3.0)
 
 
-def test_bogey_with_insufficient_warmup_gives_no_signal_at_all():
+def test_bogey_with_insufficient_warmup_freezes_the_whole_pocket():
+    """Correctif ARCHITECTURE.md §12.4 : IEF (bogey) sans rendement calculable ce cycle est une
+    donnée manquante (cas 3) pour la poche ENTIÈRE (le momentum absolu ne peut être évalué pour
+    AUCUN actif sans bogey) -> gel (omission), pas un 0.0 explicite pour tout le monde (ancien
+    comportement, qui aurait liquidé des positions existantes sur un simple warmup IEF
+    insuffisant)."""
     daily_returns = {
         "SPY": 0.0016, "QQQ": 0.0014, "IWM": 0.0012, "EFA": 0.0010,
         "EEM": 0.0008, "VNQ": 0.0006, "GLD": 0.0004, "DBC": 0.0002,
@@ -279,9 +289,12 @@ def test_bogey_with_insufficient_warmup_gives_no_signal_at_all():
     assert len(ief_short) < MIN_WARMUP_TRADING_DAYS
     history[BOND_BOGEY] = _bars(ief_short)
 
-    weights = STRATEGY.target_weights(history, state={}, profile=_profile("equilibre"))
+    state: dict = {}
+    weights = STRATEGY.target_weights(history, state=state, profile=_profile("equilibre"))
 
-    assert weights == {sym: 0.0 for sym in RISKY_UNIVERSE + [BOND_BOGEY]}
+    assert weights == {}
+    missing_counters = state["strategy_state"]["dual_momentum_etf"]["missing_data_cycles"]
+    assert set(missing_counters.keys()) == set(RISKY_UNIVERSE + [BOND_BOGEY])
 
 
 def test_total_return_asof_none_below_min_warmup_trading_days():
@@ -332,21 +345,56 @@ def test_unknown_or_missing_profile_returns_no_weights():
     assert STRATEGY.target_weights({}, state={}, profile={"id": "inconnu"}) == {}
 
 
-def test_missing_bogey_history_gives_all_zero_weights():
+def test_missing_bogey_history_freezes_the_whole_pocket_not_all_zero():
+    """Correctif ARCHITECTURE.md §12.4 : IEF totalement absent de `history` ce cycle -> cas 3
+    pour la poche entière -> gel (omission), pas un 0.0 explicite (qui aurait liquidé à tort
+    toute position existante sur cette poche pour un simple raté de fetch IEF)."""
     daily_returns = {
         "SPY": 0.0016, "QQQ": 0.0014, "IWM": 0.0012, "EFA": 0.0010,
         "EEM": 0.0008, "VNQ": 0.0006, "GLD": 0.0004, "DBC": 0.0002,
     }  # pas de IEF du tout dans `history`
     history = _history_for(daily_returns, end=END_APRIL_CONFIRMED)
 
-    weights = STRATEGY.target_weights(history, state={}, profile=_profile("prudent"))
+    state: dict = {}
+    weights = STRATEGY.target_weights(history, state=state, profile=_profile("prudent"))
 
-    assert weights == {sym: 0.0 for sym in RISKY_UNIVERSE + [BOND_BOGEY]}
+    assert weights == {}
+    missing_counters = state["strategy_state"]["dual_momentum_etf"]["missing_data_cycles"]
+    assert set(missing_counters.keys()) == set(RISKY_UNIVERSE + [BOND_BOGEY])
 
 
-def test_empty_history_returns_all_zero_not_empty_for_valid_wallet():
-    weights = STRATEGY.target_weights({}, state={}, profile=_profile("prudent"))
-    assert weights == {sym: 0.0 for sym in RISKY_UNIVERSE + [BOND_BOGEY]}
+def test_empty_history_freezes_the_whole_pocket_for_valid_wallet():
+    """Correctif ARCHITECTURE.md §12.4 : historique totalement vide -> cas 3 (gel), pas de 0.0
+    explicite (ancien comportement `test_empty_history_returns_all_zero_not_empty_for_valid_
+    wallet`, remplacé)."""
+    state: dict = {}
+    weights = STRATEGY.target_weights({}, state=state, profile=_profile("prudent"))
+    assert weights == {}
+    missing_counters = state["strategy_state"]["dual_momentum_etf"]["missing_data_cycles"]
+    assert set(missing_counters.keys()) == set(RISKY_UNIVERSE + [BOND_BOGEY])
+
+
+def test_missing_risky_asset_freezes_only_that_symbol_then_liquidates_after_max_cycles():
+    """Cas 3 (symbole précis, pas la poche entière) + garde-fou N cycles : un actif risqué
+    (SPY) sans historique exploitable est gelé, puis liquidé par prudence après
+    `MISSING_DATA_MAX_CYCLES_DEFAULT` cycles consécutifs."""
+    from bot.strategies import MISSING_DATA_MAX_CYCLES_DEFAULT
+
+    daily_returns = {
+        "QQQ": 0.0014, "IWM": 0.0012, "EFA": 0.0010,
+        "EEM": 0.0008, "VNQ": 0.0006, "GLD": 0.0004, "DBC": 0.0002, "IEF": 0.0003,
+    }
+    history = _history_for(daily_returns, end=END_APRIL_CONFIRMED)
+    spy_short = _bdate_closes(0.0030, end=END_APRIL_CONFIRMED, start="2024-03-01")
+    history["SPY"] = _bars(spy_short)
+
+    state: dict = {}
+    for cycle in range(1, MISSING_DATA_MAX_CYCLES_DEFAULT):
+        weights = STRATEGY.target_weights(history, state=state, profile=_profile("prudent"))
+        assert "SPY" not in weights, f"cycle {cycle}: devrait encore être gelé"
+
+    weights = STRATEGY.target_weights(history, state=state, profile=_profile("prudent"))
+    assert weights.get("SPY") == 0.0  # liquidation par prudence au Nème cycle consécutif
 
 
 def test_stability_same_inputs_give_identical_weights():

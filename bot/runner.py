@@ -695,6 +695,18 @@ def process_wallet(
         wallet_cfg, history_hourly, daily_history, working_state, strategies_by_name
     )
 
+    # Correctif ARCHITECTURE.md §12.4 : symboles liquidés CE cycle par le garde-fou "N cycles
+    # consécutifs de donnée manquante" (`bot.strategies.apply_missing_data_policy`, mutation
+    # EN PLACE de `working_state["strategy_state"]` par `_combine_pockets()` ci-dessus, MÊME
+    # cycle) — permet de journaliser une raison distincte de la sortie de tendance légitime
+    # (cas 1), qui produirait sinon un poids cible 0.0 identique et donc indiscernable en aval.
+    liquidated_by_missing_data: Dict[str, int] = {}
+    for strat_state in (working_state.get("strategy_state") or {}).values():
+        if isinstance(strat_state, dict):
+            liquidated_by_missing_data.update(
+                strat_state.get("liquidated_by_missing_data_this_cycle") or {}
+            )
+
     risk_manager = _risk_manager_for_wallet(wallet_cfg)
     no_trade_band_scale = _no_trade_band_scale_by_symbol(wallet_cfg)
     cibles_finales, reasons = risk_manager.apply(
@@ -743,6 +755,24 @@ def process_wallet(
         raw = cibles_brutes.get(symbol)
         final = cibles_finales.get(symbol, current_w)
         base_reason = reasons.get(symbol, "aucun ajustement de risque documenté pour cet actif")
+        if symbol in liquidated_by_missing_data:
+            # Cas 3 prolongé (ARCHITECTURE.md §12.4) : le garde-fou N cycles a explicitement
+            # liquidé ce symbole ce cycle — raison distincte et prioritaire sur les notes
+            # génériques ci-dessous (sinon indiscernable d'une vraie sortie de tendance cas 1).
+            base_reason = (
+                f"données indisponibles depuis {liquidated_by_missing_data[symbol]} cycles "
+                "consécutifs (garde-fou de prudence atteint) — position liquidée par prudence, "
+                "pas une sortie de tendance"
+            )
+        elif raw is None and (symbol in history_hourly_failed or symbol in daily_history_failed):
+            # Cas 3 (gel, ARCHITECTURE.md §12.4) : aucune cible brute fournie ce cycle faute de
+            # données pour CE symbole — `RiskManager.apply` a déjà conservé `poids_actuel`
+            # (raison "aucune cible brute fournie... poids conservé" incluse dans base_reason
+            # ci-dessus) ; message explicite complémentaire pour la supervision.
+            base_reason += (
+                " ; données indisponibles ce cycle — position gelée, ni entrée ni sortie "
+                "(pas une liquidation)"
+            )
         if asset_class == "crypto" and symbol in history_hourly_failed:
             base_reason += " ; historique horaire clôturé insuffisant/indisponible — signal non calculable ce cycle"
         if asset_class in ("equities", "etf") and symbol in daily_history_failed:

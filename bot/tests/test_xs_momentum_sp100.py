@@ -228,8 +228,9 @@ def test_rank_and_select_top_k_and_positive_only():
         momentums[symbol] = -0.10
 
     history = _sample_universe_history(days, momentums)
-    winners = _rank_and_select(SAMPLE_SYMBOLS, history, decision_date)
+    winners, missing = _rank_and_select(SAMPLE_SYMBOLS, history, decision_date)
 
+    assert missing == []  # les 15 candidats ont tous un historique/momentum calculable
     assert len(winners) == TOP_K
     winner_symbols = {sym for sym, _ in winners}
     # Les 2 momentums positifs les plus FAIBLES (0.01, 0.02 -> SAMPLE_SYMBOLS[0], [1]) sont
@@ -250,7 +251,9 @@ def test_rank_and_select_no_positive_candidate_gives_empty_list():
     momentums = {s: -0.01 * (i + 1) for i, s in enumerate(SAMPLE_SYMBOLS)}
     history = _sample_universe_history(days, momentums)
 
-    assert _rank_and_select(SAMPLE_SYMBOLS, history, decision_date) == []
+    winners, missing = _rank_and_select(SAMPLE_SYMBOLS, history, decision_date)
+    assert winners == []
+    assert missing == []  # momentum calculé (négatif) pour tous, PAS une donnée manquante
 
 
 # ---------------------------------------------------------------------------------------
@@ -282,15 +285,21 @@ def test_full_strategy_selects_top_k_positive_momentum_equal_weight():
     history = _sample_universe_history(days, momentums)
     history[MARKET_FILTER_SYMBOL] = spy_hist
 
-    weights = STRATEGY.target_weights(history, state={}, profile=EQUILIBRE)
+    state: dict = {}
+    weights = STRATEGY.target_weights(history, state=state, profile=EQUILIBRE)
 
     selected = {sym: w for sym, w in weights.items() if w > 0.0}
     assert len(selected) == TOP_K
     for w in selected.values():
         assert w == pytest.approx(1.0 / TOP_K)
     assert sum(weights.values()) == pytest.approx(1.0)
-    # Tous les symboles de l'univers complet sont présents (poids explicite, pas d'omission).
-    assert set(weights.keys()) == set(UNIVERSE_SP100)
+    # Correctif ARCHITECTURE.md §12.4 : seuls les titres pour lesquels un historique a été
+    # FOURNI (SAMPLE_SYMBOLS) reçoivent un poids explicite (cas 1/2, décision réelle) — les 88
+    # autres titres de l'univers, sans historique fourni ce cycle, sont GELÉS (omis), pas mis à
+    # 0.0 (qui forcerait une liquidation sur un simple titre non couvert par cette fixture).
+    assert set(weights.keys()) == set(SAMPLE_SYMBOLS)
+    missing_counters = state["strategy_state"]["xs_momentum_sp100"]["missing_data_cycles"]
+    assert set(missing_counters.keys()) == set(UNIVERSE_SP100) - set(SAMPLE_SYMBOLS)
 
 
 def test_full_strategy_market_filter_off_gives_all_cash():
@@ -315,30 +324,65 @@ def test_full_strategy_missing_spy_returns_empty_not_forced_liquidation():
     assert weights == {}
 
 
-def test_full_strategy_insufficient_spy_warmup_gives_all_cash():
+def test_full_strategy_insufficient_spy_warmup_freezes_not_all_cash():
+    """Correctif ARCHITECTURE.md §12.4 : SMA200 SPY non calculable (warmup insuffisant) est une
+    donnée MANQUANTE (cas 3), pas un régime baissier confirmé (cas 1) — la poche entière doit
+    être GELÉE (poids conservés), pas mise à 0.0 explicite (ancien comportement, qui aurait
+    forcé une liquidation totale sur un simple warmup insuffisant, jamais une vraie tendance)."""
     days = _trading_days(date(2026, 1, 5), MIN_SPY_DAYS - 5)  # trop court pour SMA200
     spy_hist = _daily_df(days, _spy_trend_closes(len(days), uptrend=True))
     history = {MARKET_FILTER_SYMBOL: spy_hist}
     history.update(_sample_universe_history(days, {s: 0.20 for s in SAMPLE_SYMBOLS}))
 
-    weights = STRATEGY.target_weights(history, state={}, profile=EQUILIBRE)
-    assert weights == {symbol: 0.0 for symbol in UNIVERSE_SP100}
+    state: dict = {}
+    weights = STRATEGY.target_weights(history, state=state, profile=EQUILIBRE)
+    assert weights == {}
+    missing_counters = state["strategy_state"]["xs_momentum_sp100"]["missing_data_cycles"]
+    assert set(missing_counters.keys()) == set(UNIVERSE_SP100)
 
 
-def test_ineligible_symbol_gets_zero_weight_without_breaking_others():
+def test_ineligible_symbol_is_frozen_not_zeroed_without_breaking_others():
+    """Correctif ARCHITECTURE.md §12.4 : un titre du panier au historique bien trop court
+    (nouvellement "coté", ou raté de fetch transitoire) est GELÉ (omis du dict, PAS mis à 0.0
+    qui forcerait une liquidation à tort) sans jamais casser le calcul des autres titres."""
     days = _days_ending_at_confirmed_month_end(date(2026, 1, 5), max(MIN_ELIGIBLE_DAYS, MIN_SPY_DAYS))
     spy_hist = _daily_df(days, _spy_trend_closes(len(days), uptrend=True))
 
     momentums = {s: 0.10 + 0.01 * i for i, s in enumerate(SAMPLE_SYMBOLS)}
     history = _sample_universe_history(days, momentums)
     # Un titre du panier a un historique bien trop court (nouvellement "coté") : ne doit
-    # jamais faire planter le calcul des autres, simplement rester à 0.
+    # jamais faire planter le calcul des autres, simplement être gelé.
     short_symbol = SAMPLE_SYMBOLS[-1]
     history[short_symbol] = _daily_df(days[-10:], [50.0] * 10)
     history[MARKET_FILTER_SYMBOL] = spy_hist
 
-    weights = STRATEGY.target_weights(history, state={}, profile=EQUILIBRE)
-    assert weights[short_symbol] == 0.0
+    state: dict = {}
+    weights = STRATEGY.target_weights(history, state=state, profile=EQUILIBRE)
+    assert short_symbol not in weights
+    other_sample_symbols = [s for s in SAMPLE_SYMBOLS if s != short_symbol]
+    assert all(s in weights for s in other_sample_symbols)
+    missing_counters = state["strategy_state"]["xs_momentum_sp100"]["missing_data_cycles"]
+    assert short_symbol in missing_counters
+
+
+def test_missing_history_symbol_position_frozen_then_liquidated_after_max_cycles():
+    """Cas 3 prolongé : un titre détenu dont l'historique reste manquant `MISSING_DATA_MAX_
+    CYCLES_DEFAULT` cycles CONSÉCUTIFS finit par être liquidé par prudence (poids 0.0
+    explicite), pas gelé indéfiniment — même garde-fou que `quasi_passif_crypto`."""
+    from bot.strategies import MISSING_DATA_MAX_CYCLES_DEFAULT
+
+    days = _days_ending_at_confirmed_month_end(date(2026, 1, 5), max(MIN_ELIGIBLE_DAYS, MIN_SPY_DAYS))
+    spy_hist = _daily_df(days, _spy_trend_closes(len(days), uptrend=True))
+    short_symbol = SAMPLE_SYMBOLS[-1]
+    history = {MARKET_FILTER_SYMBOL: spy_hist, short_symbol: _daily_df(days[-10:], [50.0] * 10)}
+
+    state: dict = {}
+    for cycle in range(1, MISSING_DATA_MAX_CYCLES_DEFAULT):
+        weights = STRATEGY.target_weights(history, state=state, profile=EQUILIBRE)
+        assert short_symbol not in weights, f"cycle {cycle}: devrait encore être gelé"
+
+    weights = STRATEGY.target_weights(history, state=state, profile=EQUILIBRE)
+    assert weights.get(short_symbol) == 0.0  # liquidation par prudence au Nème cycle consécutif
 
 
 # ---------------------------------------------------------------------------------------

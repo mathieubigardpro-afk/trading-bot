@@ -1107,18 +1107,21 @@ exercé). La crypto reste `market_open=True` inconditionnellement (24/7). `decis
 documente `asset_class` réel (`"crypto"` / `"equities"` / `"etf"`, plus par symbole) au lieu de
 la valeur `"crypto"` codée en dur avant cette intégration.
 
-### 11.5 `state["strategy_state"]` — champ persistant, actuellement inerte
+### 11.5 `state["strategy_state"]` — champ persistant, ACTIF depuis le correctif §12.4
 
-Un champ `strategy_state` (dict, vide par défaut) est désormais propagé tel quel d'un cycle à
-l'autre dans chaque `state/wallets/<id>/state.json` (`bot/runner.py:process_wallet`). Aucune des
-3 stratégies câblées ne le lit ni ne l'écrit aujourd'hui : leurs rebalancements mensuels
-(`xs_momentum_sp100`, `dual_momentum_etf`) sont dérivés PUREMENT du calendrier (dernier jour de
-bourse confirmé du mois, cf. leurs docstrings "Point dur (1)"), sans avoir besoin de mémoriser
-une date de dernier rebalancement. Le champ est câblé par anticipation, pour qu'une future
-stratégie qui en aurait réellement besoin puisse l'utiliser sans changement de schéma d'état ni
-migration. `bot/persist/state.py:validate_schema()` n'a pas été modifié (aucune contrainte sur
-les clés supplémentaires au niveau racine de `state.json`) — un `state.json` archivé avant cette
-intégration (sans ce champ) reste chargeable tel quel (`state.get("strategy_state") or {}`).
+Un champ `strategy_state` (dict, vide par défaut) est propagé tel quel d'un cycle à l'autre dans
+chaque `state/wallets/<id>/state.json` (`bot/runner.py:process_wallet`). Initialement câblé "par
+anticipation" (aucune des 3 stratégies ne le lisait ni ne l'écrivait), il est désormais ACTIVEMENT
+utilisé par les 3 : `bot.strategies.apply_missing_data_policy()` (`bot/strategies/__init__.py`)
+y persiste, pour chaque stratégie, un compteur par symbole de cycles consécutifs de donnée
+manquante (`state["strategy_state"][strategy_name]["missing_data_cycles"]`) — cf. §12.4 pour le
+détail complet du mécanisme (gel vs liquidation par prudence après N cycles). Les rebalancements
+mensuels (`xs_momentum_sp100`, `dual_momentum_etf`) restent, eux, dérivés PUREMENT du calendrier
+(sans lecture/écriture de `strategy_state` pour cette part-là de leur logique, cf. leurs
+docstrings "Point dur (1)"). `bot/persist/state.py:validate_schema()` n'a pas été modifié
+(aucune contrainte sur les clés supplémentaires au niveau racine de `state.json`) — un
+`state.json` archivé avant cette intégration (sans ce champ, ou avec un `strategy_state` vide)
+reste chargeable tel quel (`state.get("strategy_state") or {}`).
 
 ### 11.6 Bug corrigé en intégration — marge de warmup `HISTORY_N_HOURS`
 
@@ -1229,27 +1232,76 @@ min, valide le mapping `BRK.B`), `bot/tests/test_exchange.py` (reproduit le seco
 d'exécution à 120s, valide l'override par symbole, la propagation de `quote_delayed`, et le
 câblage réel `bot.runner._exchange_for_wallet`).
 
-### 12.4 Point noté pour supervision (non corrigé, hors périmètre de ce correctif) — aller-retour XLM T18/T19 (wallet agressif)
+### 12.4 Aller-retour XLM T18/T19 (wallet agressif) — RÉSOLU (2026-07-23, correctif de suivi)
 
-`XLM` acheté au cycle T18 (`quasi_passif_crypto` signal 0.3, poids cible 18%, tendance SMA200
-"on", vol de panier calculable) puis intégralement revendu au cycle T19 suivant (poids cible
-retombé à 0%), soit un aller-retour en 1h avec double frais (`state/wallets/agressif/
-trades.jsonl`). Cause exacte identifiée dans `decisions.jsonl` : à T19, SEULS `XLM` et `XRP`
-(parmi les 12 cryptos de l'univers agressif) portent la mention "historique horaire clôturé
+**Symptôme initial** : `XLM` acheté au cycle T18 (`quasi_passif_crypto` signal 0.3, poids cible
+18%, tendance SMA200 "on", vol de panier calculable) puis intégralement revendu au cycle T19
+suivant (poids cible retombé à 0%), soit un aller-retour en 1h avec double frais
+(`state/wallets/agressif/trades.jsonl`).
+
+**Cause exacte identifiée** dans `decisions.jsonl` : à T19, SEULS `XLM` et `XRP` (parmi les 12
+cryptos de l'univers agressif) portaient la mention "historique horaire clôturé
 insuffisant/indisponible — signal non calculable ce cycle" — càd que
-`bot.feeds.get_history_crypto("XLM", ...)` a échoué à fournir assez de bougies horaires
+`bot.feeds.get_history_crypto("XLM", ...)` avait échoué à fournir assez de bougies horaires
 clôturées CE cycle précis (Binance primaire / Coinbase fallback, panne transitoire d'un seul
-cycle). Les autres cryptos de l'univers (BTC, ETH, SOL, BNB, HBAR, ICP, UNI...) gardent des
-signaux non nuls normaux ce même cycle (ex. UNI signal 0.3 inchangé) — ce n'est donc PAS un
+cycle). Les autres cryptos de l'univers (BTC, ETH, SOL, BNB, HBAR, ICP, UNI...) gardaient des
+signaux non nuls normaux ce même cycle (ex. UNI signal 0.3 inchangé) — ce n'était donc PAS un
 échec de calcul de vol du panier entier (qui aurait mis tout le monde à 0 simultanément), ni un
-franchissement réel de la SMA200, ni du bruit de marché autour de la moyenne mobile : c'est
+franchissement réel de la SMA200, ni du bruit de marché autour de la moyenne mobile : c'était
 `bot.strategies.quasi_passif_crypto._is_trend_on()` qui, recevant un historique vide/insuffisant
-pour XLM CE cycle (`_daily_closes(history.get("XLM"))` vide), retourne `None` ("donnée
+pour XLM CE cycle (`_daily_closes(history.get("XLM"))` vide), retournait `None` ("donnée
 insuffisante"), excluant XLM de `eligible` et forçant son poids cible à 0.0 (`weights` initialisé
 à 0.0 pour tout le mapping, jamais réécrit pour les symboles hors `eligible`) — comportement
 pessimiste voulu par design ("aucune exposition ce cycle, jamais de signal extrapolé"), mais dont
 l'effet de bord (flatten forcé sur un simple raté de fetch d'UN cycle, suivi probable d'un rachat
-au cycle suivant une fois l'historique de nouveau disponible) mérite d'être suivi : un signal qui
-"tient" une ou deux heures avant de retomber à 0 faute de donnée (plutôt que de conserver le
-dernier signal connu) génère des allers-retours evitables et des frais/slippage non nécessaires.
-Non corrigé ici sur instruction explicite (note de supervision uniquement).
+au cycle suivant une fois l'historique de nouveau disponible) générait des allers-retours évitables
+et des frais/slippage non nécessaires à CHAQUE hoquet de fetch transitoire.
+
+**Correctif appliqué** (défaut de conception corrigé à la racine, pas seulement documenté) :
+trois cas sont désormais distingués explicitement, pour les 3 stratégies concrètes du dépôt
+(`quasi_passif_crypto`, `xs_momentum_sp100`, `dual_momentum_etf` — les deux dernières
+souffraient du MÊME défaut structurel : `weights = {symbol: 0.0 for symbol in UNIVERS}`
+pré-rempli, jamais distingué d'une vraie décision de sortie) :
+
+  1. **Signal calculé, tendance/momentum OFF confirmé** -> poids cible 0.0 EXPLICITE (vente
+     légitime) — comportement INCHANGÉ.
+  2. **Signal calculé, tendance/momentum ON** -> poids cible normal — comportement INCHANGÉ.
+  3. **Donnée indisponible ce cycle** (historique manquant/insuffisant/erreur de fetch pour CE
+     symbole précis, OU pour une quantité dont dépend le calcul — ex. vol de panier, bogey IEF,
+     régime SPY) -> le symbole est OMIS du dict de poids retourné par la stratégie plutôt que mis
+     à 0.0, via le nouvel helper partagé `bot.strategies.apply_missing_data_policy()`
+     (`bot/strategies/__init__.py`). `bot.risk.manager.RiskManager.apply` traitait DÉJÀ
+     nativement l'absence d'un symbole dans les cibles brutes comme "aucune cible fournie ->
+     poids conservé" (`raw is None -> interim[symbol] = current_w`, mécanisme préexistant,
+     documenté par `xs_momentum_sp100` mais jamais exploité par les 2 autres stratégies avant ce
+     correctif) : la position est donc GELÉE (ni achat ni vente) sans qu'aucun nouveau mécanisme
+     de gel n'ait été nécessaire côté risque — seul le "signal manquant" doit désormais être
+     signalé PAR OMISSION plutôt que par un 0.0 mensonger.
+
+**Garde-fou de prudence** (position "aveugle" trop longtemps) : le nombre de cycles horaires
+CONSÉCUTIFS de donnée manquante, par symbole et par stratégie, est compté et persisté dans
+`state["strategy_state"][strategy_name]["missing_data_cycles"]` (cf. §11.5). Au-delà de
+`bot.strategies.MISSING_DATA_MAX_CYCLES_DEFAULT` (24 cycles horaires consécutifs, ~24h), le
+symbole est liquidé par prudence (poids cible 0.0 explicite) — et `bot/runner.py` journalise
+cette liquidation avec une raison EXPLICITEMENT distincte d'une sortie de tendance légitime
+("données indisponibles depuis N cycles consécutifs (garde-fou de prudence atteint) — position
+liquidée par prudence, pas une sortie de tendance", cf. `liquidated_by_missing_data_this_cycle`
+dans `strategy_state`). Un symbole redevenu disponible voit son compteur immédiatement remis à
+zéro (pas de mémoire indéfinie d'un raté ponctuel résolu).
+
+**Fichiers modifiés** : `bot/strategies/__init__.py` (nouvel `apply_missing_data_policy()`),
+`bot/strategies/quasi_passif_crypto.py`, `bot/strategies/xs_momentum_sp100.py`,
+`bot/strategies/dual_momentum_etf.py` (les 3 stratégies câblées, cf. distinction cas 1/2/3
+ci-dessus), `bot/runner.py` (journalisation distincte des liquidations par garde-fou dans
+`decisions.jsonl`).
+
+**Tests** : `bot/tests/test_quasi_passif_crypto.py` (gel simple, gel du panier vol-indéterminé,
+reset du compteur, liquidation au Nème cycle, ET le scénario XLM EXACT reproduit en fixture —
+historique présent à T18, absent à T19, présent de nouveau à T20, position intacte à T19 et
+signal identique à T20), `bot/tests/test_xs_momentum_sp100.py` et `bot/tests/
+test_dual_momentum_etf.py` (mêmes cas 3/garde-fou, adaptés à chaque stratégie — SPY manquant,
+IEF/bogey manquant, un titre isolé manquant), `bot/tests/test_missing_data_runner_wiring.py`
+(bout-en-bout via `bot.runner.process_wallet`, sans git ni disque : gel sans vente forcée,
+retour à la normale au cycle suivant, liquidation au Nème cycle avec raison distincte dans
+`decisions.jsonl`). Non-régression des cas 1/2 vérifiée sur les 3 suites de tests existantes
+(sortie de tendance confirmée, régime baissier SPY confirmé, momentum absolu vs IEF) — inchangés.

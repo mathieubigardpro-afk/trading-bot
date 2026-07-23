@@ -76,13 +76,44 @@ entièrement reconstruit à chaque cycle). Cette propriété est vérifiée expl
 --------------------------------------------------------------------------------------------
 Posture défensive (réseau bloqué en développement, ARCHITECTURE.md §0.2/§0.3)
 --------------------------------------------------------------------------------------------
-Aucun appel réseau ni écriture disque ici (fonction pure, comme l'exige `StrategyBase`).
-En cas de donnée insuffisante ou incohérente pour un calcul fiable — moins de 200 jours
-calendaires complets pour un actif (SMA200 non calculable), moins de 2 rendements horaires
-communs aux actifs "on" (vol de panier non calculable), profil de risque incomplet — la
-règle est TOUJOURS de traiter l'actif/le wallet comme non éligible ce cycle (poids 0, jamais
-une valeur extrapolée ou une "meilleure estimation" créative), conformément au principe
-pessimiste cardinal du projet.
+Aucun appel réseau ni écriture disque ici (fonction pure, comme l'exige `StrategyBase` — à
+l'exception documentée de `apply_missing_data_policy()`, cf. §12.4 ci-dessous et
+`bot/strategies/__init__.py`). En cas de donnée insuffisante ou incohérente pour un calcul
+fiable — moins de 200 jours calendaires complets pour un actif (SMA200 non calculable), moins
+de 2 rendements horaires communs aux actifs "on" (vol de panier non calculable), profil de
+risque incomplet — la règle est TOUJOURS de traiter l'actif comme non éligible à une NOUVELLE
+décision ce cycle (jamais une valeur extrapolée ou une "meilleure estimation" créative),
+conformément au principe pessimiste cardinal du projet.
+
+--------------------------------------------------------------------------------------------
+Correctif ARCHITECTURE.md §12.4 (2026-07-23, incident XLM T18/T19) — gel vs liquidation
+--------------------------------------------------------------------------------------------
+AVANT ce correctif, "non éligible ce cycle" (SMA200 non calculable pour CE symbole précis, ou
+vol de panier non calculable pour le panier "on" entier) se traduisait par un poids cible 0.0
+EXPLICITE — indiscernable d'une VRAIE sortie de tendance (close < SMA200 confirmé). Un simple
+raté transitoire de `bot.feeds.get_history()` pour UN symbole (ex. XLM, un seul cycle horaire
+sur les 12 de l'univers agressif) forçait alors une liquidation complète de la position tenue,
+suivie d'un probable rachat au cycle suivant une fois la donnée revenue — aller-retour à double
+frais sans aucun signal de marché réel (cf. `state/wallets/agressif/decisions.jsonl`,
+`2026-07-23T18`/`T19`, XLM).
+
+Trois cas sont désormais distingués explicitement pour CHAQUE symbole de `universe` :
+  1. **Tendance CONFIRMÉE off** (`_is_trend_on` -> `False`, donnée disponible) -> poids 0.0
+     EXPLICITE — sortie légitime, comportement INCHANGÉ.
+  2. **Tendance CONFIRMÉE on** (`_is_trend_on` -> `True` ET vol de panier calculable) -> poids
+     normal (sizing vol-targeté) — comportement INCHANGÉ.
+  3. **Donnée indisponible ce cycle** (`_is_trend_on` -> `None`, historique manquant/insuffisant
+     pour CE symbole ; OU tendance "on" confirmée mais vol de panier non calculable, qui rend le
+     SIZING — pas la tendance — indéterminé pour cet actif) -> le symbole est OMIS du dict
+     retourné plutôt que mis à 0.0, via `apply_missing_data_policy()`
+     (`bot/strategies/__init__.py`) : `bot.risk.manager.RiskManager.apply` traite déjà
+     nativement l'absence d'un symbole comme "poids conservé" (`raw is None -> poids_actuel`),
+     ce qui GÈLE la position (ni achat ni vente) sans qu'aucun mécanisme supplémentaire ne soit
+     nécessaire côté risque. Garde-fou de prudence : au-delà de
+     `bot.strategies.MISSING_DATA_MAX_CYCLES_DEFAULT` (24 cycles horaires consécutifs, ~24h)
+     de donnée manquante pour un MÊME symbole, celui-ci est liquidé par prudence (poids 0.0
+     explicite, position jugée "aveugle" trop longtemps) — comptabilisé dans
+     `state["strategy_state"]["quasi_passif_crypto"]["missing_data_cycles"]`.
 """
 
 from __future__ import annotations
@@ -92,7 +123,7 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from bot.strategies import StrategyBase
+from bot.strategies import StrategyBase, apply_missing_data_policy
 
 # --- Univers SPEC par wallet (docs/config-strategies.json -> variants) ---------------------
 SPEC_UNIVERSE_BY_WALLET: Dict[str, List[str]] = {
@@ -252,23 +283,32 @@ class QuasiPassifCrypto(StrategyBase):
         if not universe:
             return {}
 
-        # --- 1. filtre de tendance SMA200 journalière, par actif -----------------------
-        eligible: List[str] = []
+        # --- 1. filtre de tendance SMA200 journalière, par actif — 3 cas distincts, cf.
+        # docstring module "Correctif ARCHITECTURE.md §12.4" ------------------------------
+        eligible: List[str] = []       # cas 2 : tendance CONFIRMÉE on
+        trend_off: List[str] = []      # cas 1 : tendance CONFIRMÉE off
+        missing: List[str] = []        # cas 3 : donnée indisponible (tendance indécidable)
         for symbol in universe:
             daily = _daily_closes(history.get(symbol))
-            if _is_trend_on(daily) is True:
+            trend = _is_trend_on(daily)
+            if trend is True:
                 eligible.append(symbol)
+            elif trend is False:
+                trend_off.append(symbol)
+            else:
+                missing.append(symbol)
 
-        weights: Dict[str, float] = {symbol: 0.0 for symbol in universe}
+        weights: Dict[str, float] = {symbol: 0.0 for symbol in trend_off}
         if not eligible:
-            return weights
+            return apply_missing_data_policy(state, self.name, weights, missing)
 
         # --- 2. vol EWMA annualisée du panier équipondéré des actifs "on" --------------
         vol_annualized = _basket_vol_annualized(eligible, history, halflife_hours)
         if vol_annualized is None:
-            # Vol de panier non estimable de façon fiable : posture la plus prudente
-            # possible (aucune exposition ce cycle), jamais de vol inventée.
-            return weights
+            # Vol de panier non estimable de façon fiable : le SIZING (pas la tendance) des
+            # actifs "on" est indéterminé ce cycle -> cas 3 pour CHACUN d'eux (gelés, pas
+            # liquidés), jamais une vol inventée pour forcer un calcul.
+            return apply_missing_data_policy(state, self.name, weights, missing + eligible)
 
         # --- 3. sizing brut portefeuille -------------------------------------------------
         poids_brut_portefeuille = min(float(gross_exposure_max), float(vol_target) / vol_annualized)
@@ -280,4 +320,4 @@ class QuasiPassifCrypto(StrategyBase):
         for symbol in eligible:
             weights[symbol] = min(per_asset_raw, cap)
 
-        return weights
+        return apply_missing_data_policy(state, self.name, weights, missing)
