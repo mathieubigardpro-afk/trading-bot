@@ -1,5 +1,5 @@
 {
-  "cash_usd": 1141.079,
+  "cash_usd": 728.99974547205,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
@@ -17,6 +17,10 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-23T17:42:36.867701+00:00"
+      },
+      {
+        "equity": 1141.079,
+        "ts": "2026-07-23T18:05:52.744151+00:00"
       }
     ],
     "flatten_mode": false,
@@ -29,15 +33,25 @@
     "last_rate": 1.1392,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-23T17:43:24.706155+00:00"
+    "last_rate_ts": "2026-07-23T18:07:11.193368+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-23T17:42:36.867701+00:00",
-  "last_run_id": "2026-07-23T17",
-  "positions": {},
+  "last_run_completed_at": "2026-07-23T18:05:52.744151+00:00",
+  "last_run_id": "2026-07-23T18",
+  "positions": {
+    "UNI": {
+      "prix_moyen": 3.7707669999999993,
+      "qty": 54.5
+    },
+    "XLM": {
+      "prix_moyen": 0.18175779,
+      "qty": 1132.0
+    }
+  },
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "12981b76386d49aecba7d0488cd8fc6f93ba5a2e18899362b887a4ad43a8b347",
+  "state_hash_prev": "04c399f005c83b20f5d7036205fa26c2e7ea2960c16b2e05ffb19c4ce86c0085",
+  "strategy_state": {},
   "trade_history_for_breakers": [],
   "wallet_id": "agressif"
 }

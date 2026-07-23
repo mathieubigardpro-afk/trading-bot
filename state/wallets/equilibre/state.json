@@ -17,6 +17,10 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-23T17:42:36.867701+00:00"
+      },
+      {
+        "equity": 1141.079,
+        "ts": "2026-07-23T18:05:52.744151+00:00"
       }
     ],
     "flatten_mode": false,
@@ -29,15 +33,16 @@
     "last_rate": 1.1392,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-23T17:43:24.706155+00:00"
+    "last_rate_ts": "2026-07-23T18:07:11.193368+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-23T17:42:36.867701+00:00",
-  "last_run_id": "2026-07-23T17",
+  "last_run_completed_at": "2026-07-23T18:05:52.744151+00:00",
+  "last_run_id": "2026-07-23T18",
   "positions": {},
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "6161f36fa61f049b0abee7a00365a28ffb407df52e4b9aabde5b49f6d270cf49",
+  "state_hash_prev": "5748fd8ad9903f803f6c48200db5914b2778b7861fbeee408042db177fccb40a",
+  "strategy_state": {},
   "trade_history_for_breakers": [],
   "wallet_id": "equilibre"
 }
