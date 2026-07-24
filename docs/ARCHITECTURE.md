@@ -1355,6 +1355,71 @@ prix, palier 10 bps actions vs 6 bps ETF selon le symbole ; sans `regularMarketP
 `None` (inchangé) ; bid/ask valide -> `source="yahoo"` inchangé, jamais synthétique. Non-
 régression crypto vérifiée (`bot/tests/test_crypto.py`, aucun changement de comportement).
 
+### 12.6 Root cause #2 — 429 sur `/v7/finance/quote` en bloc, repli `yfinance` (2026-07-24T18/T19)
+
+**Symptôme** : le correctif §12.5 déployé (commit `6f8d8f8`) puis validé en conditions réelles
+au cycle `2026-07-24T18` (commit `80e73ad`) — toujours `quote_available=false` sur 100% des 112
+actions/ETF, marché ouvert. Le spread synthétique n'a donc PAS résolu l'incident : la cause
+racine était ailleurs, en amont même de `_build_quote_from_result`.
+
+**Diagnostic** : `bot.yml` "Publier le log" passé temporairement `if: failure()` -> `if:
+always()` (toujours capturer `/tmp/cycle.log` sur la branche `logs`, cf. commentaire dans le
+fichier) + `get_prices_equity` enrichi pour journaliser le statut HTTP et un extrait du corps de
+réponse en cas d'échec de la requête v7. Le log du cycle `2026-07-24T19` (déclenché
+manuellement, run `f6fcdaa`/`b2ebdd2`) apporte la preuve directe :
+
+```
+yahoo v7 quote échec pour [...112 symboles...]: 429 Client Error: Too Many Requests for url:
+https://query1.finance.yahoo.com/v7/finance/quote?symbols=... (http_status=429,
+extrait_reponse='Too Many Requests\r\n')
+```
+
+La requête `/v7/finance/quote` échoue **en bloc pour les 112 symboles en un seul appel** —
+rate-limiting Yahoo sur l'IP du runner GitHub Actions (IP partagée/datacenter, probablement
+déjà sollicitée par de nombreux autres workflows tiers). Avant ce correctif,
+`get_prices_equity` retournait alors immédiatement un dictionnaire 100% `None` (`return result`
+dans le bloc `except`), sans aucun repli — le spread synthétique de §12.5 n'était donc jamais
+atteint puisqu'il n'y avait tout simplement plus aucune ligne de résultat à parser.
+
+**Correctif** (`bot/feeds/equities.py`) : repli `yfinance` (bibliothèque déjà présente comme
+dépendance du projet — `bot/feeds/daily.py`/`tools/build_daily_cache.py` l'utilisent avec succès
+pour l'historique journalier, depuis la MÊME plage d'IP GitHub Actions, le MÊME jour — endpoint
+Yahoo distinct, visiblement pas soumis au même 429).
+- Le bloc `except` de la requête v7 ne fait plus de `return` immédiat : il journalise le
+  diagnostic (statut HTTP + extrait de réponse) puis laisse le flux continuer, `rows = []`.
+- Après la boucle de parsing v7 (qui peut désormais laisser TOUS les symboles à `None`, ou
+  seulement certains en cas d'échec partiel — symbole absent de la réponse, bid/ask invalide et
+  spread synthétique lui-même désactivé, etc.), `missing = [sym for sym in symbols if
+  result[sym] is None]` est recalculé.
+- Si `missing` est non vide, `_fetch_yfinance_last_prices(missing)` télécharge le dernier prix
+  intraday (1 minute, `yf.download(period="1d", interval="1m", group_by="ticker", ...)`) par
+  LOTS de 15 symboles avec pause de 1s entre lots — même motif exact que
+  `bot/feeds/daily.py:YFINANCE_BATCH_SIZE`/`YFINANCE_BATCH_PAUSE_SECONDS`.
+- Chaque prix obtenu construit une quote synthétique via le MÊME `_build_synthetic_quote()` que
+  §12.5 (spread par classe d'actif inchangé, 10 bps actions / 6 bps ETF), avec
+  `source="yfinance_synthetic_spread"` (distinct de `"yahoo_synthetic_spread"` pour garder la
+  source exacte traçable jusqu'à `decisions.jsonl`/`trades.jsonl`).
+- La fraîcheur (`STALENESS_MAX_SECONDS_EQUITY`) et le marquage `delayed` au-delà du seuil temps
+  réel plausible (`EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS`) sont appliqués de façon identique
+  aux deux sources (extraits dans une fonction interne commune `_finalize`).
+- Si les DEUX sources échouent (v7 ET yfinance), la quote reste `None` : no-trade strict
+  inchangé, jamais de prix inventé sans aucune donnée réelle en amont.
+
+**Tests** : `bot/tests/test_equities.py` — v7 en échec total (429 simulé) + yfinance disponible
+-> quote synthétique `source="yfinance_synthetic_spread"` ; v7 total + yfinance également sans
+donnée -> `None` ; v7 partiel (un symbole résolu, un absent) -> le symbole manquant complété par
+yfinance sans toucher au symbole déjà résolu par v7 ; palier de spread par classe d'actif
+identique via le repli yfinance ; `yfinance` non installé (`ImportError`) -> repli sauté
+proprement, `None`, jamais d'exception qui ferait planter le cycle ; lots de 15 symboles avec
+pause entre lots ; mapping `BRK.B` -> `BRK-B` respecté également par ce repli. Suite complète
+(`bot/tests` + `tools/tests`) : 592 tests verts (baseline avant ce correctif : 583).
+
+**Statut à la clôture du marché 2026-07-24** : correctif poussé sur `main` avant 19h20 UTC — le
+créneau `T19` (dernière exécution avant ce correctif, commit `b2ebdd2`) montre encore 0 trade
+actions/ETF (comportement AVANT le correctif). Les créneaux `T19:27`/`T19:47` restent les
+dernières fenêtres de validation en marché ouvert avant la clôture NYSE 20:00 UTC — cf. rapport
+de mission pour le verdict empirique de ces cycles (trades observés ou non).
+
 ---
 
 ## 13. Addendum § Labo (2026-07-23) — le wallet labo 🧪, incubateur de stratégies candidates

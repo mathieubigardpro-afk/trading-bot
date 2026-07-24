@@ -228,10 +228,15 @@ def test_get_prices_equity_stale_quote_returns_none(monkeypatch):
 
 
 def test_get_prices_equity_network_failure_returns_none_for_all(monkeypatch):
+    """Depuis le correctif root cause #2 (429, cf. bandeau de tête de module), un échec v7 total
+    déclenche désormais le repli `yfinance` — ce test isole donc EXPLICITEMENT ce repli comme
+    lui aussi sans issue (yfinance indisponible) pour vérifier que le no-trade strict final
+    reste intact quand AUCUNE des deux sources ne fournit de prix."""
     def raise_err(*a, **k):
         raise requests.ConnectionError("down")
 
     monkeypatch.setattr(equities_mod._session, "get", raise_err)
+    monkeypatch.setattr(equities_mod, "_YFINANCE_AVAILABLE", False)
 
     result = equities_mod.get_prices_equity(["AAPL", "MSFT"])
 
@@ -239,13 +244,189 @@ def test_get_prices_equity_network_failure_returns_none_for_all(monkeypatch):
 
 
 def test_get_prices_equity_symbol_missing_from_response_returns_none(monkeypatch):
+    """MSFT absent de la réponse v7 déclenche le repli yfinance pour ce seul symbole — isolé ici
+    comme lui aussi sans donnée exploitable, pour vérifier le no-trade strict final."""
     payload = _quote_payload(symbol="AAPL")  # ne contient pas MSFT
     monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+    monkeypatch.setattr(equities_mod, "_YFINANCE_AVAILABLE", False)
 
     result = equities_mod.get_prices_equity(["AAPL", "MSFT"])
 
     assert result["AAPL"] is not None
     assert result["MSFT"] is None
+
+
+# ---------------------------------------------------------------------------
+# Repli `yfinance` (root cause #2, 429 Yahoo v7 quote — 2026-07-24T18/T19, cf. bandeau de tête
+# de module et ARCHITECTURE.md §12.6) : dernier prix intraday utilisé pour construire une quote
+# synthétique, exactement comme le repli bid/ask manquant (§12.5).
+# ---------------------------------------------------------------------------
+
+
+def _make_yf_quote_batch_multiindex(tickers_prices, now=None):
+    """Construit un DataFrame yfinance multi-tickers (`group_by="ticker"`) avec une seule
+    bougie 1 minute par ticker — `tickers_prices` = {ticker_yahoo: prix_close}."""
+    now = now or _dt.datetime.now(_dt.timezone.utc)
+    idx = pd.DatetimeIndex([pd.Timestamp(now)])
+    frames = {}
+    for ticker, price in tickers_prices.items():
+        frames[(ticker, "Open")] = [price]
+        frames[(ticker, "High")] = [price]
+        frames[(ticker, "Low")] = [price]
+        frames[(ticker, "Close")] = [price]
+        frames[(ticker, "Volume")] = [1_000_000.0]
+    df = pd.DataFrame(frames, index=idx)
+    df.columns = pd.MultiIndex.from_tuples(df.columns)
+    return df
+
+
+def test_get_prices_equity_v7_total_failure_falls_back_to_yfinance_synthetic_spread(monkeypatch):
+    """Reproduit exactement l'incident production 2026-07-24T18/T19 : `/v7/finance/quote`
+    échoue en bloc (429) pour TOUS les symboles -> repli `yfinance` par lots, quote synthétique
+    construite autour du dernier prix intraday obtenu."""
+    def raise_429(*a, **k):
+        raise requests.HTTPError("429 Client Error: Too Many Requests")
+
+    monkeypatch.setattr(equities_mod._session, "get", raise_429)
+
+    batch_df = _make_yf_quote_batch_multiindex({"AAPL": 200.0})
+    monkeypatch.setattr(equities_mod.yf, "download", lambda **kwargs: batch_df)
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    q = result["AAPL"]
+    assert q is not None
+    assert q.source == "yfinance_synthetic_spread"
+    assert q.synthetic_spread is True
+    assert q.delayed is True
+    assert q.mid == pytest.approx(200.0)
+    assert q.bid < q.mid < q.ask
+
+
+def test_get_prices_equity_v7_total_failure_and_yfinance_also_fails_returns_none(monkeypatch):
+    """Les DEUX sources échouent (429 v7 ET yfinance sans donnée exploitable) -> no-trade
+    strict, jamais de prix inventé."""
+    def raise_429(*a, **k):
+        raise requests.HTTPError("429 Client Error: Too Many Requests")
+
+    monkeypatch.setattr(equities_mod._session, "get", raise_429)
+    monkeypatch.setattr(equities_mod.yf, "download", lambda **kwargs: pd.DataFrame())
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    assert result["AAPL"] is None
+
+
+def test_get_prices_equity_v7_partial_success_yfinance_fills_the_rest(monkeypatch):
+    """v7 répond correctement pour AAPL (bid/ask valide) mais ne renvoie RIEN pour MSFT (absent
+    du payload, comme lors d'un throttling partiel) -> MSFT est complété par le repli yfinance,
+    AAPL reste inchangé (jamais remplacé par une source moins fiable)."""
+    payload = _quote_payload(symbol="AAPL", bid=325.02, ask=329.97)
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+
+    batch_df = _make_yf_quote_batch_multiindex({"MSFT": 410.0})
+    monkeypatch.setattr(equities_mod.yf, "download", lambda **kwargs: batch_df)
+
+    result = equities_mod.get_prices_equity(["AAPL", "MSFT"])
+
+    aapl, msft = result["AAPL"], result["MSFT"]
+    assert aapl is not None and aapl.source == "yahoo" and aapl.synthetic_spread is False
+    assert msft is not None and msft.source == "yfinance_synthetic_spread"
+    assert msft.synthetic_spread is True
+    assert msft.mid == pytest.approx(410.0)
+
+
+def test_get_prices_equity_yfinance_fallback_respects_synthetic_spread_width_by_class(monkeypatch):
+    """Le repli yfinance utilise le MÊME palier de spread par classe d'actif (`bot.config.
+    SYMBOLS_ETF`) que le repli bid/ask manquant — ETF plus liquide -> spread plus étroit."""
+    monkeypatch.setattr(equities_mod.cfg, "SYMBOLS_ETF", ["SPY"])
+    monkeypatch.setattr(equities_mod.cfg, "EQUITY_SYNTHETIC_SPREAD_BPS", 10)
+    monkeypatch.setattr(equities_mod.cfg, "ETF_SYNTHETIC_SPREAD_BPS", 6)
+
+    def raise_429(*a, **k):
+        raise requests.HTTPError("429 Client Error: Too Many Requests")
+
+    monkeypatch.setattr(equities_mod._session, "get", raise_429)
+
+    batch_df = _make_yf_quote_batch_multiindex({"AAPL": 100.0, "SPY": 100.0})
+    monkeypatch.setattr(equities_mod.yf, "download", lambda **kwargs: batch_df)
+
+    result = equities_mod.get_prices_equity(["AAPL", "SPY"])
+
+    aapl, spy = result["AAPL"], result["SPY"]
+    aapl_width_bps = (aapl.ask - aapl.bid) / aapl.mid * 1e4
+    spy_width_bps = (spy.ask - spy.bid) / spy.mid * 1e4
+    assert aapl_width_bps == pytest.approx(10.0)
+    assert spy_width_bps == pytest.approx(6.0)
+
+
+def test_get_prices_equity_yfinance_unavailable_import_error_returns_none(monkeypatch):
+    """`yfinance` non installé (ImportError au chargement du module, cf. bandeau défensif en
+    tête de fichier) : le repli est silencieusement sauté, no-trade strict — jamais une
+    exception qui ferait planter tout le cycle."""
+    def raise_429(*a, **k):
+        raise requests.HTTPError("429 Client Error: Too Many Requests")
+
+    monkeypatch.setattr(equities_mod._session, "get", raise_429)
+    monkeypatch.setattr(equities_mod, "_YFINANCE_AVAILABLE", False)
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    assert result["AAPL"] is None
+
+
+def test_fetch_yfinance_last_prices_empty_symbols_returns_empty_dict():
+    assert equities_mod._fetch_yfinance_last_prices([]) == {}
+
+
+def test_fetch_yfinance_last_prices_batches_by_size(monkeypatch):
+    """`YFINANCE_QUOTE_BATCH_SIZE` (15) symboles max par appel `yf.download` — au-delà, un
+    second lot est déclenché (même motif que `bot/feeds/daily.py`)."""
+    symbols = [f"SYM{i}" for i in range(20)]
+    calls = []
+
+    def fake_download(**kwargs):
+        tickers = kwargs["tickers"].split(" ")
+        calls.append(tickers)
+        return _make_yf_quote_batch_multiindex({t: 50.0 for t in tickers})
+
+    monkeypatch.setattr(equities_mod.yf, "download", fake_download)
+    monkeypatch.setattr(equities_mod.time, "sleep", lambda *a, **k: None)
+
+    results = equities_mod._fetch_yfinance_last_prices(symbols)
+
+    assert len(calls) == 2
+    assert len(calls[0]) == 15
+    assert len(calls[1]) == 5
+    assert all(results[s] is not None for s in symbols)
+
+
+def test_fetch_yfinance_last_prices_download_exception_leaves_none(monkeypatch):
+    def raise_exc(**kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(equities_mod.yf, "download", raise_exc)
+
+    results = equities_mod._fetch_yfinance_last_prices(["AAPL"])
+
+    assert results == {"AAPL": None}
+
+
+def test_extract_yf_last_price_uses_brk_b_yahoo_ticker(monkeypatch):
+    """Le repli yfinance respecte lui aussi le mapping BRK.B -> BRK-B (cf. tests dédiés plus
+    bas pour v7)."""
+    def raise_429(*a, **k):
+        raise requests.HTTPError("429 Client Error: Too Many Requests")
+
+    monkeypatch.setattr(equities_mod._session, "get", raise_429)
+    batch_df = _make_yf_quote_batch_multiindex({"BRK-B": 450.0})
+    monkeypatch.setattr(equities_mod.yf, "download", lambda **kwargs: batch_df)
+
+    result = equities_mod.get_prices_equity(["BRK.B"])
+
+    q = result["BRK.B"]
+    assert q is not None
+    assert q.mid == pytest.approx(450.0)
 
 
 def test_get_prices_equity_empty_symbol_list_returns_empty_dict():
