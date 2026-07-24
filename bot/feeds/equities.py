@@ -168,6 +168,7 @@ def get_prices_equity(symbols: list[str]) -> dict[str, Quote | None]:
     result: dict[str, Quote | None] = {sym: None for sym in symbols}
 
     query_symbols = [_yahoo_ticker_for(sym) for sym in symbols]
+    resp: requests.Response | None = None
     try:
         resp = _session.get(
             YAHOO_QUOTE_URL,
@@ -178,7 +179,23 @@ def get_prices_equity(symbols: list[str]) -> dict[str, Quote | None]:
         payload = resp.json()
         rows = payload["quoteResponse"]["result"]
     except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
-        logger.warning("yahoo v7 quote échec pour %s: %s", symbols, exc)
+        # Diagnostic maximal (incident 2026-07-24T18, cf. ARCHITECTURE.md §12.5) : le statut
+        # HTTP + un extrait du corps de réponse distinguent un blocage/quota Yahoo (401/429/999,
+        # souvent accompagné d'une page HTML "consentement"/captcha au lieu du JSON attendu — cas
+        # documenté de l'endpoint v7 quote gratuit sans "crumb"/cookie de session) d'une simple
+        # panne réseau transitoire — invisible depuis `decisions.jsonl` seul (quote_source=None
+        # dans les deux cas), cf. limite de journalisation déjà identifiée §12.2.
+        status = getattr(resp, "status_code", None) if resp is not None else None
+        snippet = None
+        if resp is not None:
+            try:
+                snippet = resp.text[:300]
+            except Exception:  # noqa: BLE001 — diagnostic best-effort uniquement
+                snippet = None
+        logger.warning(
+            "yahoo v7 quote échec pour %s: %s (http_status=%s, extrait_reponse=%r)",
+            symbols, exc, status, snippet,
+        )
         return result
 
     by_symbol = {row.get("symbol"): row for row in rows if isinstance(row, dict)}

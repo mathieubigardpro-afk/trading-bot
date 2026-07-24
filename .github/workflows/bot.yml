@@ -91,14 +91,19 @@ jobs:
           set -o pipefail
           python -m bot.runner 2>&1 | tee /tmp/cycle.log
 
-      - name: Publier le log d'échec sur la branche logs
-        if: failure()
-        # Observabilité (incident 2026-07-24) : le job précédent n'a laissé NI commit NI trace
-        # exploitable en cas d'échec (timeout ou exception) — on ne peut pas non plus lire les
-        # logs du run via l'API GitHub (api.github.com rate-limitée/inaccessible depuis
-        # l'environnement de développement). Ce step capture donc /tmp/cycle.log + un contexte
-        # d'exécution sur une branche dédiée "logs" (force-push, 20 logs les plus récents
-        # conservés), entièrement via git (accessible même sans l'API GitHub).
+      - name: Publier le log du cycle sur la branche logs
+        if: always()
+        # Observabilité (incident 2026-07-24) : à l'origine déclenché seulement `if: failure()`
+        # (timeout/exception, aucune autre trace exploitable faute d'accès à l'API GitHub pour
+        # lire les logs du run). Passé temporairement à `if: always()` (2026-07-24 ~18h10 UTC,
+        # incident de suivi "poches actions/ETF toujours quote_available=false malgré le
+        # spread synthétique activé") : un cycle peut désormais "réussir" (commit créé,
+        # NO_TRADE partout) tout en cachant un problème réseau/parsing côté
+        # `bot/feeds/equities.py` invisible dans `decisions.jsonl` (quote_source=None ne
+        # distingue pas "requête Yahoo v7 en échec total" d'un simple bid/ask manquant) — capture
+        # donc TOUJOURS /tmp/cycle.log + contexte sur la branche dédiée "logs" (force-push, 20
+        # logs les plus récents conservés), entièrement via git (accessible même sans API
+        # GitHub). À revenir à `if: failure()` une fois la cause racine confirmée/corrigée.
         run: |
           set -euo pipefail
           STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -116,7 +121,7 @@ jobs:
 
           mkdir -p "$LOGWORK/logs"
           {
-            echo "== Échec du cycle bot =="
+            echo "== Cycle bot (job.status=${{ job.status }}) =="
             echo "date_utc: $(date -u -Iseconds)"
             echo "run_id_attendu: ${RUN_ID_ATTENDU}"
             echo "sha_main: ${GITHUB_SHA}"
@@ -136,14 +141,15 @@ jobs:
 
           git add -A
           git -c user.name="Trading Bot" -c user.email="bot@trading.local" \
-            commit -m "Échec cycle ${RUN_ID_ATTENDU} (run ${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}) — log capturé"
+            commit -m "Cycle ${RUN_ID_ATTENDU} (run ${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}, status=${{ job.status }}) — log capturé"
           git push --force origin logs
 
           cd "${GITHUB_WORKSPACE}"
           git worktree remove "$LOGWORK" --force
 
-# (touch: run de validation déclenché manuellement le 2026-07-24 ~18h08 UTC — spread
-# synthétique activé (dernier verrou poches actions/ETF, cf. ARCHITECTURE.md §12.5) ;
-# les créneaux cron 17:07/17:27/17:47 n'ont produit aucun commit ni log d'échec observable
-# après plus d'une heure — force ce run de validation immédiat pendant que le marché est
-# encore ouvert (clôture 20:00 UTC))
+# (touch: run de validation déclenché manuellement le 2026-07-24 ~18h13 UTC — diagnostic de
+# suivi : le cycle T18 a "réussi" (commit créé) mais les 112 actions/ETF restent
+# quote_available=false malgré le spread synthétique activé (ARCHITECTURE.md §12.5) ;
+# publication du log passée temporairement à `if: always()` pour capturer la cause exacte
+# côté bot/feeds/equities.py (requête Yahoo v7 en échec total vs bid/ask simplement absent),
+# invisible depuis decisions.jsonl seul)
