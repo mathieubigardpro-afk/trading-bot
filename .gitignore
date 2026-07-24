@@ -2,3 +2,8 @@ secrets/
 *.pyc
 __pycache__/
 .env
+
+# Cache disque quotidien actions/ETF/crypto (branche git `data-cache`, régénérée par
+# .github/workflows/daily-data-cache.yml, checkoutée localement par .github/workflows/bot.yml
+# à cet emplacement exact — cf. bot/feeds/daily.py:_cache_dir()). Jamais commité sur main.
+/data-cache/

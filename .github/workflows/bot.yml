@@ -29,7 +29,15 @@ concurrency:
 jobs:
   run-cycle:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # INCIDENT 2026-07-24 : les cycles T13/T14 ont disparu SANS AUCUNE trace — le job a été tué
+    # par ce timeout (alors à 15 min) en pleine ouverture du marché US, pendant le téléchargement
+    # direct des ~112 historiques journaliers actions/ETF (bot/feeds/daily.py). Deux correctifs
+    # structurels : (1) ce téléchargement lourd est désormais sorti du cycle horaire, régénéré
+    # une fois par jour par .github/workflows/daily-data-cache.yml et lu ici depuis un cache
+    # disque (étape "Checkout data-cache" ci-dessous) ; (2) le repli réseau direct restant (cache
+    # absent/périmé/incomplet) est plafonné à 6 min (bot.feeds.daily.EQUITY_ETF_FETCH_DEADLINE_
+    # SECONDS). 30 min reste une marge de sécurité supplémentaire, plus jamais un budget serré.
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,6 +52,21 @@ jobs:
           # ne fait que `git pull --rebase` / `git push` sur le remote `origin` tel quel,
           # sans jamais lire ni modifier son URL.
 
+      - name: Checkout data-cache (cache journalier actions/ETF/crypto)
+        uses: actions/checkout@v4
+        continue-on-error: true # la branche peut ne pas encore exister (tout premier run avant
+        # que .github/workflows/daily-data-cache.yml n'ait tourné une première fois) — dans ce
+        # cas bot/feeds/daily.py:_try_load_from_disk_cache() ne trouve simplement rien (répertoire
+        # data-cache/ absent) et retombe sur le repli réseau direct plafonné, sans échec du job.
+        with:
+          ref: data-cache
+          path: data-cache # relatif à la racine du workspace = racine du dépôt (checkout
+          # ci-dessus) — c'est exactement là que bot/feeds/daily.py:_cache_dir() cherche le
+          # cache par défaut (`<racine dépôt>/data-cache`, cf. bandeau "INCIDENT 2026-07-24"
+          # dans ce module). Ignoré par git (.gitignore) : jamais commité par erreur par le
+          # cycle horaire, qui ne git-add que des chemins explicites (bot/persist/git_sync.py).
+          fetch-depth: 1
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -52,10 +75,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # yfinance ajouté lors de l'intégration des stratégies (docs/ARCHITECTURE.md §11) :
-          # bot/feeds/daily.py (poches actions xs_momentum_sp100 + ETF dual_momentum_etf) l'utilise
-          # comme source primaire (téléchargement par lots), repli stooq.com si absent/en échec —
-          # le cycle reste fonctionnel sans yfinance, mais en disponibilité dégradée (stooq seul).
+          # yfinance : bot/feeds/daily.py (poches actions xs_momentum_sp100 + ETF dual_momentum_etf)
+          # l'utilise comme source primaire (téléchargement par lots) pour le repli réseau direct
+          # (cache data-cache/ absent/périmé/incomplet), repli stooq.com si absent/en échec — le
+          # cycle reste fonctionnel sans yfinance, mais en disponibilité dégradée (stooq seul).
           pip install pandas numpy requests yfinance
 
       - name: Configure git identity
@@ -64,6 +87,60 @@ jobs:
           git config user.email "bot@trading.local"
 
       - name: Run bot cycle
-        run: python -m bot.runner
+        run: |
+          set -o pipefail
+          python -m bot.runner 2>&1 | tee /tmp/cycle.log
 
-# (touch: run de validation déclenché manuellement le 2026-07-23)
+      - name: Publier le log d'échec sur la branche logs
+        if: failure()
+        # Observabilité (incident 2026-07-24) : le job précédent n'a laissé NI commit NI trace
+        # exploitable en cas d'échec (timeout ou exception) — on ne peut pas non plus lire les
+        # logs du run via l'API GitHub (api.github.com rate-limitée/inaccessible depuis
+        # l'environnement de développement). Ce step capture donc /tmp/cycle.log + un contexte
+        # d'exécution sur une branche dédiée "logs" (force-push, 20 logs les plus récents
+        # conservés), entièrement via git (accessible même sans l'API GitHub).
+        run: |
+          set -euo pipefail
+          STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+          RUN_ID_ATTENDU="$(date -u +%Y-%m-%dT%H)"
+          LOGWORK="$(mktemp -d)"
+
+          git fetch origin logs --depth=1 2>/dev/null || true
+          if git rev-parse --verify --quiet refs/remotes/origin/logs >/dev/null; then
+            git worktree add -B logs "$LOGWORK" refs/remotes/origin/logs
+          else
+            git worktree add --detach "$LOGWORK" HEAD
+            git -C "$LOGWORK" checkout --orphan logs
+            git -C "$LOGWORK" rm -rf --quiet . || true
+          fi
+
+          mkdir -p "$LOGWORK/logs"
+          {
+            echo "== Échec du cycle bot =="
+            echo "date_utc: $(date -u -Iseconds)"
+            echo "run_id_attendu: ${RUN_ID_ATTENDU}"
+            echo "sha_main: ${GITHUB_SHA}"
+            echo "github_run_id: ${GITHUB_RUN_ID}"
+            echo "github_run_attempt: ${GITHUB_RUN_ATTEMPT}"
+            echo "github_run_number: ${GITHUB_RUN_NUMBER}"
+            echo "workflow: ${GITHUB_WORKFLOW}"
+            echo "event: ${GITHUB_EVENT_NAME}"
+            echo "=========================="
+            cat /tmp/cycle.log 2>/dev/null || echo "(/tmp/cycle.log absent — échec avant même le démarrage du runner)"
+          } > "$LOGWORK/logs/cycle-${STAMP}.log"
+
+          # Ne garder que les 20 logs les plus récents (force-push ci-dessous : branche de
+          # données entièrement régénérable, aucune valeur à conserver dans son historique).
+          cd "$LOGWORK"
+          ls -1t logs/*.log | tail -n +21 | xargs -r rm -f
+
+          git add -A
+          git -c user.name="Trading Bot" -c user.email="bot@trading.local" \
+            commit -m "Échec cycle ${RUN_ID_ATTENDU} (run ${GITHUB_RUN_ID}/${GITHUB_RUN_ATTEMPT}) — log capturé"
+          git push --force origin logs
+
+          cd "${GITHUB_WORKSPACE}"
+          git worktree remove "$LOGWORK" --force
+
+# (touch: run de validation déclenché manuellement le 2026-07-24 — cache disque + plafond de
+# temps + observabilité, correctif de l'incident cycles T13/T14 manquants)

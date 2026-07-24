@@ -1,0 +1,73 @@
+name: Daily data cache
+
+# Correctif structurel de l'incident 2026-07-24 (cycles horaires T13/T14 manquants, cf.
+# bandeau "INCIDENT 2026-07-24" dans bot/feeds/daily.py et le commentaire de tête de
+# .github/workflows/bot.yml) : le téléchargement LOURD des historiques journaliers
+# actions/ETF (~112 tickers, yfinance par lots) est sorti du cycle horaire et déplacé ici,
+# HORS du chemin critique, avec un budget de temps généreux.
+#
+# Un cache vieux d'un jour (voire de quelques jours, cf. bot.feeds.daily.CACHE_MAX_AGE_DAYS)
+# est PARFAIT pour des signaux SMA200/momentum MENSUEL (bot.strategies.xs_momentum_sp100,
+# bot.strategies.dual_momentum_etf) — inutile de le régénérer plus d'une fois par jour.
+#
+# Déclencheurs :
+#   - schedule : une fois par jour à 21h30 UTC, APRÈS la clôture régulière NYSE (20:00 UTC) —
+#     l'historique du jour calendaire courant est alors définitivement clôturé.
+#   - workflow_dispatch : lancement manuel (rattrapage, debug).
+#   - push sur ce fichier ou sur tools/build_daily_cache.py : run de validation immédiat dès
+#     le premier push (même principe que .github/workflows/fetch-data.yml/bot.yml — aucun
+#     autre moyen de vérifier le pipeline depuis un environnement où l'API GitHub est
+#     inaccessible).
+on:
+  schedule:
+    - cron: "30 21 * * *"
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/build_daily_cache.py"
+      - ".github/workflows/daily-data-cache.yml"
+
+permissions:
+  contents: write
+
+# Une seule régénération à la fois (force-push sur la branche orpheline `data-cache`) : le
+# run suivant attend en file plutôt que d'annuler un run en cours (jamais deux force-push
+# concurrents sur la même branche).
+concurrency:
+  group: daily-data-cache
+  cancel-in-progress: false
+
+jobs:
+  build-cache:
+    runs-on: ubuntu-latest
+    # Budget large et volontairement généreux (le repli réseau direct de bot/feeds/daily.py
+    # tourne ici SANS le plafond de 6 min imposé au cycle horaire, cf.
+    # tools/build_daily_cache.py:build_equity_etf_cache -> deadline_seconds=None) : ~112
+    # tickers actions/ETF (lots yfinance + repli séquentiel stooq pour les échecs de lot) plus
+    # l'univers crypto (Binance/Coinbase, direct par symbole) — 45 min laisse une marge
+    # confortable même en cas de forte dégradation côté sources.
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # persist-credentials par défaut (true) : actions/checkout configure
+          # http.extraheader dans .git/config pour authentifier le push --force ultérieur.
+          # tools/build_daily_cache.py (via tools.fetch_data.publish_to_orphan_branch) reste
+          # volontairement agnostique de ce mécanisme, comme tools/fetch_data.py.
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy requests yfinance
+
+      - name: Régénère le cache disque data-cache
+        run: python tools/build_daily_cache.py

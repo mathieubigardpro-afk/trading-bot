@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -632,4 +633,185 @@ def test_yf_period_for_scales_with_n_days():
     assert daily_mod._yf_period_for(100) == "2y"
     assert daily_mod._yf_period_for(400) == "2y"
     assert daily_mod._yf_period_for(1000) in ("2y", "5y")
+
+
+# ---------------------------------------------------------------------------
+# Cache disque (`data-cache/`, incident 2026-07-24) — présent/absent/périmé, et plafond de
+# temps du repli réseau direct. Cf. bandeau "INCIDENT 2026-07-24" en tête de bot/feeds/daily.py.
+# ---------------------------------------------------------------------------
+
+
+def _make_cache_df(n_days, start="2024-01-01"):
+    idx = pd.date_range(start, periods=n_days, freq="D", tz="UTC")
+    return pd.DataFrame(
+        {
+            "open": [100.0] * n_days, "high": [101.0] * n_days, "low": [99.0] * n_days,
+            "close": [100.5] * n_days, "volume": [1_000_000.0] * n_days,
+        },
+        index=pd.Index(idx, name="ts"),
+    )
+
+
+def _fail_if_called(*_a, **_k):
+    raise AssertionError("aucun appel réseau attendu ici")
+
+
+def test_cache_dir_honors_env_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("BOT_DATA_CACHE_DIR", str(tmp_path / "custom"))
+    assert daily_mod._cache_dir() == str(tmp_path / "custom")
+
+
+def test_write_cache_manifest_requires_tz_aware_datetime(tmp_path):
+    with pytest.raises(ValueError):
+        daily_mod.write_cache_manifest(str(tmp_path), _dt.datetime(2026, 7, 23, 21, 30))
+
+
+def test_write_and_read_cache_symbol_roundtrip(tmp_path):
+    df = _make_cache_df(5)
+    path = daily_mod.write_cache_symbol_csv(str(tmp_path), "equity", "AAPL", df)
+    assert os.path.isfile(path)
+
+    loaded = daily_mod._load_disk_cache_symbol(str(tmp_path), "equity", "AAPL")
+    assert loaded is not None
+    assert len(loaded) == 5
+    assert list(loaded.columns) == ["open", "high", "low", "close", "volume"]
+    assert str(loaded.index.tz) == "UTC"
+
+
+def test_load_disk_cache_symbol_missing_file_returns_none(tmp_path):
+    assert daily_mod._load_disk_cache_symbol(str(tmp_path), "equity", "NOPE") is None
+
+
+def test_manifest_freshness_boundary(tmp_path):
+    now = _dt.datetime(2026, 7, 24, 12, 0, tzinfo=_dt.timezone.utc)
+
+    exactly_at_limit = now - _dt.timedelta(days=daily_mod.CACHE_MAX_AGE_DAYS)
+    fresh_manifest = {"generated_at": exactly_at_limit.isoformat()}
+    assert daily_mod._manifest_is_fresh(fresh_manifest, now) is True
+
+    one_day_too_old = now - _dt.timedelta(days=daily_mod.CACHE_MAX_AGE_DAYS + 1)
+    stale_manifest = {"generated_at": one_day_too_old.isoformat()}
+    assert daily_mod._manifest_is_fresh(stale_manifest, now) is False
+
+    assert daily_mod._manifest_is_fresh(None, now) is False
+    assert daily_mod._manifest_is_fresh({}, now) is False
+    assert daily_mod._manifest_is_fresh({"generated_at": "pas une date"}, now) is False
+
+
+def test_prefetch_daily_history_uses_fresh_disk_cache_without_network_call(tmp_path, monkeypatch):
+    cache_dir = tmp_path / "data-cache"
+    monkeypatch.setenv("BOT_DATA_CACHE_DIR", str(cache_dir))
+    daily_mod.write_cache_symbol_csv(str(cache_dir), "equity", "AAPL", _make_cache_df(30))
+    daily_mod.write_cache_symbol_csv(str(cache_dir), "equity", "MSFT", _make_cache_df(30))
+    daily_mod.write_cache_manifest(str(cache_dir), _dt.datetime.now(_dt.timezone.utc))
+
+    monkeypatch.setattr(daily_mod.yf, "download", _fail_if_called)
+    monkeypatch.setattr(daily_mod.yf, "Ticker", _fail_if_called)
+    monkeypatch.setattr(daily_mod._stooq_session, "get", _fail_if_called)
+
+    statuses = daily_mod.prefetch_daily_history(["AAPL", "MSFT"], "equities", 30)
+
+    assert statuses == {"AAPL": "cache_disque", "MSFT": "cache_disque"}
+
+    out = daily_mod.get_daily_history("AAPL", 30, "equities")
+    assert len(out) == 30
+
+
+def test_prefetch_daily_history_disk_cache_absent_falls_back_to_network(tmp_path, monkeypatch):
+    monkeypatch.setenv("BOT_DATA_CACHE_DIR", str(tmp_path / "does-not-exist"))
+    tickers = ["AAPL", "MSFT"]
+    batch_df = _make_yf_batch_multiindex(tickers, 30)
+    monkeypatch.setattr(daily_mod.yf, "download", lambda **kwargs: batch_df)
+
+    statuses = daily_mod.prefetch_daily_history(tickers, "equities", 30)
+
+    assert statuses == {"AAPL": "ok", "MSFT": "ok"}
+
+
+def test_prefetch_daily_history_disk_cache_stale_ignored_falls_back_to_network(tmp_path, monkeypatch):
+    cache_dir = tmp_path / "data-cache"
+    monkeypatch.setenv("BOT_DATA_CACHE_DIR", str(cache_dir))
+    daily_mod.write_cache_symbol_csv(str(cache_dir), "equity", "AAPL", _make_cache_df(30))
+    stale_ts = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=daily_mod.CACHE_MAX_AGE_DAYS + 1)
+    daily_mod.write_cache_manifest(str(cache_dir), stale_ts)
+
+    tickers = ["AAPL"]
+    batch_df = _make_yf_batch_multiindex(tickers, 30)
+    monkeypatch.setattr(daily_mod.yf, "download", lambda **kwargs: batch_df)
+
+    statuses = daily_mod.prefetch_daily_history(tickers, "equities", 30)
+
+    assert statuses == {"AAPL": "ok"}  # pas "cache_disque" : cache jugé trop vieux, ignoré
+
+
+def test_prefetch_daily_history_disk_cache_partial_hit_only_fetches_missing_symbol(tmp_path, monkeypatch):
+    cache_dir = tmp_path / "data-cache"
+    monkeypatch.setenv("BOT_DATA_CACHE_DIR", str(cache_dir))
+    daily_mod.write_cache_symbol_csv(str(cache_dir), "equity", "AAPL", _make_cache_df(30))
+    daily_mod.write_cache_manifest(str(cache_dir), _dt.datetime.now(_dt.timezone.utc))
+
+    requested_tickers = []
+
+    def fake_download(**kwargs):
+        requested_tickers.append(kwargs.get("tickers"))
+        return _make_yf_batch_multiindex(["MSFT"], 30)
+
+    monkeypatch.setattr(daily_mod.yf, "download", fake_download)
+
+    statuses = daily_mod.prefetch_daily_history(["AAPL", "MSFT"], "equities", 30)
+
+    assert statuses["AAPL"] == "cache_disque"
+    assert statuses["MSFT"] == "ok"
+    assert requested_tickers == ["MSFT"]  # AAPL ne doit PAS être redemandé au réseau
+
+
+def test_prefetch_daily_history_deadline_already_expired_skips_all_network(monkeypatch):
+    monkeypatch.setattr(daily_mod.yf, "download", _fail_if_called)
+    monkeypatch.setattr(daily_mod.yf, "Ticker", _fail_if_called)
+    monkeypatch.setattr(daily_mod._stooq_session, "get", _fail_if_called)
+    monkeypatch.setattr(daily_mod.time, "monotonic", lambda: 100.0)
+
+    statuses = daily_mod.prefetch_daily_history(["AAPL", "MSFT"], "equities", 30, deadline_seconds=0.0)
+
+    assert statuses == {"AAPL": "budget_temps_epuise", "MSFT": "budget_temps_epuise"}
+
+    with pytest.raises(HistoryUnavailableError):
+        daily_mod.get_daily_history("AAPL", 30, "equities")
+
+
+def test_prefetch_daily_history_deadline_stops_individual_retry_after_batch_gap(monkeypatch):
+    # Le lot ne renvoie AUCUNE donnée pour "MSFT" (comme test_prefetch_daily_history_falls_back_
+    # per_ticker_when_missing_from_batch), mais le budget de temps est épuisé AVANT que le repli
+    # individuel par ticker ne soit tenté pour MSFT -> jamais de yf.Ticker() pour MSFT.
+    batch_df = _make_yf_batch_multiindex(["AAPL"], 30)
+    monkeypatch.setattr(daily_mod.yf, "download", lambda **kwargs: batch_df)
+    monkeypatch.setattr(daily_mod.yf, "Ticker", _fail_if_called)
+
+    clock_values = iter([0.0, 0.0, 999.0])
+    monkeypatch.setattr(daily_mod.time, "monotonic", lambda: next(clock_values))
+
+    statuses = daily_mod.prefetch_daily_history(["AAPL", "MSFT"], "equities", 30, deadline_seconds=5.0)
+
+    assert statuses["AAPL"] == "ok"
+    assert statuses["MSFT"] == "budget_temps_epuise"
+
+    with pytest.raises(HistoryUnavailableError):
+        daily_mod.get_daily_history("MSFT", 30, "equities")
+
+
+def test_prefetch_daily_history_deadline_none_disables_cap(monkeypatch):
+    """`deadline_seconds=None` (utilisé par `tools/build_daily_cache.py`, budget dédié bien
+    plus large) désactive totalement le plafond — comportement réseau inchangé."""
+    tickers = ["AAPL", "MSFT"]
+    batch_df = _make_yf_batch_multiindex(tickers, 30)
+    monkeypatch.setattr(daily_mod.yf, "download", lambda **kwargs: batch_df)
+
+    def fail_monotonic():
+        raise AssertionError("time.monotonic() ne devrait jamais être appelé sans plafond")
+
+    monkeypatch.setattr(daily_mod.time, "monotonic", fail_monotonic)
+
+    statuses = daily_mod.prefetch_daily_history(tickers, "equities", 30, deadline_seconds=None)
+
+    assert statuses == {"AAPL": "ok", "MSFT": "ok"}
     assert daily_mod._yf_period_for(3000) in ("5y", "10y", "max")

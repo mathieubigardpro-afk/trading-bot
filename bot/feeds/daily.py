@@ -47,7 +47,9 @@ from __future__ import annotations
 
 import datetime as _dt
 import io
+import json
 import logging
+import os
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
@@ -77,16 +79,45 @@ __all__ = [
     "is_daily_history_available",
     "clear_daily_cache",
     "MIN_WARMUP_DAYS",
+    "CACHE_MAX_AGE_DAYS",
+    "EQUITY_ETF_FETCH_DEADLINE_SECONDS",
+    "write_cache_symbol_csv",
+    "write_cache_manifest",
 ]
 
 # ------------------------------------------------------------------------------------------
-# NOTE D'INTÉGRATION IMPORTANTE (à l'attention de l'agent qui câble ce module dans le runner) :
-# `.github/workflows/bot.yml` installe actuellement `pandas numpy requests` uniquement — PAS
-# `yfinance`. Ce module reste fonctionnel sans yfinance (import optionnel défensif ci-dessus,
-# repli intégral sur stooq pour actions/ETF), mais avec une disponibilité dégradée (stooq
-# seul). Si ce module est câblé en production pour les poches actions/ETF, ajouter `yfinance`
-# à l'étape "Install dependencies" de bot.yml (même dépendance que fetch-data.yml) — hors
-# périmètre de ce module (`bot/feeds/` uniquement, cf. consigne de mission).
+# NOTE D'INTÉGRATION : `.github/workflows/bot.yml` installe `yfinance` (câblé en production
+# pour les poches actions/ETF, cf. `bot/runner.py:_gather_daily_history`). Ce module reste
+# fonctionnel sans yfinance (import optionnel défensif ci-dessus, repli intégral sur stooq),
+# mais avec une disponibilité dégradée (stooq seul).
+#
+# INCIDENT 2026-07-24 (cycles T13/T14 manquants) — CACHE DISQUE + PLAFOND DE TEMPS :
+# le premier cycle horaire qui a vraiment dû télécharger les ~112 historiques journaliers
+# actions/ETF (103 S&P100 + SPY + 8 ETF risqués + IEF) en pleine ouverture du marché US a
+# dépassé le timeout de 15 min du job `bot.yml` : Yahoo, sous forte charge légitime à
+# l'ouverture (13:30 UTC), a fait échouer une partie des lots `yfinance.download()`, et les
+# tickers en échec retombent alors sur un repli SÉQUENTIEL par ticker (`_resolve_equity_etf_
+# single`, yfinance individuel PUIS stooq, chacun avec ses propres retries/backoff) — un
+# scénario où ne serait-ce qu'une vingtaine de tickers basculent sur ce repli suffit à
+# consommer largement plus de 15 minutes, sans qu'AUCUNE exception ne remonte jamais jusqu'à
+# `main()` (donc AUCUNE trace, ni commit ni log) : le job est simplement tué par GitHub Actions
+# à l'expiration du timeout.
+#
+# Deux correctifs structurels, tous deux dans ce module :
+#   1. CACHE DISQUE (`data-cache/`, branche git `data-cache`, régénérée quotidiennement par
+#      `.github/workflows/daily-data-cache.yml` via `tools/build_daily_cache.py`, cf.
+#      `_try_load_from_disk_cache` ci-dessous) : `prefetch_daily_history()` lit D'ABORD ce
+#      cache local (checkouté par `bot.yml` dans le répertoire `data-cache/` à la racine du
+#      dépôt, ou `$BOT_DATA_CACHE_DIR` en test) avant tout appel réseau. Un cache vieux d'un
+#      jour (voire jusqu'à `CACHE_MAX_AGE_DAYS` jours) est PARFAIT pour des signaux SMA200 /
+#      momentum mensuel — ces stratégies ne réagissent de toute façon qu'une fois par jour de
+#      bourse au mieux (cf. `bot/strategies/xs_momentum_sp100.py`).
+#   2. PLAFOND DE TEMPS STRICT (`EQUITY_ETF_FETCH_DEADLINE_SECONDS`, défaut 6 min) sur le
+#      repli réseau direct (cache absent/périmé, ou quelques tickers manquants du cache) : le
+#      cycle horaire ne peut plus JAMAIS dépasser son budget réseau pour cette étape, quel que
+#      soit le nombre de tickers qui échouent en lot ce cycle-là — les tickers non résolus à
+#      temps sont simplement marqués indisponibles ce cycle (comportement déjà géré en aval,
+#      `bot/runner.py:_gather_daily_history` traite ça comme un échec par symbole ordinaire).
 # ------------------------------------------------------------------------------------------
 
 BINANCE_BASE_URL = "https://api.binance.com"
@@ -129,6 +160,156 @@ YFINANCE_TICKER_OVERRIDES = {"BRK.B": "BRK-B"}
 
 _NY_TZ = ZoneInfo("America/New_York")
 _EMPTY_OHLCV = pd.DataFrame(columns=["open", "high", "low", "close", "volume"])
+
+# --- Cache disque (branche git `data-cache`, cf. bandeau "INCIDENT 2026-07-24" ci-dessus) ----
+# Écrit par `tools/build_daily_cache.py` (workflow `daily-data-cache.yml`, quotidien 21:30 UTC),
+# lu ici par `prefetch_daily_history()` avant tout appel réseau. Répertoire résolu via
+# `$BOT_DATA_CACHE_DIR` si défini (tests, ou override explicite), sinon `<racine dépôt>/data-cache`
+# — c'est exactement là où `.github/workflows/bot.yml` checkoute la branche `data-cache` (étape
+# "Checkout data-cache", `path: data-cache`, à la racine du workspace = racine du dépôt).
+CACHE_MAX_AGE_DAYS = 5  # cf. bandeau : un cache d'hier (voire de quelques jours) est parfait
+# pour un signal SMA200/momentum mensuel — au-delà, on préfère un repli réseau (données trop
+# vieilles pour rester un repli "raisonnable" sans le signaler).
+
+# Plafond de temps strict pour le repli réseau direct (cache absent/périmé, ou tickers
+# manquants du cache) : root cause du timeout du 2026-07-24 (cf. bandeau ci-dessus) — sans ce
+# plafond, un lot de tickers en échec peut faire basculer un grand nombre de symboles sur le
+# repli séquentiel par ticker (yfinance individuel + stooq, chacun avec ses propres
+# retries/backoff) et consommer largement plus que le timeout du job `bot.yml`.
+EQUITY_ETF_FETCH_DEADLINE_SECONDS: float = 360.0  # 6 minutes
+
+_CACHE_CSV_COLUMNS = ["open", "high", "low", "close", "volume"]
+_MANIFEST_FILENAME = "MANIFEST.json"
+
+
+def _cache_dir() -> str:
+    override = os.environ.get("BOT_DATA_CACHE_DIR")
+    if override:
+        return override
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.join(repo_root, "data-cache")
+
+
+def _cache_symbol_path(cache_dir: str, normalized_class: str, symbol: str) -> str:
+    safe_symbol = symbol.replace("/", "_")
+    return os.path.join(cache_dir, normalized_class, f"{safe_symbol}.csv.gz")
+
+
+def _manifest_path(cache_dir: str) -> str:
+    return os.path.join(cache_dir, _MANIFEST_FILENAME)
+
+
+def write_cache_symbol_csv(cache_dir: str, normalized_class: str, symbol: str, df: pd.DataFrame) -> str:
+    """Écrit `df` (OHLCV, index `ts` UTC) au format CSV.gz attendu par le lecteur de cache
+    ci-dessous — symétrique de `_load_disk_cache_symbol`. Utilisé UNIQUEMENT par
+    `tools/build_daily_cache.py` (workflow `daily-data-cache.yml`) ; jamais appelé depuis le
+    cycle horaire (`bot/runner.py`), qui ne fait que LIRE ce cache."""
+    path = _cache_symbol_path(cache_dir, normalized_class, symbol)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    out = df[_CACHE_CSV_COLUMNS].copy()
+    out.index.name = "ts"
+    out.to_csv(path, compression="gzip")
+    return path
+
+
+def write_cache_manifest(cache_dir: str, generated_at: _dt.datetime, extra: Optional[dict] = None) -> str:
+    """Écrit `MANIFEST.json` (date de génération + métadonnées optionnelles) à la racine du
+    cache disque. `generated_at` doit être tz-aware ; converti en UTC avant sérialisation.
+    Utilisé UNIQUEMENT par `tools/build_daily_cache.py`."""
+    if generated_at.tzinfo is None:
+        raise ValueError("generated_at doit être tz-aware (UTC recommandé)")
+    payload = {"generated_at": generated_at.astimezone(_dt.timezone.utc).isoformat()}
+    if extra:
+        payload.update(extra)
+    os.makedirs(cache_dir, exist_ok=True)
+    path = _manifest_path(cache_dir)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, sort_keys=True, ensure_ascii=False)
+        f.write("\n")
+    return path
+
+
+def _read_cache_manifest(cache_dir: str) -> Optional[dict]:
+    path = _manifest_path(cache_dir)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError) as exc:
+        logger.warning("cache disque %s: MANIFEST.json illisible (%s) — cache ignoré", cache_dir, exc)
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _manifest_generated_at(manifest: dict) -> Optional[_dt.datetime]:
+    raw = manifest.get("generated_at")
+    if not raw:
+        return None
+    try:
+        gen = _dt.datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if gen.tzinfo is None:
+        gen = gen.replace(tzinfo=_dt.timezone.utc)
+    return gen.astimezone(_dt.timezone.utc)
+
+
+def _manifest_is_fresh(manifest: Optional[dict], now: _dt.datetime, max_age_days: int = CACHE_MAX_AGE_DAYS) -> bool:
+    if not manifest:
+        return False
+    generated_at = _manifest_generated_at(manifest)
+    if generated_at is None:
+        return False
+    age_days = (now.date() - generated_at.date()).days
+    return 0 <= age_days <= max_age_days
+
+
+def _load_disk_cache_symbol(cache_dir: str, normalized_class: str, symbol: str) -> Optional[pd.DataFrame]:
+    path = _cache_symbol_path(cache_dir, normalized_class, symbol)
+    if not os.path.isfile(path):
+        return None
+    try:
+        raw = pd.read_csv(path, compression="gzip")
+    except (OSError, pd.errors.ParserError, pd.errors.EmptyDataError, EOFError) as exc:
+        logger.warning("cache disque %s illisible (%s) — ignoré pour ce symbole", path, exc)
+        return None
+    if "ts" not in raw.columns:
+        logger.warning("cache disque %s: colonne 'ts' manquante — ignoré pour ce symbole", path)
+        return None
+    raw["ts"] = pd.to_datetime(raw["ts"], utc=True, errors="coerce")
+    raw = raw.dropna(subset=["ts"]).set_index("ts")
+    return _validate_ohlcv(raw, context=f"cache-disque {normalized_class} {symbol}")
+
+
+def _try_load_from_disk_cache(symbols: List[str], normalized_class: str, n_days: int) -> Dict[str, pd.DataFrame]:
+    """Tente de satisfaire `symbols` depuis le cache disque `data-cache/` (cf. bandeau
+    "INCIDENT 2026-07-24"). Ne lève JAMAIS d'exception : cache absent, MANIFEST.json illisible,
+    périmé (> `CACHE_MAX_AGE_DAYS` jours calendaires), ou fichier par-symbole manquant/invalide
+    se traduit simplement par une absence d'entrée pour ce symbole (repli réseau en amont,
+    `prefetch_daily_history`) — jamais par une exception qui remonterait au cycle."""
+    cache_dir = _cache_dir()
+    manifest = _read_cache_manifest(cache_dir)
+    if not _manifest_is_fresh(manifest, _now_utc()):
+        if manifest is not None:
+            logger.warning(
+                "cache disque data-cache présent mais périmé ou illisible (généré=%s, "
+                "max=%d jours) — ignoré, repli réseau direct pour %d symbole(s)",
+                manifest.get("generated_at"), CACHE_MAX_AGE_DAYS, len(symbols),
+            )
+        return {}
+
+    hits: Dict[str, pd.DataFrame] = {}
+    for symbol in symbols:
+        df = _load_disk_cache_symbol(cache_dir, normalized_class, symbol)
+        if df is not None and len(df) >= n_days:
+            hits[symbol] = df.tail(n_days)
+    if hits:
+        logger.info(
+            "cache disque data-cache (généré=%s) : %d/%d symbole(s) servis sans appel réseau",
+            manifest.get("generated_at") if manifest else None, len(hits), len(symbols),
+        )
+    return hits
 
 
 def _now_utc() -> _dt.datetime:
@@ -470,10 +651,17 @@ def _extract_yf_ticker_frame(batch_df: pd.DataFrame, yf_symbol: str, batch_len: 
     return None
 
 
-def _fetch_yfinance_batch(tickers: List[str], period: str) -> Dict[str, Optional[pd.DataFrame]]:
+def _fetch_yfinance_batch(
+    tickers: List[str], period: str, deadline: Optional[float] = None
+) -> Dict[str, Optional[pd.DataFrame]]:
     """Téléchargement PAR LOTS (`YFINANCE_BATCH_SIZE` tickers/lot, pause entre lots, retries
     avec backoff par lot) — motif directement repris de `tools/fetch_data.py:
-    fetch_yfinance_batch`, seul pipeline déjà éprouvé en conditions réelles pour ce projet."""
+    fetch_yfinance_batch`, seul pipeline déjà éprouvé en conditions réelles pour ce projet.
+
+    `deadline` (optionnel) : valeur `time.monotonic()` au-delà de laquelle plus AUCUN nouveau
+    lot n'est démarré (cf. `EQUITY_ETF_FETCH_DEADLINE_SECONDS` / bandeau "INCIDENT 2026-07-24")
+    — les tickers des lots non tentés restent `None` dans le résultat (traités en amont comme
+    de simples échecs, jamais d'exception)."""
     results: Dict[str, Optional[pd.DataFrame]] = {t: None for t in tickers}
     if not _YFINANCE_AVAILABLE:
         logger.warning(
@@ -484,6 +672,14 @@ def _fetch_yfinance_batch(tickers: List[str], period: str) -> Dict[str, Optional
 
     batches = [tickers[i : i + YFINANCE_BATCH_SIZE] for i in range(0, len(tickers), YFINANCE_BATCH_SIZE)]
     for batch_idx, batch in enumerate(batches, start=1):
+        if deadline is not None and time.monotonic() >= deadline:
+            remaining = sum(len(b) for b in batches[batch_idx - 1 :])
+            logger.warning(
+                "yfinance-daily: plafond de temps atteint avant le lot %d/%d — %d ticker(s) "
+                "non tentés ce cycle (repli individuel en aval également soumis au plafond)",
+                batch_idx, len(batches), remaining,
+            )
+            break
         yf_symbols = [_yfinance_symbol_for(t) for t in batch]
         batch_df: Optional[pd.DataFrame] = None
         for attempt in range(1, _MAX_ATTEMPTS_DEFAULT + 1):
@@ -619,16 +815,34 @@ def _resolve_equity_etf_single(symbol: str, n_days: int) -> pd.DataFrame:
     return df
 
 
-def prefetch_daily_history(symbols: List[str], asset_class: str, n_days: int = MIN_WARMUP_DAYS) -> Dict[str, str]:
+def prefetch_daily_history(
+    symbols: List[str],
+    asset_class: str,
+    n_days: int = MIN_WARMUP_DAYS,
+    deadline_seconds: Optional[float] = EQUITY_ETF_FETCH_DEADLINE_SECONDS,
+) -> Dict[str, str]:
     """Précharge le cache pour un GROUPE de symboles equity/ETF en téléchargement PAR LOTS
     (recommandé pour tout univers de plus de quelques tickers — ex. les 103 constituants du
     S&P100 de `xs_momentum_sp100`, ou les 8 ETF de `dual_momentum_multiclasse_etf`). N'a AUCUN
     effet pour `asset_class="crypto"` (chaque paire crypto est déjà une requête indépendante
     peu coûteuse, aucun lot à constituer — `ValueError` explicite pour éviter un faux sentiment
     d'optimisation). Ne lève jamais d'exception réseau : chaque échec individuel est journalisé
-    et reflété dans le dict de statuts retourné (`"cache"` / `"ok"` / `"insuffisant"` /
-    `"indisponible"`) — `get_daily_history()` reste la seule source de vérité pour savoir si un
-    symbole est réellement tradable ce cycle (elle relit ce même cache en premier lieu)."""
+    et reflété dans le dict de statuts retourné (`"cache"` / `"cache_disque"` / `"ok"` /
+    `"insuffisant"` / `"indisponible"` / `"budget_temps_epuise"`) — `get_daily_history()` reste
+    la seule source de vérité pour savoir si un symbole est réellement tradable ce cycle (elle
+    relit ce même cache mémoire en premier lieu).
+
+    Ordre de résolution pour tout symbole pas déjà en cache mémoire (cf. bandeau "INCIDENT
+    2026-07-24" en tête de module) :
+      1. cache DISQUE (`data-cache/`, cf. `_try_load_from_disk_cache`) — aucun appel réseau,
+         quasi instantané, ignoré silencieusement si absent/périmé/incomplet pour ce symbole ;
+      2. repli réseau direct (lots yfinance, puis repli séquentiel par ticker yfinance+stooq
+         pour les lots en échec), PLAFONNÉ par `deadline_seconds` (défaut
+         `EQUITY_ETF_FETCH_DEADLINE_SECONDS`, 6 min) : passé ce budget, tout symbole restant
+         est marqué `"budget_temps_epuise"` SANS nouvelle tentative réseau — jamais de dépassement
+         du timeout du job appelant, quel que soit le nombre de tickers en échec ce cycle-là.
+         `deadline_seconds=None` désactive le plafond (réservé à `tools/build_daily_cache.py`,
+         qui dispose d'un budget dédié bien plus large, cf. ce script)."""
     normalized_class = _normalize_asset_class(asset_class)
     if normalized_class == "crypto":
         raise ValueError(
@@ -641,8 +855,20 @@ def prefetch_daily_history(symbols: List[str], asset_class: str, n_days: int = M
     if not to_fetch:
         return statuses
 
+    # --- 1) cache disque (aucun appel réseau, cf. bandeau "INCIDENT 2026-07-24") ---
+    disk_hits = _try_load_from_disk_cache(to_fetch, normalized_class, n_days)
+    for symbol, df in disk_hits.items():
+        _store_cache(normalized_class, symbol, df, n_days, None)
+        statuses[symbol] = "cache_disque"
+    to_fetch = [s for s in to_fetch if s not in disk_hits]
+    if not to_fetch:
+        return statuses
+
+    # --- 2) repli réseau direct, plafonné dans le temps ---
+    deadline = None if deadline_seconds is None else (time.monotonic() + deadline_seconds)
+
     period = _yf_period_for(n_days)
-    batch_results = _fetch_yfinance_batch(to_fetch, period)
+    batch_results = _fetch_yfinance_batch(to_fetch, period, deadline)
 
     still_missing: List[str] = []
     for symbol in to_fetch:
@@ -658,6 +884,14 @@ def prefetch_daily_history(symbols: List[str], asset_class: str, n_days: int = M
         statuses[symbol] = "ok" if error is None else "insuffisant"
 
     for symbol in still_missing:
+        if deadline is not None and time.monotonic() >= deadline:
+            error = (
+                f"equity/etf {symbol}: budget de temps ({deadline_seconds:.0f}s) épuisé avant "
+                "toute tentative de repli individuel — reporté au prochain cycle"
+            )
+            _store_cache(normalized_class, symbol, _EMPTY_OHLCV.copy(), n_days, error)
+            statuses[symbol] = "budget_temps_epuise"
+            continue
         df = _resolve_equity_etf_single(symbol, n_days)
         error = None if len(df) >= n_days else (
             f"equity/etf {symbol}: seulement {len(df)}/{n_days} bougies obtenues (yfinance + stooq épuisés)"

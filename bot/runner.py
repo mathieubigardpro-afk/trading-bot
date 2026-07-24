@@ -59,6 +59,7 @@ import dataclasses
 import logging
 import os
 import sys
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Set, Tuple
@@ -990,6 +991,25 @@ def main(now: Optional[datetime] = None) -> int:
     now = now or datetime.now(timezone.utc)
     repo = repo_dir()
 
+    # --- chronométrage par étape (observabilité, cf. incident 2026-07-24 : cycles T13/T14
+    # manquants sans AUCUNE trace faute de timing exploitable dans les logs du job). Chaque
+    # phase est journalisée dès qu'elle se termine (`_log_phase`) ET récapitulée en une seule
+    # ligne `TIMING` à la fin du cycle (`_log_timing_summary`, cf. les `return` de `main()`) —
+    # utile pour un log capturé partiellement par un job tué en cours de route (timeout).
+    _cycle_t0 = time.monotonic()
+    _timings: Dict[str, float] = {}
+
+    def _log_phase(label: str, started_at: float) -> float:
+        elapsed = time.monotonic() - started_at
+        _timings[label] = elapsed
+        logger.info("TIMING phase=%s durée=%.1fs", label, elapsed)
+        return elapsed
+
+    def _log_timing_summary() -> None:
+        total = time.monotonic() - _cycle_t0
+        parts = " ".join(f"{label}={duration:.1f}s" for label, duration in _timings.items())
+        logger.info("TIMING résumé cycle : %s total=%.1fs", parts, total)
+
     # --- 1) pull_rebase : repartir de l'état le plus récent poussé, AVANT toute lecture ---
     pull_result = pull_rebase(repo)
     if pull_result != "SUCCESS":
@@ -1077,6 +1097,7 @@ def main(now: Optional[datetime] = None) -> int:
     # `get_prices()` (façade bot.feeds) route automatiquement chaque symbole vers l'adaptateur
     # crypto (Binance) ou actions/ETF (Yahoo) selon `bot.config.SYMBOLS_CRYPTO`/`SYMBOLS_EQUITY`
     # — UN seul appel couvre les 3 wallets, toutes classes d'actifs confondues.
+    _t_feeds_crypto = time.monotonic()
     prices: Dict[str, Optional[Quote]] = get_prices(all_price_symbols) if all_price_symbols else {}
     for sym in all_price_symbols:
         prices.setdefault(sym, None)
@@ -1091,10 +1112,13 @@ def main(now: Optional[datetime] = None) -> int:
         except HistoryUnavailableError as exc:
             logger.warning("historique indisponible pour %s: %s", sym, exc)
             history_failed.add(sym)
+    _log_phase("feeds_crypto", _t_feeds_crypto)
 
     # --- historique JOURNALIER clôturé actions/ETF (S&P100 + SPY + univers ETF risqué + IEF),
     # UNE fois, partagé entre les wallets qui portent une poche actions et/ou ETF ---
+    _t_feeds_equities = time.monotonic()
     daily_history, daily_history_failed = _gather_daily_history(sorted(daily_symbols_all))
+    _log_phase("feeds_equities", _t_feeds_equities)
 
     # --- marché actions/ETF ouvert ce cycle ? (bot.feeds.calendar, séance régulière NYSE
     # 09:30-16:00 America/New_York) : UNE fois, partagé (crypto reste 24/7, non concerné) ---
@@ -1137,7 +1161,12 @@ def main(now: Optional[datetime] = None) -> int:
             fx_resolved.source, fx_resolved.ts,
         )
 
-    # --- 5) traitement des 3 wallets, EN MÉMOIRE, tout-ou-rien ---
+    # --- 5) traitement des 3 wallets, EN MÉMOIRE, tout-ou-rien --- (labellisé "strategies_
+    # execution" : `process_wallet()` calcule le signal de CHAQUE stratégie ET l'exécute contre
+    # `ExchangeSim` dans la même passe par wallet, cf. `bot/runner.py:process_wallet` — les
+    # séparer chronométriquement demanderait de scinder cette fonction, hors périmètre de ce
+    # correctif d'observabilité)
+    _t_strategies_execution = time.monotonic()
     results: List[WalletCycleResult] = []
     try:
         for wallet_cfg in config.WALLETS:
@@ -1155,6 +1184,8 @@ def main(now: Optional[datetime] = None) -> int:
                 raise WalletCycleError(wallet_id, exc) from exc
             results.append(result)
     except WalletCycleError as exc:
+        _log_phase("strategies_execution", _t_strategies_execution)
+        _log_timing_summary()
         logger.error(
             "ÉCHEC du cycle : le traitement du wallet %r a levé une exception (%s) — "
             "principe tout-ou-rien : AUCUNE écriture, AUCUN commit pour AUCUN wallet ce "
@@ -1162,6 +1193,7 @@ def main(now: Optional[datetime] = None) -> int:
             exc.wallet_id, exc.original,
         )
         return 1
+    _log_phase("strategies_execution", _t_strategies_execution)
 
     # --- 6) tous les wallets ont réussi : écritures disque, puis UN SEUL commit ---
     for wallet_cfg, result in zip(config.WALLETS, results):
@@ -1188,7 +1220,10 @@ def main(now: Optional[datetime] = None) -> int:
     )
     message = f"Cycle {run_id} : {summary} — {total_trades} trade(s)"
 
+    _t_git_sync = time.monotonic()
     result = git_sync(repo, message, run_id=run_id, state_path=config.CYCLE_JSON, paths=all_paths)
+    _log_phase("git_sync", _t_git_sync)
+    _log_timing_summary()
 
     if result == "SUCCESS":
         logger.info("git_sync SUCCESS — cycle %s terminé (%s).", run_id, summary)
