@@ -103,7 +103,20 @@ jobs:
         # distingue pas "requête Yahoo v7 en échec total" d'un simple bid/ask manquant) — capture
         # donc TOUJOURS /tmp/cycle.log + contexte sur la branche dédiée "logs" (force-push, 20
         # logs les plus récents conservés), entièrement via git (accessible même sans API
-        # GitHub). À revenir à `if: failure()` une fois la cause racine confirmée/corrigée.
+        # GitHub).
+        #
+        # MAJ 2026-07-24 ~19h20 UTC : ce log a permis d'identifier la VRAIE cause racine (429
+        # Too Many Requests sur `/v7/finance/quote` en bloc, cf. ARCHITECTURE.md §12.6) — le
+        # correctif (repli `yfinance`, commit f5e1df8) est poussé sur `main`, mais n'a PAS pu
+        # être validé en conditions réelles aujourd'hui : le run_id horaire "2026-07-24T19" était
+        # déjà consommé (run de diagnostic ~19h01 UTC, AVANT le correctif) et l'idempotence
+        # (`state/cycle.json`) empêche tout second cycle sous le même run_id — les créneaux
+        # 19h27/19h47 UTC restants n'exécutent donc RIEN (abandon silencieux). Le prochain run_id
+        # disponible (2026-07-24T20) tombe exactement à la clôture NYSE (20:00 UTC, borne
+        # exclusive dans `bot/feeds/calendar.py:is_us_market_open` — `t < MARKET_CLOSE_TIME`),
+        # donc marché déjà fermé. Validation en conditions réelles reportée à la prochaine
+        # ouverture (lundi 2026-07-27). Garder `if: always()` jusqu'à cette validation, puis
+        # revenir à `if: failure()` une fois le correctif confirmé sur un cycle marché ouvert.
         run: |
           set -euo pipefail
           STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -150,6 +163,9 @@ jobs:
 # (touch: run de validation déclenché manuellement le 2026-07-24 ~19h01 UTC — le run précédent
 # (18h17) est tombé sur run_id=2026-07-24T18 déjà traité (idempotence : "abandon silencieux
 # propre", aucun appel réseau equities effectué, log inexploitable pour le diagnostic). Ce
-# nouveau touch force un run sous run_id=2026-07-24T19 (nouvelle heure UTC), qui exécutera
-# réellement bot/feeds/equities.py:get_prices_equity — dernière fenêtre avant la clôture NYSE
-# 20:00 UTC.)
+# nouveau touch a forcé un run sous run_id=2026-07-24T19 (nouvelle heure UTC), qui a exécuté
+# réellement bot/feeds/equities.py:get_prices_equity et révélé le 429 documenté en
+# ARCHITECTURE.md §12.6 — AVANT que le correctif yfinance (commit f5e1df8) ne soit prêt. Le
+# run_id="2026-07-24T19" étant déjà consommé, un nouveau touch ici ne servirait à rien
+# aujourd'hui : validation en conditions réelles du correctif reportée à l'ouverture de marché
+# suivante (lundi 2026-07-27, premier cron 07/27/47 après 13h30 UTC = 9h30 ET).)
