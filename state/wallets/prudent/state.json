@@ -49,6 +49,10 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-24T18:08:56.995184+00:00"
+      },
+      {
+        "equity": 1141.079,
+        "ts": "2026-07-24T19:01:35.531195+00:00"
       }
     ],
     "flatten_mode": false,
@@ -61,15 +65,15 @@
     "last_rate": 1.1377,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-24T18:09:06.905099+00:00"
+    "last_rate_ts": "2026-07-24T19:02:16.708342+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-24T18:08:56.995184+00:00",
-  "last_run_id": "2026-07-24T18",
+  "last_run_completed_at": "2026-07-24T19:01:35.531195+00:00",
+  "last_run_id": "2026-07-24T19",
   "positions": {},
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "5ed99ba0e38b692ecb188ed2689c42123b74dad92c3f137289a64a9ace9415e7",
+  "state_hash_prev": "b45ed827557f3ba1a365e798b057b95b322f7024861bc94a502e6a88b2eab24f",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -77,9 +81,7 @@
     },
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
-      "missing_data_cycles": {
-        "ETH": 1
-      }
+      "missing_data_cycles": {}
     }
   },
   "trade_history_for_breakers": [],
