@@ -142,5 +142,8 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           git worktree remove "$LOGWORK" --force
 
-# (touch: run de validation déclenché manuellement le 2026-07-24 — cache disque + plafond de
-# temps + observabilité, correctif de l'incident cycles T13/T14 manquants)
+# (touch: run de validation déclenché manuellement le 2026-07-24 ~18h08 UTC — spread
+# synthétique activé (dernier verrou poches actions/ETF, cf. ARCHITECTURE.md §12.5) ;
+# les créneaux cron 17:07/17:27/17:47 n'ont produit aucun commit ni log d'échec observable
+# après plus d'une heure — force ce run de validation immédiat pendant que le marché est
+# encore ouvert (clôture 20:00 UTC))
