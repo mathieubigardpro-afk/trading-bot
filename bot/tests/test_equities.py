@@ -69,40 +69,152 @@ def test_get_prices_equity_parses_valid_quote(monkeypatch):
     assert q.bid < q.ask
 
 
-def test_get_prices_equity_missing_bid_ask_returns_none_by_default(monkeypatch):
+def test_get_prices_equity_missing_bid_ask_returns_synthetic_spread_by_default(monkeypatch):
+    """Correctif incident production 2026-07-24T16 (cf. ARCHITECTURE.md §12.5) :
+    `EQUITY_SYNTHETIC_SPREAD_ENABLED` vaut désormais `True` par défaut — Yahoo gratuit ne
+    fournit quasi jamais de bid/ask exploitable, un dernier prix différé fiable suffit
+    maintenant à produire une quote (synthétique, honnêtement marquée) plutôt qu'un rejet."""
     payload = _quote_payload()
     payload["quoteResponse"]["result"][0]["bid"] = None
     payload["quoteResponse"]["result"][0]["ask"] = None
     monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
-
-    result = equities_mod.get_prices_equity(["AAPL"])
-
-    assert result["AAPL"] is None
-
-
-def test_get_prices_equity_synthetic_spread_when_explicitly_enabled(monkeypatch):
-    payload = _quote_payload()
-    payload["quoteResponse"]["result"][0]["bid"] = None
-    payload["quoteResponse"]["result"][0]["ask"] = None
-    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
-    monkeypatch.setattr(equities_mod.cfg, "EQUITY_SYNTHETIC_SPREAD_ENABLED", True)
 
     result = equities_mod.get_prices_equity(["AAPL"])
 
     q = result["AAPL"]
     assert q is not None
     assert q.source == "yahoo_synthetic_spread"
+    assert q.synthetic_spread is True
+    assert q.delayed is True  # jamais confondue avec un vrai bid/ask temps réel
     assert q.bid < q.mid < q.ask
     assert q.mid == pytest.approx(326.59)
 
 
-def test_get_prices_equity_invalid_bid_ask_crossed_returns_none(monkeypatch):
-    payload = _quote_payload(bid=330.0, ask=325.0)  # bid > ask, incohérent
+def test_get_prices_equity_missing_bid_ask_returns_none_when_explicitly_disabled(monkeypatch):
+    """L'interrupteur reste disponible pour retrouver le no-trade strict V1 (cf. ARCHITECTURE.md
+    §12.5 : décision assumée, pas un comportement câblé en dur)."""
+    payload = _quote_payload()
+    payload["quoteResponse"]["result"][0]["bid"] = None
+    payload["quoteResponse"]["result"][0]["ask"] = None
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+    monkeypatch.setattr(equities_mod.cfg, "EQUITY_SYNTHETIC_SPREAD_ENABLED", False)
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    assert result["AAPL"] is None
+
+
+def test_get_prices_equity_no_price_at_all_returns_none_even_with_synthetic_enabled(monkeypatch):
+    """Si Yahoo ne fournit AUCUN prix exploitable (pas de `regularMarketTime`), la quote reste
+    `None` — le spread synthétique ne peut rien reconstruire à partir de rien."""
+    payload = _quote_payload()
+    payload["quoteResponse"]["result"][0]["bid"] = None
+    payload["quoteResponse"]["result"][0]["ask"] = None
+    payload["quoteResponse"]["result"][0]["regularMarketTime"] = None
     monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
 
     result = equities_mod.get_prices_equity(["AAPL"])
 
     assert result["AAPL"] is None
+
+
+def test_get_prices_equity_no_regular_market_price_returns_none_even_with_synthetic_enabled(monkeypatch):
+    """Idem, cas où `regularMarketTime` est présent mais pas `regularMarketPrice` (bid/ask
+    absents également) : rien à reconstruire, `None`."""
+    payload = _quote_payload()
+    payload["quoteResponse"]["result"][0]["bid"] = None
+    payload["quoteResponse"]["result"][0]["ask"] = None
+    del payload["quoteResponse"]["result"][0]["regularMarketPrice"]
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    assert result["AAPL"] is None
+
+
+def test_get_prices_equity_invalid_bid_ask_crossed_falls_back_to_synthetic_spread(monkeypatch):
+    """bid >= ask (incohérent) échoue la validation au même titre qu'un bid/ask absent -> même
+    repli spread synthétique (le prix différé, lui, reste valide)."""
+    payload = _quote_payload(bid=330.0, ask=325.0)  # bid > ask, incohérent
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    q = result["AAPL"]
+    assert q is not None
+    assert q.source == "yahoo_synthetic_spread"
+    assert q.synthetic_spread is True
+
+
+def test_get_prices_equity_valid_bid_ask_never_synthetic(monkeypatch):
+    """Non-régression : un bid/ask valide et cohérent reste utilisé TEL QUEL (jamais remplacé
+    par un spread synthétique, même avec `EQUITY_SYNTHETIC_SPREAD_ENABLED=True`)."""
+    payload = _quote_payload(bid=325.02, ask=329.97)
+    monkeypatch.setattr(equities_mod._session, "get", lambda *a, **k: FakeResponse(payload))
+
+    result = equities_mod.get_prices_equity(["AAPL"])
+
+    q = result["AAPL"]
+    assert q is not None
+    assert q.source == "yahoo"
+    assert q.synthetic_spread is False
+    assert q.bid == pytest.approx(325.02)
+    assert q.ask == pytest.approx(329.97)
+
+
+# ---------------------------------------------------------------------------
+# Paliers de spread synthétique PAR CLASSE (ARCHITECTURE.md §12.5) : actions S&P100
+# "megacaps" (bot.config.EQUITY_SYNTHETIC_SPREAD_BPS, 10 bps) vs ETF liquides
+# (bot.config.SYMBOLS_ETF -> bot.config.ETF_SYNTHETIC_SPREAD_BPS, 6 bps) — classification par
+# symbole INTERNE, indépendante du ticker Yahoo effectivement interrogé.
+# ---------------------------------------------------------------------------
+
+
+def test_synthetic_spread_bps_for_equity_uses_equity_palier(monkeypatch):
+    monkeypatch.setattr(equities_mod.cfg, "SYMBOLS_ETF", ["SPY", "QQQ"])
+    monkeypatch.setattr(equities_mod.cfg, "EQUITY_SYNTHETIC_SPREAD_BPS", 10)
+    monkeypatch.setattr(equities_mod.cfg, "ETF_SYNTHETIC_SPREAD_BPS", 6)
+
+    assert equities_mod._synthetic_spread_bps_for("AAPL") == pytest.approx(10)
+
+
+def test_synthetic_spread_bps_for_etf_uses_etf_palier(monkeypatch):
+    monkeypatch.setattr(equities_mod.cfg, "SYMBOLS_ETF", ["SPY", "QQQ"])
+    monkeypatch.setattr(equities_mod.cfg, "EQUITY_SYNTHETIC_SPREAD_BPS", 10)
+    monkeypatch.setattr(equities_mod.cfg, "ETF_SYNTHETIC_SPREAD_BPS", 6)
+
+    assert equities_mod._synthetic_spread_bps_for("SPY") == pytest.approx(6)
+
+
+def test_get_prices_equity_synthetic_spread_width_differs_by_asset_class(monkeypatch):
+    monkeypatch.setattr(equities_mod.cfg, "SYMBOLS_ETF", ["SPY"])
+    monkeypatch.setattr(equities_mod.cfg, "EQUITY_SYNTHETIC_SPREAD_BPS", 10)
+    monkeypatch.setattr(equities_mod.cfg, "ETF_SYNTHETIC_SPREAD_BPS", 6)
+
+    def fake_get(url, params=None, timeout=None):
+        symbols = params["symbols"].split(",")
+        rows = []
+        for sym in symbols:
+            row = _quote_payload(symbol=sym, price=100.0)["quoteResponse"]["result"][0]
+            row["bid"] = None
+            row["ask"] = None
+            rows.append(row)
+        return FakeResponse({"quoteResponse": {"result": rows, "error": None}})
+
+    monkeypatch.setattr(equities_mod._session, "get", fake_get)
+
+    result = equities_mod.get_prices_equity(["AAPL", "SPY"])
+
+    aapl, spy = result["AAPL"], result["SPY"]
+    assert aapl is not None and spy is not None
+    aapl_width_bps = (aapl.ask - aapl.bid) / aapl.mid * 1e4
+    spy_width_bps = (spy.ask - spy.bid) / spy.mid * 1e4
+    assert aapl_width_bps == pytest.approx(10.0)
+    assert spy_width_bps == pytest.approx(6.0)
+    assert spy_width_bps < aapl_width_bps
+    # Spread DÉFAVORABLE au bot dans les deux cas : bid < prix < ask.
+    assert aapl.bid < 100.0 < aapl.ask
+    assert spy.bid < 100.0 < spy.ask
 
 
 def test_get_prices_equity_stale_quote_returns_none(monkeypatch):

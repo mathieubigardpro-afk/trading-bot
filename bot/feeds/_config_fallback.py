@@ -27,12 +27,17 @@ _DEFAULTS = {
         "DOGE": "DOGE-USD", "LINK": "LINK-USD", "AVAX": "AVAX-USD",
     },
     "SYMBOLS_EQUITY": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META"],
+    "SYMBOLS_ETF": ["SPY", "QQQ"],
     "STALENESS_MAX_SECONDS_CRYPTO": 300,
     # 25 min — cf. bot/config.py pour la justification complète (délai réglementaire ~15-20 min
     # du flux Yahoo Finance gratuit, correctif incident production 2026-07-23T18/T19).
     "STALENESS_MAX_SECONDS_EQUITY": 1500,
     "EQUITY_QUOTE_REALTIME_THRESHOLD_SECONDS": 300,
-    "EQUITY_SYNTHETIC_SPREAD_ENABLED": False,
+    # cf. bot/config.py pour la justification complète (correctif incident production
+    # 2026-07-24T16 : Yahoo gratuit ne fournit quasi jamais de bid/ask exploitable).
+    "EQUITY_SYNTHETIC_SPREAD_ENABLED": True,
+    "EQUITY_SYNTHETIC_SPREAD_BPS": 10,
+    "ETF_SYNTHETIC_SPREAD_BPS": 6,
 }
 
 

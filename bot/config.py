@@ -107,8 +107,50 @@ FX_ERAPI_URL = "https://open.er-api.com/v6/latest/EUR"
 FX_HTTP_TIMEOUT_SECONDS = 10
 FX_STALENESS_WARN_SECONDS = 3600 * 24 * 3  # 3 jours : au-delà, avertissement supplémentaire journalisé
 
-# --- Spread synthétique actions (désactivé par défaut, cf. ARCHITECTURE.md §5.1) ---
-EQUITY_SYNTHETIC_SPREAD_ENABLED = False
+# --- CORRECTIF INCIDENT PRODUCTION (2026-07-24T16, marché NYSE ouvert) — spread synthétique ---
+# Diagnostic confirmé par lecture de code (`bot/feeds/equities.py:_build_quote_from_result`) :
+# le flux Yahoo Finance GRATUIT (v7 quote, aucune clé API) ne renvoie quasi jamais de `bid`/
+# `ask` exploitables pour les comptes non-abonnés (champs absents ou à 0) — c'est un point déjà
+# signalé comme jamais mesuré empiriquement par `docs/ARCHITECTURE.md` §8 avant ce correctif.
+# Tant que `EQUITY_SYNTHETIC_SPREAD_ENABLED` valait `False` (défaut V1), CHAQUE quote sans
+# bid/ask valide était donc rejetée (`quote_available=false`) même quand Yahoo fournissait un
+# `regularMarketPrice`/`regularMarketTime` parfaitement exploitables — verrou structurel qui
+# empêchait tout ordre actions/ETF, cycle après cycle, marché ouvert ou non (vérifié : le motif
+# est identique en dehors des heures de marché, écartant un problème de fraîcheur/timing pur).
+# `state/wallets/*/decisions.jsonl` ne permettait PAS de trancher empiriquement entre "Yahoo ne
+# renvoie rien du tout" et "Yahoo renvoie un prix mais pas de bid/ask" : `quote_available=false`
+# efface systématiquement `quote_source`/`quote_age_seconds` (mis à `None`) quelle que soit la
+# cause exacte du rejet côté `bot/feeds/equities.py` — seule la lecture du code lève l'ambiguïté.
+#
+# Activé par défaut désormais : dès qu'un dernier prix différé fiable existe (`regularMarketPrice
+# > 0`, horodaté par `regularMarketTime`, dans la fenêtre de fraîcheur `STALENESS_MAX_SECONDS_
+# EQUITY` = 25 min ci-dessus) mais que bid/ask est absent/invalide, `bot/feeds/equities.py`
+# reconstruit un bid/ask DÉFAVORABLE autour de ce prix (cf. `EQUITY_SYNTHETIC_SPREAD_BPS`/
+# `ETF_SYNTHETIC_SPREAD_BPS` ci-dessous) plutôt que de rejeter la quote — la `Quote` obtenue est
+# marquée `synthetic_spread=True` ET `delayed=True` (jamais confondue avec un vrai bid/ask coté
+# temps réel), propagé jusqu'à `decisions.jsonl`/`trades.jsonl` (`quote_synthetic_spread`).
+# Reste un interrupteur explicite (pas un comportement câblé en dur) : `False` retrouve le
+# no-trade strict V1 si un futur agent de backtest juge le spread synthétique trop optimiste.
+# Les seuils crypto (Binance/Coinbase, bid/ask RÉELS du carnet) ne bougent pas.
+EQUITY_SYNTHETIC_SPREAD_ENABLED = True
+
+# Spreads synthétiques (bps, largeur TOTALE — cf. `bot/feeds/equities.py:_build_quote_from_
+# result`, `bid = prix * (1 - s/2)`, `ask = prix * (1 + s/2)`), calibrés PESSIMISTES par
+# construction (le bot ne doit jamais payer moins qu'un exécutant réel), un palier par classe :
+#   - `EQUITY_SYNTHETIC_SPREAD_BPS = 10` (actions S&P100 "megacaps", univers
+#     `EQUITIES_SP100_UNIVERSE` ci-dessus) : le spread NBBO continu affiché pour les valeurs les
+#     plus liquides du S&P 500/100 (AAPL, MSFT, ...) est typiquement de l'ordre de 1 à 5 bps en
+#     microstructure de marché (cf. rapports de qualité d'exécution type Rule 605, études
+#     académiques sur la liquidité des megacaps US) ; 10 bps DOUBLE la borne haute de cette
+#     fourchette usuelle pour rester délibérément pessimiste.
+#   - `ETF_SYNTHETIC_SPREAD_BPS = 6` (ETF de `SYMBOLS_ETF` ci-dessus : SPY, QQQ, IWM, EFA, EEM,
+#     VNQ, GLD, DBC, IEF) : les ETF actions/obligataires les plus tradés au monde affichent en
+#     continu des spreads encore plus serrés que les megacaps individuelles (souvent < 1 bp pour
+#     SPY/QQQ) ; 6 bps reste un multiple prudent de cette réalité, y compris pour les membres les
+#     moins liquides du panel (DBC, matières premières) qui restent des produits institutionnels
+#     à carnet profond comparés à un titre individuel quelconque.
+EQUITY_SYNTHETIC_SPREAD_BPS = 10
+ETF_SYNTHETIC_SPREAD_BPS = 6
 
 # --- Risque — calibrage "AGRESSIF" historique (archive 100k$ uniquement, voir bandeau ci-dessus) ---
 VOL_TARGET_ANNUALIZED_MIN = 0.25
@@ -272,6 +314,12 @@ SYMBOLS_EQUITY = sorted(
     | set(ETF_RISKY_UNIVERSE)
     | {ETF_BOND_BOGEY}
 )
+
+# Sous-ensemble ETF de `SYMBOLS_EQUITY` — permet à `bot/feeds/equities.py` de distinguer les
+# deux paliers de spread synthétique (cf. `EQUITY_SYNTHETIC_SPREAD_BPS`/`ETF_SYNTHETIC_
+# SPREAD_BPS` plus bas) sans dupliquer `ETF_RISKY_UNIVERSE`/`ETF_BOND_BOGEY` : tout symbole de
+# `SYMBOLS_EQUITY` absent d'ici est traité comme une action S&P100 ("megacap").
+SYMBOLS_ETF = sorted(set(ETF_RISKY_UNIVERSE) | {ETF_BOND_BOGEY})
 
 # --- Pas de quantité (granularité d'exécution) actions/ETF — CORRECTIF AUDIT CRITIQUE #2 ---
 # `bot.sim.exchange.DEFAULT_QTY_STEPS` ne couvrait, côté actions, que 6 megacaps historiques

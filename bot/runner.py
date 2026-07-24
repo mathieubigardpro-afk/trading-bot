@@ -653,6 +653,7 @@ def process_wallet(
             "quote_ts": None,
             "quote_age_seconds": None,
             "quote_delayed": False,
+            "quote_synthetic_spread": False,
             "strategy_signals": {},
             "poids_cible_brut": None,
             "poids_cible_apres_risk": None,
@@ -765,6 +766,7 @@ def process_wallet(
                 "symbol": symbol, "asset_class": asset_class, "market_open": symbol_market_open,
                 "quote_available": False, "quote_source": None, "price_mid_ideal": None,
                 "quote_ts": None, "quote_age_seconds": None, "quote_delayed": False,
+                "quote_synthetic_spread": False,
                 "strategy_signals": signals_for_symbol, "poids_cible_brut": None,
                 "poids_cible_apres_risk": None, "poids_actuel": current_w,
                 "decision": "NO_TRADE",
@@ -833,6 +835,11 @@ def process_wallet(
                 reason = f"{base_reason} ; ordre exécuté ({side} qty={result.qty:.8f}, notional={result.notional_usd:.2f}$)"
                 if result.quote_delayed:
                     reason += " [quote différée : écart possible vs prix idéal instantané, cf. quote_age_seconds]"
+                if result.quote_synthetic_spread:
+                    reason += (
+                        " [spread synthétique : bid/ask reconstruits autour du dernier prix "
+                        "différé, cf. bot/feeds/equities.py §12.5 ARCHITECTURE.md]"
+                    )
             else:
                 decision = "NO_TRADE"
                 reason = f"{base_reason} ; ordre {side} rejeté par ExchangeSim : {result.reason}"
@@ -844,6 +851,7 @@ def process_wallet(
             "price_mid_ideal": quote.mid, "quote_ts": quote.ts,
             "quote_age_seconds": quote_age_seconds,
             "quote_delayed": bool(getattr(quote, "delayed", False)),
+            "quote_synthetic_spread": bool(getattr(quote, "synthetic_spread", False)),
             "strategy_signals": signals_for_symbol,
             "poids_cible_brut": raw, "poids_cible_apres_risk": final, "poids_actuel": current_w,
             "decision": decision, "reason": reason, "circuit_breakers_snapshot": cb_snapshot,

@@ -360,6 +360,8 @@ class Quote:
     mid: float
     ts: str          # ISO8601 UTC, horodatage de la quote côté source (pas l'heure de réception)
     source: str       # "binance" | "coinbase" | "yahoo" | "yahoo_synthetic_spread"
+    delayed: bool = False            # cf. §12.3 — quote différée (actions/ETF Yahoo) mais utilisée
+    synthetic_spread: bool = False   # cf. §12.5 — bid/ask reconstruits autour d'un prix différé
 
 def get_prices(symbols: list[str]) -> dict[str, Quote | None]:
     """
@@ -390,12 +392,14 @@ def get_history(symbol: str, n_hours: int) -> pd.DataFrame:
   que les bougies dont `close_time < now`.
 - `bot/feeds/equities.py` : `get_prices` interroge
   `GET https://query1.finance.yahoo.com/v7/finance/quote?symbols=<SYM>`. Si les champs `bid`/`ask`
-  sont absents, nuls ou invalides (cas fréquent hors séance), **ne pas tenter** de générer un
-  quote synthétique — retourner `None` pour ce symbole (`quote_available: false` en décision). Le
-  spread synthétique (`source="yahoo_synthetic_spread"`, largeur fixe 15 bps autour de
-  `regularMarketPrice`) n'est utilisé **que si strictement nécessaire pour ne pas bloquer tout
-  trading actions**, décision à valider par un agent de backtest ultérieur — en V1, préférer le
-  no-trade strict par défaut (poser `EQUITY_SYNTHETIC_SPREAD_ENABLED = False` dans `config.py`).
+  sont absents, nuls ou invalides (**cas FRÉQUENT côté Yahoo gratuit, y compris marché ouvert —
+  cf. §12.5, mesuré empiriquement**) mais qu'un dernier prix différé fiable existe
+  (`regularMarketPrice > 0`, horodaté), un spread synthétique DÉFAVORABLE est reconstruit autour
+  de ce prix (`source="yahoo_synthetic_spread"`, `synthetic_spread=true`, `delayed=true`) —
+  `EQUITY_SYNTHETIC_SPREAD_ENABLED = True` par défaut depuis §12.5, largeur calibrée PAR CLASSE
+  (`EQUITY_SYNTHETIC_SPREAD_BPS = 10` actions, `ETF_SYNTHETIC_SPREAD_BPS = 6` ETF, cf.
+  `bot/config.py`). Si Yahoo ne fournit AUCUN prix exploitable du tout, `None` (no-trade strict,
+  inchangé).
   `get_history` utilise
   `GET https://query1.finance.yahoo.com/v8/finance/chart/<SYM>?interval=1h&range=730d` (bornage
   Yahoo ~2 ans en horaire), même règle d'exclusion de la dernière bougie. Le symbole interne
@@ -696,15 +700,15 @@ def combine_strategies(
   `StrategyBase.target_weights()` définie ici.
 - La pondération de `combine_strategies` (actuellement équi-pondérée) est un placeholder explicite
   à revoir une fois des statistiques de backtest walk-forward disponibles.
-- `EQUITY_SYNTHETIC_SPREAD_ENABLED` : décision à trancher après mesure empirique de la
-  disponibilité réelle des champs bid/ask Yahoo Finance en conditions de marché ouvert.
-  L'incident production 2026-07-23T18/T19 (cf. §12) apporte un début de réponse au seuil de
-  fraîcheur (cause racine la plus probable, corrigée), mais PAS à cette question précise : les
-  journaux commités ne permettent pas de distinguer, pour une quote rejetée, "bid/ask absent"
-  de "bid/ask présent mais trop vieux" (les deux aboutissent au même `quote_available: false`,
-  `quote_ts: null` en décision — cf. §12, limite de journalisation identifiée). Si le prochain
-  cycle en conditions réelles montre encore des rejets côté bid/ask malgré le correctif de
-  fraîcheur, `EQUITY_SYNTHETIC_SPREAD_ENABLED` reste l'option de repli à activer explicitement.
+- ~~`EQUITY_SYNTHETIC_SPREAD_ENABLED` : décision à trancher après mesure empirique~~ — **TRANCHÉ,
+  cf. §12.5** : le correctif de fraîcheur (§12) n'a PAS suffi (cycle 2026-07-24T16, marché
+  ouvert, toujours `quote_available=false` à 100% sur les 112 actions/ETF). Lecture de code de
+  `bot/feeds/equities.py:_build_quote_from_result` : Yahoo gratuit ne fournit quasi jamais de
+  bid/ask exploitable, et tant que `EQUITY_SYNTHETIC_SPREAD_ENABLED` valait `False`, toute quote
+  sans bid/ask était rejetée MÊME quand `regularMarketPrice` était parfaitement valide.
+  `EQUITY_SYNTHETIC_SPREAD_ENABLED = True` par défaut désormais, avec des paliers de spread
+  calibrés par classe d'actif (`EQUITY_SYNTHETIC_SPREAD_BPS`/`ETF_SYNTHETIC_SPREAD_BPS`,
+  cf. `bot/config.py`) plutôt qu'une largeur fixe unique.
 - Panel exact des megacaps actions (`SYMBOLS_EQUITY`) proposé ici à titre de valeur par défaut,
   modifiable dans `bot/config.py` sans impact sur le reste de l'architecture.
 
@@ -1305,6 +1309,51 @@ IEF/bogey manquant, un titre isolé manquant), `bot/tests/test_missing_data_runn
 retour à la normale au cycle suivant, liquidation au Nème cycle avec raison distincte dans
 `decisions.jsonl`). Non-régression des cas 1/2 vérifiée sur les 3 suites de tests existantes
 (sortie de tendance confirmée, régime baissier SPY confirmé, momentum absolu vs IEF) — inchangés.
+
+### 12.5 Dernier verrou — spread synthétique activé (2026-07-24T16, correctif de suivi)
+
+**Symptôme** : malgré le correctif §12 (fraîcheur 25 min), le cycle 2026-07-24T16 (marché NYSE
+ouvert, `market_open=true`) journalise encore `quote_available=false` sur 100% des 112
+actions/ETF de l'univers — taux d'échec uniforme, identique en dehors des heures de marché,
+écartant à nouveau un problème de fraîcheur/timing pur (déjà corrigé) ou de panne réseau
+partielle. `state/wallets/*/decisions.jsonl` ne permet toujours PAS de distinguer empiriquement
+la cause exacte (limite de journalisation déjà identifiée en §12.2 : `quote_available=false`
+efface `quote_source`/`quote_age_seconds` quelle qu'en soit la cause).
+
+**Diagnostic (lecture de code, `bot/feeds/equities.py:_build_quote_from_result`)** : Yahoo
+Finance gratuit (v7 quote, sans abonnement) ne fournit quasiment jamais de `bid`/`ask`
+exploitables — champs absents ou à 0, cas déjà anticipé par ce document (§8, jamais mesuré
+empiriquement avant ce correctif). Tant que `EQUITY_SYNTHETIC_SPREAD_ENABLED` valait `False`
+(défaut V1), `_build_quote_from_result` retournait `None` dès que `bid`/`ask` échouait la
+validation — **y compris quand `regularMarketPrice`/`regularMarketTime` étaient parfaitement
+valides** — verrou structurel empêchant tout ordre actions/ETF, marché ouvert ou non.
+
+**Correctif** :
+- `EQUITY_SYNTHETIC_SPREAD_ENABLED = True` par défaut (`bot/config.py`, reste un interrupteur
+  explicite, pas un comportement câblé en dur — `False` retrouve le no-trade strict V1).
+- Spread synthétique calibré PAR CLASSE plutôt qu'une largeur fixe unique (15 bps) :
+  `EQUITY_SYNTHETIC_SPREAD_BPS = 10` (actions S&P100 "megacaps", double la borne haute usuelle
+  1-5 bps des megacaps US en continu) et `ETF_SYNTHETIC_SPREAD_BPS = 6` (ETF de
+  `bot.config.SYMBOLS_ETF` — nouveau sous-ensemble ETF de `SYMBOLS_EQUITY` — multiple prudent
+  d'un spread réel souvent < 1 bp pour SPY/QQQ), sources documentées dans `bot/config.py`.
+  `bot/feeds/equities.py:_synthetic_spread_bps_for()` classe par symbole INTERNE (pas le ticker
+  Yahoo, pour rester correct malgré l'override `"BRK.B"` -> `"BRK-B"`).
+- `bot.feeds.types.Quote` (et son duplicata `bot.sim.fills.Quote`) gagnent un champ
+  `synthetic_spread: bool = False`, toujours accompagné de `delayed=True` pour une quote
+  synthétique (jamais confondue avec un vrai bid/ask coté temps réel). Propagé jusqu'à
+  `Fill`/`Reject` (`quote_synthetic_spread`) puis `trades.jsonl`/`decisions.jsonl`
+  (`quote_synthetic_spread`) — l'écart potentiel vs un prix idéal instantané reste mesurable et
+  honnêtement journalisé, jamais absorbé silencieusement dans `source="yahoo"`.
+- Si Yahoo ne fournit AUCUN prix exploitable du tout (pas de `regularMarketPrice`/
+  `regularMarketTime`), la quote reste `None` (no-trade strict, inchangé) — aucune donnée n'est
+  jamais inventée à partir de rien. Les seuils crypto (Binance/Coinbase, bid/ask RÉELS du
+  carnet, aucun repli synthétique prévu ni nécessaire) ne bougent pas.
+
+**Tests** : `bot/tests/test_equities.py` — fixtures Yahoo sans bid/ask (prix valide) -> quote
+synthétique `synthetic_spread=true`/`delayed=true`, bid/ask défavorables de part et d'autre du
+prix, palier 10 bps actions vs 6 bps ETF selon le symbole ; sans `regularMarketPrice` du tout ->
+`None` (inchangé) ; bid/ask valide -> `source="yahoo"` inchangé, jamais synthétique. Non-
+régression crypto vérifiée (`bot/tests/test_crypto.py`, aucun changement de comportement).
 
 ---
 

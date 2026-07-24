@@ -18,10 +18,13 @@ from bot.sim.exchange import floor_to_step
 NOW = datetime(2026, 7, 22, 14, 0, 0, tzinfo=timezone.utc)
 
 
-def make_quote(bid, ask, ts=None, source="binance", delayed=False):
+def make_quote(bid, ask, ts=None, source="binance", delayed=False, synthetic_spread=False):
     ts = ts or NOW.isoformat()
     mid = (bid + ask) / 2
-    return Quote(bid=bid, ask=ask, mid=mid, ts=ts, source=source, delayed=delayed)
+    return Quote(
+        bid=bid, ask=ask, mid=mid, ts=ts, source=source,
+        delayed=delayed, synthetic_spread=synthetic_spread,
+    )
 
 
 def make_sim(**kwargs):
@@ -393,6 +396,48 @@ def test_reject_propagates_quote_delayed_flag():
 
     assert isinstance(result, Reject)
     assert result.quote_delayed is True
+
+
+def test_fill_propagates_quote_synthetic_spread_flag():
+    sim = ExchangeSim(
+        fee_taker_bps=10, slippage_penalty_bps=5,
+        max_quote_age_seconds_by_symbol={"AAPL": 1500.0},
+    )
+    old_ts = (NOW - timedelta(seconds=900)).isoformat()
+    quote = make_quote(
+        bid=100.0, ask=100.2, ts=old_ts, source="yahoo_synthetic_spread",
+        delayed=True, synthetic_spread=True,
+    )
+
+    result = sim.execute_order("BUY", "AAPL", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Fill)
+    assert result.quote_synthetic_spread is True
+    assert result.quote_delayed is True
+
+
+def test_fill_quote_synthetic_spread_false_by_default():
+    sim = make_sim()
+    quote = make_quote(bid=100.0, ask=100.2)  # synthetic_spread=False par défaut
+
+    result = sim.execute_order("BUY", "BTC", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Fill)
+    assert result.quote_synthetic_spread is False
+
+
+def test_reject_propagates_quote_synthetic_spread_flag():
+    sim = make_sim()
+    old_ts = (NOW - timedelta(seconds=900)).isoformat()
+    quote = make_quote(
+        bid=100.0, ask=100.2, ts=old_ts, source="yahoo_synthetic_spread",
+        delayed=True, synthetic_spread=True,
+    )
+
+    result = sim.execute_order("BUY", "AAPL", 1.0, quote, "s", "2026-07-22T14", now=NOW)
+
+    assert isinstance(result, Reject)
+    assert result.quote_synthetic_spread is True
 
 
 def test_per_symbol_fee_override_produces_higher_fees_than_base_rate():

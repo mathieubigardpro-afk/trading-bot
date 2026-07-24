@@ -26,6 +26,16 @@ class Quote:
     Coinbase temps réel). Propagé jusqu'à `decisions.jsonl`/`trades.jsonl` (`quote_delayed`)
     pour journaliser honnêtement l'écart potentiel vs un prix "idéal" instantané, cf.
     `docs/ARCHITECTURE.md` §5.1/§12.
+
+    `synthetic_spread` : `True` si `bid`/`ask` ne proviennent PAS du carnet réel de la source
+    mais ont été RECONSTRUITS autour d'un dernier prix différé fiable (`bid`/`ask` absents ou
+    invalides côté source, cf. `bot/feeds/equities.py:_build_quote_from_result`) — toujours
+    accompagné de `delayed=True` (un prix synthétique n'est par construction jamais "temps
+    réel"). Jamais `True` pour la crypto (Binance/Coinbase fournissent toujours un bid/ask réel
+    du carnet, aucun repli synthétique prévu ni nécessaire). Propagé jusqu'à
+    `decisions.jsonl`/`trades.jsonl` (`quote_synthetic_spread`) — l'écart vs un prix idéal
+    instantané reste mesurable et honnêtement journalisé plutôt que silencieusement absorbé
+    dans un `source="yahoo"` indiscernable d'un vrai bid/ask coté.
     """
 
     bid: float
@@ -34,6 +44,7 @@ class Quote:
     ts: str
     source: str
     delayed: bool = False
+    synthetic_spread: bool = False
 
 
 class HistoryUnavailableError(Exception):

@@ -138,6 +138,7 @@ class ExchangeSim:
         quote_source = getattr(quote, "source", None) if quote is not None else None
         quote_ts = getattr(quote, "ts", None) if quote is not None else None
         quote_delayed = bool(getattr(quote, "delayed", False)) if quote is not None else False
+        quote_synthetic_spread = bool(getattr(quote, "synthetic_spread", False)) if quote is not None else False
 
         def reject(reason: str) -> Reject:
             return Reject(
@@ -150,6 +151,7 @@ class ExchangeSim:
                 quote_source=quote_source,
                 quote_ts=quote_ts,
                 quote_delayed=quote_delayed,
+                quote_synthetic_spread=quote_synthetic_spread,
             )
 
         if side_u not in ("BUY", "SELL"):
@@ -224,4 +226,5 @@ class ExchangeSim:
             quote_source=quote_source,
             quote_ts=quote_ts,
             quote_delayed=quote_delayed,
+            quote_synthetic_spread=quote_synthetic_spread,
         )

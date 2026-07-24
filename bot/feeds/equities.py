@@ -1,10 +1,19 @@
 """Adaptateur actions US : Yahoo Finance public (v7 quote + v8 chart).
 
-Aucune clé API. Pas de fallback bid/ask alternatif prévu par l'architecture
-pour les actions : si Yahoo ne fournit pas de bid/ask valide, on retourne
-`None` (no-trade strict) plutôt que d'inventer un spread synthétique — sauf
-si `EQUITY_SYNTHETIC_SPREAD_ENABLED` est explicitement activé dans
-`bot/config.py` (`False` par défaut, cf. `docs/ARCHITECTURE.md` §5.1).
+Aucune clé API. Yahoo gratuit (comptes non-abonnés) ne fournit quasi JAMAIS de `bid`/`ask`
+exploitables (champs absents ou à 0) — correctif incident production 2026-07-24T16 (marché
+ouvert, les 112 actions/ETF de l'univers en `quote_available=false` malgré un
+`regularMarketPrice` Yahoo parfaitement valide pour la plupart). Quand un dernier prix DIFFÉRÉ
+fiable existe (`regularMarketPrice > 0`, horodaté, dans la fenêtre de fraîcheur
+`STALENESS_MAX_SECONDS_EQUITY`) mais que bid/ask est absent/invalide, `_build_quote_from_result`
+reconstruit un bid/ask synthétique DÉFAVORABLE autour de ce prix plutôt que de rejeter la quote
+(`EQUITY_SYNTHETIC_SPREAD_ENABLED = True` par défaut désormais, cf. `bot/config.py` pour le
+diagnostic complet et la justification des paliers de spread par classe d'actif). La `Quote`
+obtenue est marquée `synthetic_spread=True` ET `delayed=True` — jamais confondue avec un vrai
+bid/ask coté temps réel, l'écart potentiel vs un prix idéal instantané reste mesurable et
+honnêtement journalisé jusqu'à `decisions.jsonl`/`trades.jsonl`. Si Yahoo ne fournit AUCUN prix
+exploitable du tout (pas de `regularMarketPrice`/`regularMarketTime`), la quote reste `None`
+(no-trade strict, inchangé) — aucune donnée n'est jamais inventée à partir de rien.
 """
 
 from __future__ import annotations
@@ -42,7 +51,15 @@ _USER_AGENT = (
     "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
-_SYNTHETIC_SPREAD_BPS = 15  # 0.15%, largeur totale, moitié de chaque côté du mid
+# Paliers de spread synthétique PAR CLASSE (bps, largeur TOTALE — cf. `_build_quote_from_
+# result`, `bid = prix * (1 - s/2)`, `ask = prix * (1 + s/2)`) — repli `bot/feeds/_config_
+# fallback.py` si `bot.config` non disponible (tests autonomes de `bot.feeds`). Calibrage et
+# sources documentés en détail dans `bot/config.py` (mêmes constantes, source de vérité) :
+# actions S&P100 "megacaps" 10 bps (double la borne haute usuelle 1-5 bps des megacaps US en
+# continu), ETF très liquides (`bot.config.SYMBOLS_ETF`) 6 bps (multiple prudent d'un spread
+# réel souvent < 1 bp pour SPY/QQQ).
+_EQUITY_SYNTHETIC_SPREAD_BPS_DEFAULT = 10
+_ETF_SYNTHETIC_SPREAD_BPS_DEFAULT = 6
 
 _session = requests.Session()
 _session.headers.update({"User-Agent": _USER_AGENT, "Accept": "application/json"})
@@ -70,11 +87,23 @@ def _quote_is_fresh(quote_ts: _dt.datetime, max_age_seconds: float) -> bool:
     return age <= max_age_seconds
 
 
-def _build_quote_from_result(result: dict) -> Quote | None:
-    symbol = result.get("symbol", "?")
+def _synthetic_spread_bps_for(internal_symbol: str) -> float:
+    """Palier de spread synthétique pour `internal_symbol` (symbole INTERNE côté bot, pas le
+    ticker Yahoo — important pour les overrides comme "BRK.B"/"BRK-B") : ETF de
+    `bot.config.SYMBOLS_ETF` -> `ETF_SYNTHETIC_SPREAD_BPS` (6 bps par défaut), tout le reste
+    (univers actions S&P100 réellement suivi par ce module) -> `EQUITY_SYNTHETIC_SPREAD_BPS`
+    (10 bps par défaut). Cf. bandeau de tête de ce module / `bot/config.py` pour les sources."""
+    etf_symbols = getattr(cfg, "SYMBOLS_ETF", ())
+    if internal_symbol in etf_symbols:
+        return float(getattr(cfg, "ETF_SYNTHETIC_SPREAD_BPS", _ETF_SYNTHETIC_SPREAD_BPS_DEFAULT))
+    return float(getattr(cfg, "EQUITY_SYNTHETIC_SPREAD_BPS", _EQUITY_SYNTHETIC_SPREAD_BPS_DEFAULT))
+
+
+def _build_quote_from_result(result: dict, internal_symbol: str) -> Quote | None:
+    symbol = result.get("symbol") or internal_symbol
     market_time_epoch = result.get("regularMarketTime")
     if market_time_epoch is None:
-        logger.warning("yahoo quote sans regularMarketTime pour %s", symbol)
+        logger.warning("yahoo quote sans regularMarketTime pour %s (aucun prix exploitable)", symbol)
         return None
     quote_ts = _dt.datetime.fromtimestamp(int(market_time_epoch), tz=_dt.timezone.utc)
 
@@ -90,8 +119,10 @@ def _build_quote_from_result(result: dict) -> Quote | None:
         mid = (bid_f + ask_f) / 2.0
         return Quote(bid=bid_f, ask=ask_f, mid=mid, ts=_iso(quote_ts), source="yahoo")
 
-    # Pas de bid/ask valide -> spread synthétique SEULEMENT si explicitement
-    # activé (désactivé par défaut, cf. docstring module).
+    # Pas de bid/ask valide (cas FRÉQUENT côté Yahoo gratuit, cf. bandeau de tête de ce module)
+    # -> spread synthétique DÉFAVORABLE autour du dernier prix différé fiable, SEULEMENT si
+    # explicitement activé (`EQUITY_SYNTHETIC_SPREAD_ENABLED = True` par défaut, cf.
+    # `bot/config.py` pour le diagnostic/la justification complets).
     if getattr(cfg, "EQUITY_SYNTHETIC_SPREAD_ENABLED", False):
         regular_price = result.get("regularMarketPrice")
         try:
@@ -99,13 +130,21 @@ def _build_quote_from_result(result: dict) -> Quote | None:
         except (TypeError, ValueError):
             price = None
         if price is not None and price > 0:
-            half_spread = price * (_SYNTHETIC_SPREAD_BPS / 1e4) / 2.0
+            spread_bps = _synthetic_spread_bps_for(internal_symbol)
+            half_spread = price * (spread_bps / 1e4) / 2.0
+            logger.info(
+                "yahoo quote sans bid/ask exploitable pour %s — spread synthétique %.1fbps "
+                "autour du dernier prix différé (%.4f, ts=%s)",
+                symbol, spread_bps, price, _iso(quote_ts),
+            )
             return Quote(
                 bid=price - half_spread,
                 ask=price + half_spread,
                 mid=price,
                 ts=_iso(quote_ts),
                 source="yahoo_synthetic_spread",
+                delayed=True,  # un prix synthétique n'est par construction jamais "temps réel"
+                synthetic_spread=True,
             )
 
     logger.warning("yahoo quote sans bid/ask exploitable pour %s (no-trade strict)", symbol)
@@ -113,9 +152,10 @@ def _build_quote_from_result(result: dict) -> Quote | None:
 
 
 def get_prices_equity(symbols: list[str]) -> dict[str, Quote | None]:
-    """Retourne un Quote par symbole action demandé, ou None si Yahoo échoue,
-    renvoie un JSON invalide, ou ne fournit pas de bid/ask exploitable et
-    frais (et que le spread synthétique est désactivé, cas par défaut)."""
+    """Retourne un Quote par symbole action demandé, ou None si Yahoo échoue, renvoie un JSON
+    invalide, ou ne fournit AUCUN prix exploitable du tout (pas de `regularMarketPrice`/
+    `regularMarketTime`) — cf. `_build_quote_from_result` pour le repli spread synthétique
+    (activé par défaut) quand un prix différé fiable existe sans bid/ask valide."""
     if not symbols:
         return {}
 
@@ -147,7 +187,7 @@ def get_prices_equity(symbols: list[str]) -> dict[str, Quote | None]:
         if row is None:
             logger.warning("yahoo v7 quote: pas de résultat pour %s", sym)
             continue
-        quote = _build_quote_from_result(row)
+        quote = _build_quote_from_result(row, internal_symbol=sym)
         if quote is not None:
             quote_ts = _dt.datetime.fromisoformat(quote.ts)
             if not _quote_is_fresh(quote_ts, max_age):
