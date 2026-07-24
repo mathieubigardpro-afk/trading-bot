@@ -10,6 +10,9 @@ cette classe de bug impossible à introduire sans le remarquer."""
 
 from __future__ import annotations
 
+import json
+import os
+
 import pytest
 
 from bot import config
@@ -163,3 +166,23 @@ def test_labo_pockets_and_universe_derive_from_incubating_strategies(monkeypatch
     assert config.labo_crypto_universe() == ["BTC", "ETH"]
     assert config.incubating_strategy("candidate_x") == fake[0]
     assert config.incubating_strategy("does_not_exist") is None
+
+
+def test_config_json_incubating_strategies_matches_config_py():
+    """bot/config.json:wallets[labo].incubating_strategies est un miroir informatif de
+    bot.config.INCUBATING_STRATEGIES, consommé par dashboard/index.html (section « Recherche &
+    évolution »). Une désynchronisation ici serait silencieuse pour le bot (config.json n'est
+    jamais importé par le code) mais afficherait des candidates fantômes ou manquantes sur le
+    tableau de bord public -- ce test rend cette classe de bug impossible à introduire sans le
+    remarquer, cf. incubating_strategies_note dans bot/config.json."""
+    config_json_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
+    with open(config_json_path, encoding="utf-8") as f:
+        snapshot = json.load(f)
+    labo_snapshot = next(w for w in snapshot["wallets"] if w["id"] == config.LABO_WALLET_ID)
+    snapshot_ids = {c["id"] for c in labo_snapshot["incubating_strategies"]}
+    real_ids = {c["id"] for c in config.INCUBATING_STRATEGIES}
+    assert snapshot_ids == real_ids, (
+        "bot/config.json:wallets[labo].incubating_strategies désynchronisé de "
+        "bot.config.INCUBATING_STRATEGIES -- à mettre à jour dans le même commit que toute "
+        "entrée/sortie d'incubation"
+    )

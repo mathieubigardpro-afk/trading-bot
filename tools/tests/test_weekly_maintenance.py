@@ -545,6 +545,49 @@ def test_render_drift_report_with_applied_recalibration():
     assert "225" in report
 
 
+def test_render_drift_report_json_is_valid_and_roundtrips_rows():
+    rows = [
+        {
+            "categorie": "active", "strategy_id": "quasi_passif_crypto", "wallet_id": "prudent",
+            "n_days_observed": 90, "sharpe_live": 1.1, "sharpe_ref": 1.24,
+            "dd_live_pct": 9.0, "dd_ref_pct": 8.0, "verdict": "SURVEILLER",
+            "reasons": ["drawdown vécu 9.0% > 1.5x le DD attendu (8.0%)"],
+            "antecedent_hors_promotion_rules": True,
+        },
+        {
+            "categorie": "incubation", "strategy_id": "momentum_inverse_vol", "wallet_id": "labo",
+            "age_days": 12, "n_days_observed": 12, "sharpe_live": None, "sharpe_ref": 0.9,
+            "dd_live_pct": 4.0, "dd_ref_pct": 15.0, "verdict": "OK", "reasons": [],
+            "antecedent_hors_promotion_rules": False,
+        },
+    ]
+    now = datetime(2026, 7, 27, 22, 0, tzinfo=timezone.utc)
+    raw = wm.render_drift_report_json(rows, now, None, "sauté (--skip-recalibration)")
+    payload = json.loads(raw)  # lève si le JSON est invalide
+    assert payload["schema_version"] == 1
+    assert payload["generated_at"] == now.isoformat()
+    assert payload["data_refresh_status"] == "sauté (--skip-recalibration)"
+    assert payload["recalibration"] is None
+    assert [r["strategy_id"] for r in payload["rows"]] == ["quasi_passif_crypto", "momentum_inverse_vol"]
+    assert payload["rows"][1]["age_days"] == 12
+    assert payload["thresholds"]["incubation_min_observation_days"] == wm.INCUBATION_MIN_OBSERVATION_DAYS
+    assert payload["thresholds"]["incubation_max_days"] == wm.INCUBATION_MAX_DAYS
+
+
+def test_render_drift_report_json_empty_rows_and_recalibration():
+    now = datetime(2026, 7, 27, 22, 0, tzinfo=timezone.utc)
+    recalibration = {
+        "status": "OK", "windows": 3, "current_value": 200, "current_oos_sharpe": 1.0,
+        "best_value": 225, "best_oos_sharpe": 1.2, "modal_value": 225,
+        "relative_improvement": 0.20, "changed": True, "reason": "amélioration OOS relative 20.0% > seuil 10%",
+    }
+    raw = wm.render_drift_report_json([], now, recalibration, "OK")
+    payload = json.loads(raw)
+    assert payload["rows"] == []
+    assert payload["recalibration"]["changed"] is True
+    assert payload["recalibration"]["best_value"] == 225
+
+
 # ============================================================================================
 # --- Orchestration main() en mode dry-run (--skip-push) ---
 # ============================================================================================
@@ -588,6 +631,13 @@ def test_main_dry_run_writes_report_and_returns_zero(fake_repo):
     assert "quasi_passif_crypto" in content
     assert "xs_momentum_sp100" in content
 
+    report_json_path = fake_repo / "docs" / "DRIFT-REPORT.json"
+    assert report_json_path.exists()
+    payload = json.loads(report_json_path.read_text(encoding="utf-8"))
+    strategy_ids = {r["strategy_id"] for r in payload["rows"]}
+    assert "quasi_passif_crypto" in strategy_ids
+    assert "xs_momentum_sp100" in strategy_ids
+
 
 def test_main_dry_run_skips_recalibration_without_data(fake_repo):
     # --skip-data-refresh (mais PAS --skip-recalibration) : le recalibrage doit se signaler
@@ -620,6 +670,8 @@ def test_main_handles_missing_registry_gracefully(tmp_path):
     )
     assert rc == 0
     assert (repo / "docs" / "DRIFT-REPORT.md").exists()
+    assert (repo / "docs" / "DRIFT-REPORT.json").exists()
+    json.loads((repo / "docs" / "DRIFT-REPORT.json").read_text(encoding="utf-8"))
 
 
 # ============================================================================================

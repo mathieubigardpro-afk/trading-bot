@@ -99,6 +99,8 @@
       "note": "4e wallet, incubateur de stratégies candidates (docs/ARCHITECTURE.md § Labo, mission auto-amélioration continue). univers_crypto/pockets DYNAMIQUES, dérivés de bot.config.INCUBATING_STRATEGIES (vide aujourd'hui -> wallet intégralement en cash, état attendu) -- ce snapshot JSON reflète donc l'état VIDE actuel, jamais recalculé automatiquement (source de vérité réelle : bot.config.labo_pockets()/labo_crypto_universe()).",
       "univers_crypto": [],
       "pockets": [],
+      "incubating_strategies_note": "Miroir informatif de bot.config.INCUBATING_STRATEGIES (mêmes clés, cf. bandeau de tête dans bot/config.py juste au-dessus de la déclaration) -- consommé par dashboard/index.html (section « Recherche & évolution ») pour afficher l'âge et la progression vers la Porte 2 de chaque candidate en incubation, SANS exposer bot/config.py brut au client JS. Vide aujourd'hui (aucune candidate), synchronisation vérifiée par bot/tests/test_config_strategies_sync.py::test_config_json_incubating_strategies_matches_config_py -- toute session future qui peuple INCUBATING_STRATEGIES doit mettre à jour ce tableau dans le MÊME commit, sous peine de faire échouer ce test.",
+      "incubating_strategies": [],
       "risque": {
         "vol_target_annualized": 0.20,
         "gross_exposure_max": 0.70,

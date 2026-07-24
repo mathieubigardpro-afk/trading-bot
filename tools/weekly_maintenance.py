@@ -90,6 +90,7 @@ logging.basicConfig(
 logger = logging.getLogger("tools.weekly_maintenance")
 
 DRIFT_REPORT_RELPATH = "docs/DRIFT-REPORT.md"
+DRIFT_REPORT_JSON_RELPATH = "docs/DRIFT-REPORT.json"
 REGISTRY_RELPATH = "docs/RESEARCH-REGISTRY.json"
 
 # ==========================================================================================
@@ -1079,6 +1080,36 @@ def render_drift_report(
     return "\n".join(lines)
 
 
+def render_drift_report_json(
+    rows: List[Dict[str, Any]],
+    generated_at: datetime,
+    recalibration: Optional[Dict[str, Any]],
+    data_refresh_status: str,
+) -> str:
+    """Équivalent machine-lisible de `render_drift_report` (même contenu, sans le récit) --
+    écrit à côté du `.md`, cf. mission dashboard (`dashboard/index.html`, section "Recherche
+    & évolution") : un client JS n'a pas à parser du Markdown pour lire un verdict de dérive.
+    Ne recalcule rien, ne prend aucune décision -- pure sérialisation de ce que `main()` a déjà
+    produit pour le `.md`."""
+    payload: Dict[str, Any] = {
+        "schema_version": 1,
+        "generated_at": generated_at.isoformat(),
+        "data_refresh_status": data_refresh_status,
+        "thresholds": {
+            "incubation_min_observation_days": INCUBATION_MIN_OBSERVATION_DAYS,
+            "incubation_max_days": INCUBATION_MAX_DAYS,
+            "incubation_watch_days": INCUBATION_WATCH_DAYS,
+            "death_dd_multiple_active": DEATH_DD_MULTIPLE_ACTIVE,
+            "watch_dd_multiple_active": WATCH_DD_MULTIPLE_ACTIVE,
+            "porte2_min_sharpe_ratio": PORTE2_MIN_SHARPE_RATIO,
+            "porte2_max_dd_multiple": PORTE2_MAX_DD_MULTIPLE,
+        },
+        "rows": rows,
+        "recalibration": recalibration,
+    }
+    return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False, default=str)
+
+
 # ==========================================================================================
 # --- main() ---
 # ==========================================================================================
@@ -1148,6 +1179,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         f.write(report_md)
     logger.info("rapport écrit dans %s", report_path)
 
+    report_json = render_drift_report_json(rows, now, recalibration, data_refresh_status)
+    report_json_path = os.path.join(repo_dir, DRIFT_REPORT_JSON_RELPATH)
+    with open(report_json_path, "w", encoding="utf-8") as f:
+        f.write(report_json)
+    logger.info("rapport (JSON) écrit dans %s", report_json_path)
+
     if args.skip_push:
         logger.info("--skip-push : aucun commit/push (dry-run)")
         return 0
@@ -1170,17 +1207,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         if status != "ABORTED_DUPLICATE" and not args.skip_pull:
             pull_rebase(repo_dir)  # avant le second commit, cf. mission "pull --rebase avant chaque push"
 
-    # Commit 2 : rapport de dérive (toujours produit, sauf si rien n'a changé dans le fichier).
-    if has_uncommitted_state_changes(repo_dir, paths=[DRIFT_REPORT_RELPATH]):
+    # Commit 2 : rapport de dérive (.md + .json, toujours produits ensemble, sauf si rien n'a
+    # changé dans aucun des deux fichiers).
+    drift_paths = [DRIFT_REPORT_RELPATH, DRIFT_REPORT_JSON_RELPATH]
+    if has_uncommitted_state_changes(repo_dir, paths=drift_paths):
         message = (
             f"Maintenance hebdomadaire {now.strftime('%Y-%m-%d')} : rapport de dérive"
             + (" + recalibrage quasi_passif_crypto" if changed_recal_files else "")
         )
-        status = git_sync(repo_dir, message, paths=[DRIFT_REPORT_RELPATH], branch="main")
+        status = git_sync(repo_dir, message, paths=drift_paths, branch="main")
         logger.info("git_sync (rapport de dérive): %s", status)
         return 0 if status in ("SUCCESS", "ABORTED_DUPLICATE") else 1
 
-    logger.info("aucun changement dans %s — rien à committer", DRIFT_REPORT_RELPATH)
+    logger.info("aucun changement dans %s — rien à committer", drift_paths)
     return 0
 
 

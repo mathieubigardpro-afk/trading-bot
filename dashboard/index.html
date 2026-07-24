@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tableau de bord — Bot de paper trading (3 wallets)</title>
-<meta name="description" content="Suivi en direct de trois wallets de paper trading (prudent, équilibré, agressif) vivant le même marché en parallèle : équity, positions, trades et décisions.">
+<meta name="description" content="Suivi en direct de trois wallets de paper trading (prudent, équilibré, agressif) vivant le même marché en parallèle, plus un 4e wallet labo d'incubation de stratégies candidates : équity, positions, trades, décisions et gouvernance de la recherche.">
 <style>
   /* =========================================================================
      PALETTE — issue du skill dataviz (references/palette.md), mode sombre
@@ -43,6 +43,15 @@
     --wallet-prudent:   var(--cat-1-blue);
     --wallet-equilibre: var(--cat-2-orange);
     --wallet-agressif:  var(--cat-3-aqua);
+    /* Labo 🧪 : PAS un 4e slot catégoriel. Le skill dataviz est explicite (palette.md,
+       « Categorical palette ») : seuls les slots 1/2/3 valident all-pairs en clair ET en
+       sombre sur ce graphique à courbes superposées — le 4e (jaune) échoue justement contre
+       le slot 2 (orange) déjà utilisé ici par le wallet équilibré (vérifié avec
+       scripts/validate_palette.js "3987e5,d95926,199e70,c98500" --mode dark --pairs all).
+       Le labo est donc traité comme la doc le prescrit au-delà de 3 séries : replié sur une
+       teinte neutre (texte secondaire, pas une couleur catégorielle) et distingué par la
+       TEXTURE (trait pointillé) + le badge/légende, jamais par la couleur seule. */
+    --wallet-labo:      var(--text-secondary);
 
     /* Rôles sémantiques dérivés des slots catégoriels (texte, contraste vérifié ≥4.5:1 sur #1a1a19) */
     --series-equity:    var(--cat-1-blue);
@@ -202,6 +211,9 @@
   .wc-value { font-size: 27px; font-weight: 700; letter-spacing: -.01em; font-variant-numeric: proportional-nums; }
   .wc-pnl { font-size: 13px; font-weight: 600; }
   .wc-sub { font-size: 12.5px; color: var(--text-muted); }
+  .wc-fx { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 1px; }
+  .wc-fx.good { color: var(--text-good); }
+  .wc-fx.bad  { color: var(--text-bad); }
   .wc-pending { font-size: 13px; color: var(--text-muted); padding: 6px 0; }
   .wc-spark { display: block; margin-top: 2px; }
   .wc-risk { font-size: 11.5px; color: var(--text-muted); margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border); }
@@ -213,6 +225,13 @@
   .wallet-badge.warning  { color: var(--status-warning); background: rgba(250,178,25,.14); }
   .wallet-badge.critical { color: #ffffff; background: var(--status-critical); }
   .wallet-badge.pending  { color: var(--text-muted); background: rgba(137,135,129,.14); }
+  .wallet-badge.incubateur { color: var(--text-secondary); background: rgba(255,255,255,.06); border: 1px dashed var(--border-strong); }
+
+  /* ---------- Wallet Labo 🧪 : carte visuellement distincte (bordure pointillée, jamais un
+     wallet "réel" comme les 3 tempéraments) ---------- */
+  .wallet-card.is-labo { border-style: dashed; border-left-style: dashed; }
+  .wallet-card.is-labo:hover { border-style: dashed; border-left-style: dashed; }
+  .wc-labo-note { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
 
   /* ---------- Navigation entre wallets ---------- */
   .wallet-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -229,6 +248,7 @@
     border-color: var(--tab-color, var(--border-strong)); color: var(--text-primary);
     background: var(--surface-2); font-weight: 700;
   }
+  .wallet-tabs button.is-labo { border-style: dashed; }
 
   /* ---------- Carte profil de risque (vue détail wallet) ---------- */
   .profile-card {
@@ -305,6 +325,7 @@
   .compare-legend .cl-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; }
   .compare-legend .cl-item.is-pending { opacity: .55; }
   .compare-legend .cl-swatch { width: 15px; height: 3px; border-radius: 2px; flex: none; }
+  .compare-legend .cl-swatch.dashed { background: none; border-top: 2px dashed var(--wallet-labo); height: 0; margin-top: 1px; }
   .compare-legend .cl-name { color: var(--text-secondary); }
   .compare-legend .cl-value { font-weight: 700; font-variant-numeric: proportional-nums; }
 
@@ -366,6 +387,57 @@
   .mini-bar-fill.bad  { background: var(--text-bad); right: 50%; }
   .mini-bar-mid { position:absolute; top:0; bottom:0; left:50%; width:1px; background: var(--baseline); }
 
+  /* ---------- Recherche & évolution ---------- */
+  .verdict-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .02em; white-space: nowrap;
+  }
+  .verdict-badge.ok         { color: var(--status-good); background: rgba(12,163,12,.14); }
+  .verdict-badge.surveiller { color: var(--status-warning); background: rgba(250,178,25,.14); }
+  .verdict-badge.alerte     { color: #ffffff; background: var(--status-critical); }
+  .verdict-badge.na         { color: var(--text-muted); background: rgba(137,135,129,.14); }
+
+  .research-block { margin-bottom: 22px; }
+  .research-block:last-child { margin-bottom: 0; }
+  .research-block-title { font-size: 13px; font-weight: 700; margin: 0 0 3px; display: flex; align-items: center; gap: 6px; }
+  .research-block-sub { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; }
+
+  .drift-row {
+    display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 10px; align-items: center;
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    margin-bottom: 7px; font-size: 12.5px;
+  }
+  .drift-row .dr-strategy { font-weight: 600; }
+  .drift-row .dr-wallet { color: var(--text-muted); font-size: 12px; }
+  .drift-row .dr-reason { grid-column: 1 / -1; color: var(--text-secondary); font-size: 12px; margin-top: 3px; padding-top: 6px; border-top: 1px solid var(--border); }
+  @media (max-width: 640px) { .drift-row { grid-template-columns: 1fr; } }
+
+  .candidate-card {
+    border: 1px dashed var(--border-strong); border-radius: var(--radius); padding: 13px 15px;
+    margin-bottom: 10px; background: var(--surface-2);
+  }
+  .candidate-card .cc-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 6px; }
+  .candidate-card .cc-name { font-weight: 700; font-size: 13.5px; }
+  .candidate-card .cc-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .porte2-track { position: relative; height: 7px; background: var(--surface-3); border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+  .porte2-fill { position: absolute; inset: 0 auto 0 0; background: var(--cat-1-blue); border-radius: 4px; }
+  .porte2-fill.death { background: var(--status-critical); }
+  .porte2-marker { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--baseline); }
+  .porte2-caption { font-size: 11.5px; color: var(--text-muted); }
+
+  .registry-counters { display: flex; gap: 22px; flex-wrap: wrap; }
+  .registry-counter { display: flex; flex-direction: column; gap: 2px; }
+  .registry-counter .rc-value { font-size: 24px; font-weight: 700; font-variant-numeric: proportional-nums; }
+  .registry-counter .rc-label { font-size: 11.5px; color: var(--text-muted); }
+  .registry-counter.cimetiere .rc-value { color: var(--text-bad); }
+  .registry-counter.active .rc-value { color: var(--text-good); }
+
+  .log-entry { padding: 10px 0; border-top: 1px solid var(--border); }
+  .log-entry:first-child { border-top: none; padding-top: 0; }
+  .log-entry .le-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+  .log-entry .le-body { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
+
   /* ---------- Decisions log ---------- */
   .run-group { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
   .run-group summary {
@@ -419,7 +491,7 @@
   <header class="topbar">
     <div class="brand">
       <h1>Bot de paper trading — 3 tempéraments, un seul marché</h1>
-      <p>Trois wallets fictifs indépendants de 1&nbsp;000&nbsp;€ chacun (🛡️ prudent, ⚖️ équilibré, 🔥 agressif) · aucune monnaie réelle en jeu · données publiques, lecture seule</p>
+      <p>Trois wallets fictifs indépendants de 1&nbsp;000&nbsp;€ chacun (🛡️ prudent, ⚖️ équilibré, 🔥 agressif) + un 4<sup>e</sup> wallet 🧪 labo (incubateur de stratégies candidates, capital isolé, jamais engagé dans les 3 wallets réels) · aucune monnaie réelle en jeu · données publiques, lecture seule</p>
       <p class="repo-link">Source : <a href="https://github.com/mathieubigardpro-afk/trading-bot" target="_blank" rel="noopener">github.com/mathieubigardpro-afk/trading-bot</a></p>
     </div>
     <div class="status-cluster">
@@ -440,10 +512,10 @@
       <div class="card chart-card">
         <div class="chart-head">
           <div>
-            <h2 class="section-title" id="titreCompare">Comparaison des trois tempéraments
-              <span class="info-tip" tabindex="0" data-tip="Chaque courbe part de 100 au premier cycle où CE wallet a pu être initialisé (taux de change disponible). Même échelle en % pour les trois, quel que soit leur point de départ réel — c'est la performance relative qui compte ici, pas le montant en euros.">i</span>
+            <h2 class="section-title" id="titreCompare">Comparaison des trois tempéraments + le labo 🧪
+              <span class="info-tip" tabindex="0" data-tip="Chaque courbe part de 100 au premier cycle où CE wallet a pu être initialisé (taux de change disponible). Même échelle en % pour les trois, quel que soit leur point de départ réel — c'est la performance relative qui compte ici, pas le montant en euros. Le labo (trait pointillé, capital isolé) reste en cash tant qu'aucune candidate n'est en incubation : sa courbe est plate à 100 dans ce cas, ce n'est pas un bug.">i</span>
             </h2>
-            <p class="section-sub">Équity indexée base 100 · même marché, même heure, seul le profil de risque diffère</p>
+            <p class="section-sub">Équity indexée base 100 · même marché, même heure, seul le profil de risque diffère · trait plein = 3 wallets réels, trait pointillé = labo (incubateur)</p>
           </div>
           <button type="button" class="subtle-btn" id="btnCompareTableToggle" aria-pressed="false">Voir en tableau</button>
         </div>
@@ -453,6 +525,42 @@
           <div id="compareTableWrap" hidden></div>
         </div>
         <div class="compare-legend" id="compareLegend"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="titreRecherche">
+      <div class="card">
+        <h2 class="section-title" id="titreRecherche">🧪 Recherche &amp; évolution
+          <span class="info-tip" tabindex="0" data-tip="Le bot s'auto-améliore en continu : de nouvelles stratégies candidates sont incubées dans le wallet labo avant toute promotion vers un wallet réel, selon des règles chiffrées pré-enregistrées (docs/PROMOTION-RULES.md). L'ennemi de ce dispositif est le sur-apprentissage — tester assez de stratégies fait toujours émerger de faux gagnants — chaque brique ci-dessous existe pour le combattre : verdicts de dérive automatiques, fenêtres d'incubation minimales, et un registre qui n'efface jamais une stratégie rejetée.">i</span>
+        </h2>
+        <p class="section-sub">Gouvernance de la recherche : dérive des stratégies actives, candidates en incubation, registre complet et journal des sessions</p>
+
+        <div class="research-block">
+          <p class="research-block-title">Stratégies actives — verdict de dérive (backtest vs vécu)
+            <span class="info-tip" tabindex="0" data-tip="Compare chaque semaine les métriques réellement vécues par les journaux du bot aux métriques annoncées par le backtest d'origine. OK = conforme, SURVEILLER = à l'œil, ALERTE = seuil de rétrogradation dépassé. Ne prend jamais de décision automatique — signale seulement, cf. docs/PROMOTION-RULES.md.">i</span>
+          </p>
+          <div id="driftActiveWrap"></div>
+        </div>
+
+        <div class="research-block">
+          <p class="research-block-title">Candidates en incubation 🧪
+            <span class="info-tip" tabindex="0" data-tip="Une candidate doit rester en incubation au moins 28 jours avant d'être éligible à la Porte 2 (promotion vers un wallet réel), et est tuée automatiquement après 56 jours sans avoir franchi cette porte. Barre de progression = ancienneté rapportée à ces deux seuils.">i</span>
+          </p>
+          <div id="incubatingWrap"></div>
+        </div>
+
+        <div class="research-block">
+          <p class="research-block-title">Registre de recherche
+            <span class="info-tip" tabindex="0" data-tip="Chaque stratégie ou candidate jamais testée est comptée ici, y compris celles qui ont échoué — le cimetière n'est jamais caché. C'est cette honnêteté qui rend le Deflated Sharpe Ratio des futures candidates crédible (docs/RESEARCH-REGISTRY.json).">i</span>
+          </p>
+          <div id="registryCounterWrap"></div>
+        </div>
+
+        <div class="research-block">
+          <p class="research-block-title">Dernières sessions de recherche</p>
+          <p class="research-block-sub" id="researchLogSub">3 dernières entrées de docs/RESEARCH-LOG.md</p>
+          <div id="researchLogWrap"></div>
+        </div>
       </div>
     </section>
   </main>
@@ -547,8 +655,14 @@
   /* =========================================================================
      CONFIG
      ========================================================================= */
-  var REPO_RAW_BASE = "https://raw.githubusercontent.com/mathieubigardpro-afk/trading-bot/main/state/";
+  var REPO_BASE = "https://raw.githubusercontent.com/mathieubigardpro-afk/trading-bot/main/";
+  var REPO_RAW_BASE = REPO_BASE + "state/";
+  var DOCS_BASE = REPO_BASE + "docs/";
+  var BOT_CONFIG_URL = REPO_BASE + "bot/config.json";
   var CYCLE_URL = REPO_RAW_BASE + "cycle.json";
+  var REGISTRY_URL = DOCS_BASE + "RESEARCH-REGISTRY.json";
+  var RESEARCH_LOG_URL = DOCS_BASE + "RESEARCH-LOG.md";
+  var DRIFT_REPORT_URL = DOCS_BASE + "DRIFT-REPORT.json";
   function walletUrls(id) {
     var base = REPO_RAW_BASE + "wallets/" + id + "/";
     return { state: base + "state.json", equity: base + "equity.jsonl", trades: base + "trades.jsonl", decisions: base + "decisions.jsonl" };
@@ -557,18 +671,32 @@
   var STALE_HOURS = 2;          // au-delà : "bot en panne ?"
   var REFRESH_MS = 60000;
   var DECISIONS_RUNS_PAGE = 6;
+  var LABO_ID = "labo";
+  // Seuils de gouvernance de la recherche (docs/PROMOTION-RULES.md), reflétés côté client pour
+  // la barre de progression "vers la Porte 2" — écrasés par docs/DRIFT-REPORT.json:thresholds
+  // quand ce fichier existe (source de vérité runtime, cf. renderResearchSection()).
+  var INCUBATION_MIN_OBSERVATION_DAYS = 28;
+  var INCUBATION_MAX_DAYS = 56;
 
   var STRATEGY_LABELS = {
     "ensemble": "Ensemble (combiné)",
     "donchian_55h": "Donchian 55h",
     "momentum_ema": "Momentum EMA",
-    "mean_reversion_rsi2": "Retour à la moyenne RSI(2)"
+    "mean_reversion_rsi2": "Retour à la moyenne RSI(2)",
+    "quasi_passif_crypto": "Quasi-passif crypto (vol-targeté)",
+    "xs_momentum_sp100": "Momentum cross-sectionnel S&P100",
+    "dual_momentum_etf": "Dual momentum ETF multi-classes",
+    "dual_momentum_multiclasse_etf": "Dual momentum ETF multi-classes"
   };
+  function strategyLabel(id) { return STRATEGY_LABELS[id] || id || "—"; }
 
   // Source de vérité : bot/config.py:WALLETS (miroir informatif bot/config.json). Ordre fixe =
   // ordre des slots catégoriels du skill dataviz (1 bleu, 2 orange, 3 aqua) = ordre du risque
   // croissant. Ne jamais réordonner selon le classement du moment (color follows the entity).
-  var WALLET_IDS = ["prudent", "equilibre", "agressif"];
+  // Le labo 🧪 rejoint la liste en 4e position : mêmes journaux/mêmes routes que les 3 wallets
+  // réels (state/wallets/labo/*, #/wallet/labo generique), mais SANS slot catégoriel propre
+  // (cf. --wallet-labo ci-dessus) — distingué par la texture (pointillé) partout où il apparaît.
+  var WALLET_IDS = ["prudent", "equilibre", "agressif", LABO_ID];
   var WALLET_META = {
     prudent: {
       id: "prudent", emoji: "🛡️", label: "Prudent", colorVar: "--wallet-prudent", capitalEur: 1000,
@@ -587,6 +715,12 @@
       univers: "30 cryptos", universLong: "univers étendu de 30 cryptos (paliers de coûts majors/mids/smalls)",
       risk: { vol: 0.35, expoMax: 0.90, cap: 0.30 },
       breakers: { freeze: 0.05, half: 0.20, flatten: 0.35 }
+    },
+    labo: {
+      id: "labo", emoji: "🧪", label: "Labo", colorVar: "--wallet-labo", capitalEur: 1000, isLabo: true,
+      univers: "variable", universLong: "dépend des candidates actuellement en incubation",
+      risk: { vol: 0.20, expoMax: 0.70, cap: 0.20 },
+      breakers: { freeze: 0.03, half: 0.15, flatten: 0.25 }
     }
   };
 
@@ -605,6 +739,22 @@
   var CYCLE = { data: null, known: true };
   var fetchedAt = null;
   var route = { view: "overview", id: null };
+
+  // Données de gouvernance de la recherche (docs/, bot/config.json) — indépendantes des
+  // journaux par wallet. Chaque "*Known" distingue "fichier absent" (état attendu, dégradé
+  // proprement) de "échec réseau" (à signaler, comme pour le reste du tableau de bord).
+  var RESEARCH = {
+    pockets: [],             // [{wallet_id, strategy_ref, asset_class}], depuis bot/config.json
+    pocketsKnown: true,
+    candidates: [],          // depuis bot/config.json:wallets[labo].incubating_strategies
+    candidatesKnown: true,
+    registry: null,          // docs/RESEARCH-REGISTRY.json brut
+    registryKnown: true,
+    logEntries: [],          // docs/RESEARCH-LOG.md, parsé
+    logKnown: true,
+    drift: null,             // docs/DRIFT-REPORT.json brut (peut être absent : aucune session hebdo n'a encore tourné)
+    driftKnown: true
+  };
 
   /* =========================================================================
      UTILITAIRES DOM
@@ -757,6 +907,71 @@
     });
   }
 
+  /* =========================================================================
+     RESEAU — Gouvernance de la recherche (bot/config.json, docs/*)
+     ========================================================================= */
+  // Découpe docs/RESEARCH-LOG.md (append-only, une section "## <date> — <titre>" par session)
+  // en entrées { title, excerpt }. Ne rend aucun Markdown riche (pas de dépendance ajoutée) —
+  // un extrait texte suffit pour un digest ; le lien "Source" renvoie vers le fichier complet.
+  function parseResearchLog(text) {
+    if (!text) return [];
+    var parts = text.split(/\n##[ \t]+/);
+    var out = [];
+    for (var i = 1; i < parts.length; i++) {
+      var lines = parts[i].split("\n");
+      var title = (lines[0] || "").replace(/#+\s*$/, "").trim();
+      var body = lines.slice(1).join("\n").trim();
+      var firstPara = (body.split(/\n\s*\n/)[0] || "").replace(/\*\*/g, "").replace(/`/g, "").replace(/\n/g, " ").trim();
+      if (firstPara.length > 340) firstPara = firstPara.slice(0, 337).replace(/\s+\S*$/, "") + "…";
+      if (title) out.push({ title: title, excerpt: firstPara });
+    }
+    return out;
+  }
+
+  function loadResearch() {
+    var pConfig = fetchText(BOT_CONFIG_URL).then(function (t) {
+      RESEARCH.pocketsKnown = true; RESEARCH.candidatesKnown = true;
+      if (!t) { RESEARCH.pockets = []; RESEARCH.candidates = []; return; }
+      try {
+        var cfg = JSON.parse(t);
+        var pockets = [], candidates = [];
+        (cfg.wallets || []).forEach(function (wcfg) {
+          (wcfg.pockets || []).forEach(function (p) {
+            if (p.strategy_ref) pockets.push({ wallet_id: wcfg.id, strategy_ref: p.strategy_ref, asset_class: p.asset_class });
+          });
+          if (wcfg.id === LABO_ID) candidates = wcfg.incubating_strategies || [];
+        });
+        RESEARCH.pockets = pockets;
+        RESEARCH.candidates = candidates;
+      } catch (e) {
+        RESEARCH.pocketsKnown = false; RESEARCH.candidatesKnown = false;
+        RESEARCH.pockets = []; RESEARCH.candidates = [];
+      }
+    }).catch(function () {
+      RESEARCH.pocketsKnown = false; RESEARCH.candidatesKnown = false;
+      RESEARCH.pockets = []; RESEARCH.candidates = [];
+    });
+
+    var pRegistry = fetchText(REGISTRY_URL).then(function (t) {
+      RESEARCH.registryKnown = true;
+      if (!t) { RESEARCH.registry = null; return; }
+      try { RESEARCH.registry = JSON.parse(t); } catch (e) { RESEARCH.registryKnown = false; RESEARCH.registry = null; }
+    }).catch(function () { RESEARCH.registryKnown = false; RESEARCH.registry = null; });
+
+    var pLog = fetchText(RESEARCH_LOG_URL).then(function (t) {
+      RESEARCH.logKnown = true;
+      RESEARCH.logEntries = t ? parseResearchLog(t) : [];
+    }).catch(function () { RESEARCH.logKnown = false; RESEARCH.logEntries = []; });
+
+    var pDrift = fetchText(DRIFT_REPORT_URL).then(function (t) {
+      RESEARCH.driftKnown = true;
+      if (!t) { RESEARCH.drift = null; return; }
+      try { RESEARCH.drift = JSON.parse(t); } catch (e) { RESEARCH.driftKnown = false; RESEARCH.drift = null; }
+    }).catch(function () { RESEARCH.driftKnown = false; RESEARCH.drift = null; });
+
+    return Promise.all([pConfig, pRegistry, pLog, pDrift]);
+  }
+
   function loadAll() {
     var pCycle = fetchText(CYCLE_URL).then(function (t) {
       CYCLE.known = true;
@@ -765,7 +980,7 @@
     }).catch(function () { CYCLE.known = false; return null; });
 
     var ps = WALLET_IDS.map(function (id) { return loadWallet(W[id]); });
-    return Promise.all([pCycle].concat(ps)).then(function (r) {
+    return Promise.all([pCycle, loadResearch()].concat(ps)).then(function (r) {
       CYCLE.data = r[0];
       fetchedAt = new Date();
       renderAll();
@@ -824,6 +1039,30 @@
       if (rate) return { value: (cash + sum) / rate };
     }
     return { pending: true, value: null };
+  }
+  // Effet de change pur (aucun trade requis) : chaque wallet détient des dollars, donc sa
+  // valeur en euros bouge avec EUR/USD même à exposition inchangée. Isolé ici en comparant le
+  // montant USD actuel (cash + positions, cf. equity_usd déjà mark-to-market) valorisé au taux
+  // d'aujourd'hui vs au taux d'origine du wallet (state.json:fx.initial_rate/last_rate) —
+  // demande explicite de Mathieu, à ne jamais confondre avec la performance de trading.
+  // Retourne null si les deux taux ne sont pas encore connus (wallet pas encore initialisé).
+  function fxEffectFor(w) {
+    var fx = w.data.state && w.data.state.fx;
+    if (!fx || typeof fx.initial_rate !== "number" || !(fx.initial_rate > 0)) return null;
+    if (typeof fx.last_rate !== "number" || !(fx.last_rate > 0)) return null;
+    var last = latestEquityRecord(w);
+    var usdAmount = null;
+    if (last && typeof last.equity_usd === "number") {
+      usdAmount = last.equity_usd;
+    } else if (w.data.state) {
+      var cash = w.data.state.cash_usd || 0;
+      var positions = w.data.state.positions || {};
+      var sum = 0;
+      for (var sym in positions) sum += (positions[sym].qty || 0) * (positions[sym].prix_moyen || 0);
+      usdAmount = cash + sum;
+    }
+    if (usdAmount === null) return null;
+    return usdAmount * (1 / fx.last_rate - 1 / fx.initial_rate);
   }
   function equityAtEur(w, hoursAgo) {
     if (!w.data.equity.length) return null;
@@ -1075,15 +1314,19 @@
 
   function renderWalletCard(w) {
     var meta = w.meta;
+    var isLabo = !!meta.isLabo;
     var status = walletStatus(w);
     var eqInfo = currentEquityEur(w);
-    var card = h("a", { class: "wallet-card", href: "#/wallet/" + w.id, style: "--wallet-color:var(" + meta.colorVar + ")" }, []);
+    var cardClass = "wallet-card" + (isLabo ? " is-labo" : "");
+    var card = h("a", { class: cardClass, href: "#/wallet/" + w.id, style: "--wallet-color:var(" + meta.colorVar + ")" }, []);
 
-    card.appendChild(h("div", { class: "wc-head" }, [
+    var headChildren = [
       h("span", { class: "wc-emoji" }, [meta.emoji]),
       h("span", { class: "wc-title" }, [meta.label]),
       h("span", { class: "wallet-badge " + status.cls }, [status.label])
-    ]));
+    ];
+    if (isLabo) headChildren.push(h("span", { class: "wallet-badge incubateur" }, ["Incubateur"]));
+    card.appendChild(h("div", { class: "wc-head" }, headChildren));
 
     if (eqInfo.unknown) {
       card.appendChild(h("div", { class: "wc-pending" }, ["Données indisponibles — échec de chargement (voir bandeau ci-dessus)."]));
@@ -1106,11 +1349,30 @@
         card.appendChild(svg);
       }
       card.appendChild(h("div", { class: "wc-sub" }, ["Drawdown courant : " + fmtPct(dd) + " · pic " + fmtEUR(last ? eurOf(last, w) === null ? eqInfo.value : (last.equity_peak_usd && fxRateFor(w, last) ? last.equity_peak_usd / fxRateFor(w, last) : eqInfo.value) : eqInfo.value)]));
+      var fxEffect = fxEffectFor(w);
+      if (fxEffect !== null && Math.abs(fxEffect) >= 0.005) {
+        var fxCls = Math.abs(fxEffect) < 0.005 ? "" : (fxEffect > 0 ? "good" : "bad");
+        card.appendChild(h("div", { class: "wc-fx " + fxCls }, [
+          "dont effet de change : " + fmtEUR(fxEffect, { signed: true }) + " depuis l'origine",
+          h("span", { class: "info-tip", tabindex: "0", "data-tip": "Ce wallet détient des dollars ; sa valeur affichée en euros bouge donc un peu avec le taux EUR/USD même sans aucun trade — ce montant isole cette part purement monétaire, à ne pas confondre avec la performance de trading." }, ["i"])
+        ]));
+      }
     }
 
-    card.appendChild(h("div", { class: "wc-risk" }, [
-      "Vol cible " + fmtPctRound(meta.risk.vol) + " · expo max " + fmtPctRound(meta.risk.expoMax) + " · " + meta.univers
-    ]));
+    if (isLabo) {
+      var nCand = RESEARCH.candidates ? RESEARCH.candidates.length : 0;
+      var candTxt = RESEARCH.candidatesKnown === false
+        ? "candidates : indisponible"
+        : (nCand ? nCand + " candidate(s) en incubation" : "aucune candidate en incubation — 100 % cash");
+      card.appendChild(h("div", { class: "wc-risk" }, [
+        "Vol cible " + fmtPctRound(meta.risk.vol) + " · expo max " + fmtPctRound(meta.risk.expoMax) + " · " + candTxt
+      ]));
+      card.appendChild(h("div", { class: "wc-labo-note" }, ["Capital isolé — jamais engagé dans les 3 wallets réels avant promotion (docs/PROMOTION-RULES.md)"]));
+    } else {
+      card.appendChild(h("div", { class: "wc-risk" }, [
+        "Vol cible " + fmtPctRound(meta.risk.vol) + " · expo max " + fmtPctRound(meta.risk.expoMax) + " · " + meta.univers
+      ]));
+    }
     return card;
   }
 
@@ -1207,7 +1469,7 @@
     function x(t) { return padL + ((t - tMin) / (tMax - tMin)) * plotW; }
     function y(v) { return plotTop + (plotBottom - plotTop) - ((v - ticksInfo.min) / (ticksInfo.max - ticksInfo.min)) * (plotBottom - plotTop); }
 
-    var svg = svgEl("svg", { class: "chart-svg", viewBox: "0 0 " + W0 + " " + H0, role: "img", "aria-label": "Comparaison des trois wallets, équity indexée base 100" });
+    var svg = svgEl("svg", { class: "chart-svg", viewBox: "0 0 " + W0 + " " + H0, role: "img", "aria-label": "Comparaison des trois wallets et du labo, équity indexée base 100" });
 
     ticksInfo.ticks.forEach(function (val) {
       if (val < ticksInfo.min - 1e-6 || val > ticksInfo.max + 1e-6) return;
@@ -1239,11 +1501,14 @@
 
     WALLET_IDS.forEach(function (id) {
       var s = series[id];
-      var colorVar = "var(" + WALLET_META[id].colorVar + ")";
+      var meta = WALLET_META[id];
+      var colorVar = "var(" + meta.colorVar + ")";
       if (!s) return;
       if (s.length >= 2) {
         var pts = s.map(function (p) { return x(p.t).toFixed(1) + "," + y(p.idx).toFixed(1); });
-        svg.appendChild(svgEl("path", { d: "M" + pts.join(" L"), fill: "none", stroke: colorVar, "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+        var pathAttrs = { d: "M" + pts.join(" L"), fill: "none", stroke: colorVar, "stroke-width": "2", "stroke-linejoin": "round", "stroke-linecap": "round" };
+        if (meta.isLabo) pathAttrs["stroke-dasharray"] = "6 4"; // texture, pas la couleur (cf. --wallet-labo, skill dataviz)
+        svg.appendChild(svgEl("path", pathAttrs));
       } else {
         svg.appendChild(svgEl("circle", { cx: x(s[0].t), cy: y(s[0].idx), r: 4, fill: colorVar, stroke: "var(--surface-1)", "stroke-width": "2" }));
       }
@@ -1323,8 +1588,9 @@
     WALLET_IDS.forEach(function (id) {
       var meta = WALLET_META[id];
       var s = series[id];
+      var swatchClass = "cl-swatch" + (meta.isLabo ? " dashed" : "");
       var item = h("span", { class: "cl-item" + (s ? "" : " is-pending") }, [
-        h("span", { class: "cl-swatch", style: "background:var(" + meta.colorVar + ")" }),
+        h("span", { class: swatchClass, style: meta.isLabo ? undefined : "background:var(" + meta.colorVar + ")" }),
         h("span", { class: "cl-name" }, [meta.emoji + " " + meta.label])
       ]);
       if (s && s.length) {
@@ -1371,6 +1637,206 @@
       h("tbody", {}, rows)
     ]);
     box.appendChild(h("div", { class: "table-scroll" }, [table]));
+  }
+
+  /* =========================================================================
+     RENDU — Recherche & évolution (drift, incubation, registre, journal)
+     ========================================================================= */
+  function driftThresholds() {
+    var t = (RESEARCH.drift && RESEARCH.drift.thresholds) || {};
+    return {
+      minDays: typeof t.incubation_min_observation_days === "number" ? t.incubation_min_observation_days : INCUBATION_MIN_OBSERVATION_DAYS,
+      maxDays: typeof t.incubation_max_days === "number" ? t.incubation_max_days : INCUBATION_MAX_DAYS
+    };
+  }
+
+  function driftRowFor(strategyId, categorie) {
+    if (!RESEARCH.drift || !RESEARCH.drift.rows) return null;
+    for (var i = 0; i < RESEARCH.drift.rows.length; i++) {
+      var r = RESEARCH.drift.rows[i];
+      if (r.categorie === categorie && r.strategy_id === strategyId) return r;
+    }
+    return null;
+  }
+
+  function renderVerdictBadge(verdict) {
+    var cls = verdict ? verdict.toLowerCase() : "na";
+    return h("span", { class: "verdict-badge " + cls }, [verdict || "N/D"]);
+  }
+
+  function renderDriftRow(row) {
+    var walletMeta = WALLET_META[row.wallet_id];
+    var walletLabel = walletMeta ? (walletMeta.emoji + " " + walletMeta.label) : (row.wallet_id || "—");
+    var sharpeLive = typeof row.sharpe_live === "number" ? fmtNum(row.sharpe_live, 2) : "n/d";
+    var sharpeRef = typeof row.sharpe_ref === "number" ? fmtNum(row.sharpe_ref, 2) : "n/d";
+    var ddLive = typeof row.dd_live_pct === "number" ? fmtNum(row.dd_live_pct, 1) + " %" : "n/d";
+    var ddRef = typeof row.dd_ref_pct === "number" ? fmtNum(row.dd_ref_pct, 1) + " %" : "n/d";
+    var children = [
+      h("div", {}, [
+        h("div", { class: "dr-strategy" }, [strategyLabel(row.strategy_id)]),
+        h("div", { class: "dr-wallet" }, [walletLabel + " · " + (row.n_days_observed != null ? row.n_days_observed + " j observés" : "ancienneté inconnue")])
+      ]),
+      h("div", { class: "num" }, ["Sharpe " + sharpeLive + " (réf. " + sharpeRef + ") · DD " + ddLive + " (réf. " + ddRef + ")"]),
+      renderVerdictBadge(row.verdict)
+    ];
+    var reasons = (row.reasons || []).join(" · ");
+    if (reasons) children.push(h("div", { class: "dr-reason" }, [reasons]));
+    return h("div", { class: "drift-row" }, children);
+  }
+
+  function renderDriftActive() {
+    var wrap = document.getElementById("driftActiveWrap");
+    clear(wrap);
+    if (RESEARCH.driftKnown === false) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["⚠️"]),
+        h("div", {}, ["Rapport de dérive illisible ou indisponible (voir le bandeau d'alerte ci-dessus)."])
+      ]));
+      return;
+    }
+    if (!RESEARCH.drift) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["🧪"]),
+        h("div", {}, ["En attente de la première session de recherche."]),
+        h("div", {}, ["tools/weekly_maintenance.py tourne chaque dimanche 22h UTC et publiera ici le premier verdict de dérive (docs/DRIFT-REPORT.json)."])
+      ]));
+      return;
+    }
+    var rows = (RESEARCH.drift.rows || []).filter(function (r) { return r.categorie === "active"; });
+    if (!rows.length) {
+      wrap.appendChild(h("div", { class: "empty-note" }, ["Aucune stratégie active suivie pour l'instant."]));
+      return;
+    }
+    rows.forEach(function (r) { wrap.appendChild(renderDriftRow(r)); });
+  }
+
+  function renderCandidateCard(c) {
+    var thresholds = driftThresholds();
+    var enteredAt = c.entered_at ? new Date(c.entered_at) : null;
+    var ageDays = (enteredAt && !isNaN(enteredAt.getTime())) ? Math.floor((Date.now() - enteredAt.getTime()) / 86400000) : null;
+    var drow = driftRowFor(c.id, "incubation");
+    var isDeath = ageDays !== null && ageDays > thresholds.maxDays;
+    var pct = ageDays === null ? 0 : Math.max(0, Math.min(100, (ageDays / thresholds.maxDays) * 100));
+    var markerPct = Math.max(0, Math.min(100, (thresholds.minDays / thresholds.maxDays) * 100));
+    var universTxt = Array.isArray(c.univers) && c.univers.length ? c.univers.join(", ") : "—";
+    var metaTxt = (ageDays === null ? "ancienneté inconnue" : ageDays + " j d'incubation") +
+      " · " + (c.asset_class || "—") + " (" + universTxt + ")" +
+      " · alloc. " + fmtPctRound(c.capital_alloc_pct || 0) + " du capital labo";
+    var caption = ageDays === null
+      ? "date d'entrée en incubation inconnue (entered_at manquant)"
+      : (isDeath
+          ? "au-delà de " + thresholds.maxDays + " j — mort automatique attendue (§3.2 PROMOTION-RULES.md)"
+          : ageDays + " j / " + thresholds.maxDays + " j max · seuil Porte 2 : " + thresholds.minDays + " j");
+    return h("div", { class: "candidate-card" }, [
+      h("div", { class: "cc-head" }, [
+        h("span", { class: "cc-name" }, [strategyLabel(c.id)]),
+        renderVerdictBadge(drow ? drow.verdict : null)
+      ]),
+      h("div", { class: "cc-meta" }, [metaTxt]),
+      h("div", { class: "porte2-track" }, [
+        h("div", { class: "porte2-fill" + (isDeath ? " death" : ""), style: "width:" + pct + "%" }),
+        h("div", { class: "porte2-marker", style: "left:" + markerPct + "%" })
+      ]),
+      h("div", { class: "porte2-caption" }, [caption])
+    ]);
+  }
+
+  function renderIncubating() {
+    var wrap = document.getElementById("incubatingWrap");
+    clear(wrap);
+    if (RESEARCH.candidatesKnown === false) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["⚠️"]),
+        h("div", {}, ["Liste des candidates illisible ou indisponible (bot/config.json)."])
+      ]));
+      return;
+    }
+    var candidates = RESEARCH.candidates || [];
+    if (!candidates.length) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["🧪"]),
+        h("div", {}, ["Aucune candidate en incubation pour l'instant."]),
+        h("div", {}, ["Le wallet labo reste 100 % cash tant qu'aucune stratégie n'a franchi la Porte 1 — état attendu, pas un bug."])
+      ]));
+      return;
+    }
+    candidates.forEach(function (c) { wrap.appendChild(renderCandidateCard(c)); });
+  }
+
+  function renderRegistryCounters() {
+    var wrap = document.getElementById("registryCounterWrap");
+    clear(wrap);
+    if (RESEARCH.registryKnown === false) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["⚠️"]),
+        h("div", {}, ["Registre de recherche illisible ou indisponible (docs/RESEARCH-REGISTRY.json)."])
+      ]));
+      return;
+    }
+    var strategies = (RESEARCH.registry && Array.isArray(RESEARCH.registry.strategies)) ? RESEARCH.registry.strategies : null;
+    if (!strategies) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["📒"]),
+        h("div", {}, ["Registre de recherche pas encore publié."]),
+        h("div", {}, ["docs/RESEARCH-REGISTRY.json apparaîtra ici dès la première vague de recherche archivée."])
+      ]));
+      return;
+    }
+    var cimetiereStatuts = { rejetee: true, ecartee: true, tuee: true };
+    var nActive = 0, nCimetiere = 0;
+    strategies.forEach(function (s) {
+      if (s.statut === "active") nActive++;
+      else if (cimetiereStatuts[s.statut]) nCimetiere++;
+    });
+    var counters = [
+      { cls: "", value: strategies.length, label: "stratégies testées (registre complet)" },
+      { cls: "active", value: nActive, label: "actives en production" },
+      { cls: "cimetiere", value: nCimetiere, label: "au cimetière (écartées, rejetées ou tuées)" }
+    ];
+    wrap.appendChild(h("div", { class: "registry-counters" }, counters.map(function (c) {
+      return h("div", { class: "registry-counter " + c.cls }, [
+        h("div", { class: "rc-value" }, [String(c.value)]),
+        h("div", { class: "rc-label" }, [c.label])
+      ]);
+    })));
+  }
+
+  function renderResearchLog() {
+    var wrap = document.getElementById("researchLogWrap");
+    clear(wrap);
+    if (RESEARCH.logKnown === false) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["⚠️"]),
+        h("div", {}, ["Journal de recherche illisible ou indisponible (docs/RESEARCH-LOG.md)."])
+      ]));
+      return;
+    }
+    var entries = RESEARCH.logEntries || [];
+    if (!entries.length) {
+      wrap.appendChild(h("div", { class: "chart-empty" }, [
+        h("div", { class: "icon" }, ["📓"]),
+        h("div", {}, ["En attente de la première session de recherche."]),
+        h("div", {}, ["docs/RESEARCH-LOG.md se remplit à chaque session — la première entrée apparaîtra ici."])
+      ]));
+      return;
+    }
+    entries.slice(-3).reverse().forEach(function (e) {
+      wrap.appendChild(h("div", { class: "log-entry" }, [
+        h("div", { class: "le-title" }, [e.title]),
+        h("div", { class: "le-body" }, [e.excerpt || "—"])
+      ]));
+    });
+    wrap.appendChild(h("p", { class: "research-block-sub" }, [
+      "Journal complet : ",
+      h("a", { href: RESEARCH_LOG_URL, target: "_blank", rel: "noopener" }, ["docs/RESEARCH-LOG.md"])
+    ]));
+  }
+
+  function renderResearchSection() {
+    renderDriftActive();
+    renderIncubating();
+    renderRegistryCounters();
+    renderResearchLog();
   }
 
   /* =========================================================================
@@ -2040,6 +2506,7 @@
     renderGlobalAlerts();
     renderWalletCards();
     renderCompareChart();
+    renderResearchSection();
   }
 
   function renderWalletView(id) {
