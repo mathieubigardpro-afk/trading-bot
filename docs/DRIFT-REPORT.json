@@ -1,0 +1,156 @@
+{
+  "data_refresh_status": "OK",
+  "generated_at": "2026-07-24T19:37:30.066397+00:00",
+  "recalibration": {
+    "best_oos_sharpe": 0.5227648190046261,
+    "best_value": 175,
+    "changed": false,
+    "current_oos_sharpe": 0.5077570804564328,
+    "current_value": 200,
+    "modal_value": 175,
+    "param_name": "regime_sma_days",
+    "reason": "amélioration OOS relative 3.0% <= seuil 10% — pas assez significatif, aucun changement",
+    "relative_improvement": 0.02955692618742534,
+    "status": "OK",
+    "strategy_id": "quasi_passif_crypto",
+    "votes": {
+      "150": 4,
+      "175": 5,
+      "200": 1,
+      "225": 1,
+      "250": 4
+    },
+    "windows": 15
+  },
+  "rows": [
+    {
+      "antecedent_hors_promotion_rules": false,
+      "categorie": "active",
+      "dd_live_pct": 0.0,
+      "dd_ref_pct": null,
+      "n_days_observed": 2,
+      "negative_rolling_streak_days": null,
+      "reasons": [
+        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+      ],
+      "sharpe_live": null,
+      "sharpe_ref": null,
+      "source": "introuvable dans le registre",
+      "strategy_id": "dual_momentum_etf",
+      "verdict": "SURVEILLER",
+      "wallet_id": "prudent"
+    },
+    {
+      "antecedent_hors_promotion_rules": true,
+      "categorie": "active",
+      "dd_live_pct": 0.0,
+      "dd_ref_pct": 8.0,
+      "n_days_observed": 2,
+      "negative_rolling_streak_days": null,
+      "reasons": [
+        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+      ],
+      "sharpe_live": null,
+      "sharpe_ref": 1.24,
+      "source": "backtest NON AUDITÉ (variante prudent_btc_eth)",
+      "strategy_id": "quasi_passif_crypto",
+      "verdict": "SURVEILLER",
+      "wallet_id": "prudent"
+    },
+    {
+      "antecedent_hors_promotion_rules": true,
+      "categorie": "active",
+      "dd_live_pct": 0.0,
+      "dd_ref_pct": 50.29,
+      "n_days_observed": 2,
+      "negative_rolling_streak_days": null,
+      "reasons": [
+        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+      ],
+      "sharpe_live": null,
+      "sharpe_ref": 0.8227,
+      "source": "walk-forward OOS audité",
+      "strategy_id": "xs_momentum_sp100",
+      "verdict": "SURVEILLER",
+      "wallet_id": "equilibre"
+    },
+    {
+      "antecedent_hors_promotion_rules": false,
+      "categorie": "active",
+      "dd_live_pct": 0.0,
+      "dd_ref_pct": null,
+      "n_days_observed": 2,
+      "negative_rolling_streak_days": null,
+      "reasons": [
+        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+      ],
+      "sharpe_live": null,
+      "sharpe_ref": null,
+      "source": "introuvable dans le registre",
+      "strategy_id": "dual_momentum_etf",
+      "verdict": "SURVEILLER",
+      "wallet_id": "equilibre"
+    },
+    {
+      "antecedent_hors_promotion_rules": true,
+      "categorie": "active",
+      "dd_live_pct": 0.0,
+      "dd_ref_pct": 16.4,
+      "n_days_observed": 2,
+      "negative_rolling_streak_days": null,
+      "reasons": [
+        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+      ],
+      "sharpe_live": null,
+      "sharpe_ref": 1.47,
+      "source": "backtest NON AUDITÉ (variante equilibre_6majors)",
+      "strategy_id": "quasi_passif_crypto",
+      "verdict": "SURVEILLER",
+      "wallet_id": "equilibre"
+    },
+    {
+      "antecedent_hors_promotion_rules": true,
+      "categorie": "active",
+      "dd_live_pct": 0.0,
+      "dd_ref_pct": 50.29,
+      "n_days_observed": 2,
+      "negative_rolling_streak_days": null,
+      "reasons": [
+        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+      ],
+      "sharpe_live": null,
+      "sharpe_ref": 0.8227,
+      "source": "walk-forward OOS audité",
+      "strategy_id": "xs_momentum_sp100",
+      "verdict": "SURVEILLER",
+      "wallet_id": "agressif"
+    },
+    {
+      "antecedent_hors_promotion_rules": true,
+      "categorie": "active",
+      "dd_live_pct": 0.10893996100917505,
+      "dd_ref_pct": 33.4,
+      "n_days_observed": 2,
+      "negative_rolling_streak_days": null,
+      "reasons": [
+        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+      ],
+      "sharpe_live": -13.217057552883448,
+      "sharpe_ref": 1.49,
+      "source": "backtest NON AUDITÉ (variante agressif_12diversifie)",
+      "strategy_id": "quasi_passif_crypto",
+      "verdict": "SURVEILLER",
+      "wallet_id": "agressif"
+    }
+  ],
+  "schema_version": 1,
+  "thresholds": {
+    "death_dd_multiple_active": 2.0,
+    "incubation_max_days": 56,
+    "incubation_min_observation_days": 28,
+    "incubation_watch_days": 42,
+    "porte2_max_dd_multiple": 1.5,
+    "porte2_min_sharpe_ratio": 0.5,
+    "watch_dd_multiple_active": 1.5
+  }
+}
