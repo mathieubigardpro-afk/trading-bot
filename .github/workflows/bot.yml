@@ -147,9 +147,9 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           git worktree remove "$LOGWORK" --force
 
-# (touch: run de validation déclenché manuellement le 2026-07-24 ~18h13 UTC — diagnostic de
-# suivi : le cycle T18 a "réussi" (commit créé) mais les 112 actions/ETF restent
-# quote_available=false malgré le spread synthétique activé (ARCHITECTURE.md §12.5) ;
-# publication du log passée temporairement à `if: always()` pour capturer la cause exacte
-# côté bot/feeds/equities.py (requête Yahoo v7 en échec total vs bid/ask simplement absent),
-# invisible depuis decisions.jsonl seul)
+# (touch: run de validation déclenché manuellement le 2026-07-24 ~19h01 UTC — le run précédent
+# (18h17) est tombé sur run_id=2026-07-24T18 déjà traité (idempotence : "abandon silencieux
+# propre", aucun appel réseau equities effectué, log inexploitable pour le diagnostic). Ce
+# nouveau touch force un run sous run_id=2026-07-24T19 (nouvelle heure UTC), qui exécutera
+# réellement bot/feeds/equities.py:get_prices_equity — dernière fenêtre avant la clôture NYSE
+# 20:00 UTC.)
