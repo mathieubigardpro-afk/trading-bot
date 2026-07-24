@@ -970,10 +970,21 @@ def _run_git(repo_dir: str, *args: str, check: bool = True) -> subprocess.Comple
     return result
 
 
-def publish_to_orphan_branch(repo_dir: str, staging_dir: str, branch: str, push: bool) -> Optional[str]:
-    """Publie le contenu de `staging_dir` (data/, MANIFEST.json, DATA_REPORT.md) sur la
-    branche orpheline `branch`, en écrasant tout contenu distant existant (force-push —
-    c'est une branche de données entièrement régénérable à chaque run).
+_DEFAULT_PUBLISH_ENTRIES = ("data", "MANIFEST.json", "DATA_REPORT.md")
+
+
+def publish_to_orphan_branch(
+    repo_dir: str, staging_dir: str, branch: str, push: bool, entries: Optional[Tuple[str, ...]] = None
+) -> Optional[str]:
+    """Publie le contenu de `staging_dir` sur la branche orpheline `branch`, en écrasant tout
+    contenu distant existant (force-push — c'est une branche de données entièrement
+    régénérable à chaque run).
+
+    `entries` : noms (fichiers ou répertoires, à la racine de `staging_dir`) à copier tels
+    quels sur la branche — défaut `("data", "MANIFEST.json", "DATA_REPORT.md")` (mise en page
+    de CE script, `tools/fetch_data.py` -> branche `market-data`). Réutilisée par
+    `tools/build_daily_cache.py` (branche `data-cache`) avec `entries=("equity", "etf",
+    "crypto", "MANIFEST.json")` — mise en page différente, même mécanisme de publication.
 
     Restaure le dépôt sur son commit de départ (HEAD détaché) une fois la publication
     terminée, pour ne jamais laisser un job CI dans un état de branche inattendu.
@@ -981,6 +992,7 @@ def publish_to_orphan_branch(repo_dir: str, staging_dir: str, branch: str, push:
     Retourne le sha du commit créé sur `branch`, ou None si `push=False` (mode dry-run) ou
     si l'étape push a été sautée.
     """
+    entries = entries if entries is not None else _DEFAULT_PUBLISH_ENTRIES
     starting_sha = _run_git(repo_dir, "rev-parse", "HEAD").stdout.strip()
     logger.info("publication market-data : point de départ HEAD=%s", starting_sha[:12])
 
@@ -1014,7 +1026,7 @@ def publish_to_orphan_branch(repo_dir: str, staging_dir: str, branch: str, push:
                 except OSError:
                     pass
 
-        for name in ("data", "MANIFEST.json", "DATA_REPORT.md"):
+        for name in entries:
             src = os.path.join(staging_dir, name)
             if not os.path.exists(src):
                 continue

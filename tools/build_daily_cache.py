@@ -79,6 +79,18 @@ N_DAYS_CRYPTO = daily_mod.MIN_WARMUP_DAYS + _N_DAYS_MARGIN
 
 DEFAULT_BRANCH = "data-cache"
 
+# Mise en page du staging (cf. `bot.feeds.daily.write_cache_symbol_csv` : `<classe>/<symbole>.
+# csv.gz`) — DIFFÉRENTE de celle de `tools.fetch_data.publish_to_orphan_branch` (défaut `data/`
+# + `MANIFEST.json` + `DATA_REPORT.md`, mise en page de `tools/fetch_data.py` -> branche
+# `market-data`) : `entries` explicite ci-dessous pour que rien ne soit silencieusement omis
+# de la publication (bug identifié en validation réelle : le défaut de la fonction réutilisée
+# ne copiait QUE `MANIFEST.json`, aucune donnée, cf. commit qui a introduit ce commentaire).
+# Note : tous les tickers actions ET ETF sont écrits sous la classe normalisée UNIQUE
+# `"equity"` (répertoire `equity/`), à l'identique de `bot.runner.DAILY_HISTORY_ASSET_CLASS =
+# "equities"` (le seul appelant en production, cf. `bot/runner.py`) — aucun répertoire `etf/`
+# distinct n'est produit (pas de duplication de données pour un chemin non emprunté).
+PUBLISH_ENTRIES = ("equity", "crypto", "MANIFEST.json")
+
 
 def equity_etf_universe() -> List[str]:
     """Univers actions/ETF EXACT consommé par le cycle horaire — importé de `bot.runner` (pas
@@ -210,7 +222,7 @@ def main(argv=None) -> int:
         return 0
 
     try:
-        publish_to_orphan_branch(args.repo_dir, staging_dir, args.branch, push=not args.skip_push)
+        publish_to_orphan_branch(args.repo_dir, staging_dir, args.branch, push=not args.skip_push, entries=PUBLISH_ENTRIES)
     except RuntimeError as exc:
         logger.error("échec de la publication git : %s", exc)
         return 1

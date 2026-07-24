@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import subprocess
 
 import pandas as pd
 import pytest
@@ -15,6 +16,7 @@ import tools.build_daily_cache as bdc
 from bot import runner as runner_mod
 from bot.feeds import daily as daily_mod
 from bot.feeds.types import HistoryUnavailableError
+from tools.fetch_data import publish_to_orphan_branch
 
 NY_TZ = daily_mod._NY_TZ
 
@@ -42,6 +44,17 @@ def _make_yf_batch_multiindex(tickers, n_closed, now=None):
     df = pd.DataFrame(frames, index=idx)
     df.columns = pd.MultiIndex.from_tuples(df.columns)
     return df
+
+
+def _make_cache_df(n_days, start="2024-01-01"):
+    idx = pd.date_range(start, periods=n_days, freq="D", tz="UTC")
+    return pd.DataFrame(
+        {
+            "open": [100.0] * n_days, "high": [101.0] * n_days, "low": [99.0] * n_days,
+            "close": [100.5] * n_days, "volume": [1_000_000.0] * n_days,
+        },
+        index=pd.Index(idx, name="ts"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -191,3 +204,70 @@ def test_main_aborts_publication_when_no_equity_symbol_resolved(tmp_path, monkey
     rc = bdc.main(["--skip-git", "--staging-dir", str(tmp_path)])
 
     assert rc == 1
+
+
+# ---------------------------------------------------------------------------
+# Publication git (branche orpheline `data-cache`) — régression : `publish_to_orphan_branch`
+# est réutilisée depuis `tools/fetch_data.py`, dont la mise en page par défaut ("data/",
+# "MANIFEST.json", "DATA_REPORT.md") ne correspond PAS à celle de ce script ("equity/",
+# "crypto/", "MANIFEST.json"). Sans `entries=bdc.PUBLISH_ENTRIES` explicite, seul MANIFEST.json
+# était publié — AUCUNE donnée — bug identifié en validation réelle (première régénération du
+# cache sur le dépôt de production). Ce test verrouille que les deux sont bien publiés.
+# ---------------------------------------------------------------------------
+
+
+def _init_git_repo(path):
+    subprocess.run(["git", "init", "-q", str(path)], check=True)
+    subprocess.run(["git", "-C", str(path), "config", "user.email", "test@test.local"], check=True)
+    subprocess.run(["git", "-C", str(path), "config", "user.name", "test"], check=True)
+    (path / "README.md").write_text("hello\n")
+    subprocess.run(["git", "-C", str(path), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(path), "commit", "-q", "-m", "init"], check=True)
+
+
+def test_publish_to_orphan_branch_includes_data_directories_not_just_manifest(tmp_path):
+    repo_dir = tmp_path / "repo"
+    repo_dir.mkdir()
+    _init_git_repo(repo_dir)
+
+    staging_dir = tmp_path / "staging"
+    daily_mod.write_cache_symbol_csv(str(staging_dir), "equity", "AAPL", _make_cache_df(5))
+    daily_mod.write_cache_manifest(str(staging_dir), _dt.datetime.now(_dt.timezone.utc))
+
+    sha = publish_to_orphan_branch(
+        str(repo_dir), str(staging_dir), "data-cache", push=False, entries=bdc.PUBLISH_ENTRIES
+    )
+
+    assert sha is not None
+    tracked = subprocess.run(
+        ["git", "-C", str(repo_dir), "ls-tree", "-r", "--name-only", sha],
+        capture_output=True, text=True, check=True,
+    ).stdout.splitlines()
+    assert "MANIFEST.json" in tracked
+    assert "equity/AAPL.csv.gz" in tracked
+
+
+def test_publish_to_orphan_branch_default_entries_unchanged_for_market_data(tmp_path):
+    """Non-régression : les appelants existants (`tools/fetch_data.py` lui-même, branche
+    `market-data`) ne passent PAS `entries` -> le défaut doit rester `data/`+MANIFEST.json+
+    DATA_REPORT.md, inchangé par l'ajout du paramètre `entries`."""
+    repo_dir = tmp_path / "repo"
+    repo_dir.mkdir()
+    _init_git_repo(repo_dir)
+
+    staging_dir = tmp_path / "staging"
+    (staging_dir / "data" / "crypto").mkdir(parents=True)
+    (staging_dir / "data" / "crypto" / "BTC.csv.gz").write_bytes(b"fake")
+    (staging_dir / "MANIFEST.json").write_text("{}")
+    (staging_dir / "DATA_REPORT.md").write_text("# report")
+
+    sha = publish_to_orphan_branch(str(repo_dir), str(staging_dir), "market-data", push=False)
+
+    assert sha is not None
+    tracked = subprocess.run(
+        ["git", "-C", str(repo_dir), "ls-tree", "-r", "--name-only", sha],
+        capture_output=True, text=True, check=True,
+    ).stdout.splitlines()
+    assert "MANIFEST.json" in tracked
+    assert "DATA_REPORT.md" in tracked
+    assert "data/crypto/BTC.csv.gz" in tracked
