@@ -45,6 +45,10 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-24T08:50:26.114590+00:00"
+      },
+      {
+        "equity": 1141.079,
+        "ts": "2026-07-24T11:07:46.486391+00:00"
       }
     ],
     "flatten_mode": false,
@@ -57,15 +61,15 @@
     "last_rate": 1.1392,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-24T08:51:39.041870+00:00"
+    "last_rate_ts": "2026-07-24T11:08:15.489696+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-24T08:50:26.114590+00:00",
-  "last_run_id": "2026-07-24T08",
+  "last_run_completed_at": "2026-07-24T11:07:46.486391+00:00",
+  "last_run_id": "2026-07-24T11",
   "positions": {},
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "9e0118edf8bf72dcb54acdd60d57eba831c4b127ca2d23549cc2c2f144dd6dcd",
+  "state_hash_prev": "76844aa2c831ac4bfcf5b2edaf79283770e1abd1449daa6b267946ac61b32e3a",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -73,7 +77,12 @@
     },
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
-      "missing_data_cycles": {}
+      "missing_data_cycles": {
+        "DOGE": 1,
+        "ETH": 1,
+        "LINK": 1,
+        "SOL": 1
+      }
     },
     "xs_momentum_sp100": {
       "liquidated_by_missing_data_this_cycle": {},
