@@ -57,6 +57,10 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-25T09:07:57.791505+00:00"
+      },
+      {
+        "equity": 1141.079,
+        "ts": "2026-07-25T10:49:24.876175+00:00"
       }
     ],
     "flatten_mode": false,
@@ -69,15 +73,15 @@
     "last_rate": 1.1377,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-25T09:08:18.089513+00:00"
+    "last_rate_ts": "2026-07-25T10:50:03.680064+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-25T09:07:57.791505+00:00",
-  "last_run_id": "2026-07-25T09",
+  "last_run_completed_at": "2026-07-25T10:49:24.876175+00:00",
+  "last_run_id": "2026-07-25T10",
   "positions": {},
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "bc1427f535f13cb585e05406d725f44981f6139c0577be32661add28520546c4",
+  "state_hash_prev": "dee32a4a918ba4f3f107c34413e525d289dca108ebf90c62e2fbcdd56419d9e9",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -86,11 +90,7 @@
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "AVAX": 1,
-        "DOGE": 2,
-        "ETH": 2,
-        "LINK": 2,
-        "SOL": 2
+        "AVAX": 2
       }
     },
     "xs_momentum_sp100": {
