@@ -1,15 +1,11 @@
 {
-  "cash_usd": 728.77188172926,
+  "cash_usd": 928.0950226969801,
   "circuit_breakers": {
-    "consecutive_losses": 0,
+    "consecutive_losses": 1,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1138.65418772926,
-        "ts": "2026-07-24T03:36:08.618366+00:00"
-      },
       {
         "equity": 1144.70400272926,
         "ts": "2026-07-24T06:36:14.224550+00:00"
@@ -57,6 +53,10 @@
       {
         "equity": 1135.58922272926,
         "ts": "2026-07-25T01:11:49.368384+00:00"
+      },
+      {
+        "equity": 1131.48945372926,
+        "ts": "2026-07-25T04:34:47.322129+00:00"
       }
     ],
     "flatten_mode": false,
@@ -69,37 +69,26 @@
     "last_rate": 1.1377,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-25T01:12:13.457139+00:00"
+    "last_rate_ts": "2026-07-25T04:36:17.570072+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-25T01:11:49.368384+00:00",
-  "last_run_id": "2026-07-25T01",
+  "last_run_completed_at": "2026-07-25T04:34:47.322129+00:00",
+  "last_run_id": "2026-07-25T04",
   "positions": {
     "UNI": {
       "prix_moyen": 3.7707669999999993,
       "qty": 54.5
-    },
-    "XLM": {
-      "prix_moyen": 0.18327281399999998,
-      "qty": 1122.0
     }
   },
-  "realized_pnl_cumulative_usd": 0.16849552847998317,
+  "realized_pnl_cumulative_usd": -6.140460811799984,
   "schema_version": 1,
-  "state_hash_prev": "8e23806c7d3c2b78da252037b289a78951231080c9241befe697d7983d87220f",
+  "state_hash_prev": "4cd5475ea0d2dba9dfb09137c52497c52463e7906f271716b870c7055d1a0e33",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "FIL": 3,
-        "HBAR": 3,
-        "ICP": 3,
-        "OP": 15,
-        "SOL": 3,
-        "TRX": 15,
-        "UNI": 3,
-        "XLM": 3,
-        "XRP": 3
+        "OP": 16,
+        "TRX": 16
       }
     },
     "xs_momentum_sp100": {
@@ -112,6 +101,11 @@
       "realized_pnl_usd": 0.16849552847998317,
       "symbol": "XLM",
       "ts": "2026-07-23T19:40:28.114479+00:00"
+    },
+    {
+      "realized_pnl_usd": -6.308956340279967,
+      "symbol": "XLM",
+      "ts": "2026-07-25T04:34:47.322129+00:00"
     }
   ],
   "wallet_id": "agressif"
