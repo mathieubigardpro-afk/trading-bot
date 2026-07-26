@@ -1,0 +1,183 @@
+== Cycle bot (job.status=success) ==
+date_utc: 2026-07-26T22:09:47+00:00
+run_id_attendu: 2026-07-26T22
+sha_main: 12f88f15d78bc1b385204da6a9e5ce07c5b4faca
+github_run_id: 30222551582
+github_run_attempt: 1
+github_run_number: 56
+workflow: Bot cycle
+event: schedule
+==========================
+2026-07-26 22:09:26,697 INFO bot.runner: Démarrage du cycle multi-wallets run_id=2026-07-26T22 (['prudent', 'equilibre', 'agressif', 'labo'])
+2026-07-26 22:09:27,011 WARNING bot.feeds.crypto: binance bookTicker échec pour AVAXUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=AVAXUSDT
+2026-07-26 22:09:27,067 WARNING bot.feeds.crypto: binance bookTicker échec pour BNBUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=BNBUSDT
+2026-07-26 22:09:27,083 WARNING bot.feeds.crypto: binance bookTicker échec pour BTCUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=BTCUSDT
+2026-07-26 22:09:27,097 WARNING bot.feeds.crypto: binance bookTicker échec pour DOGEUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=DOGEUSDT
+2026-07-26 22:09:27,113 WARNING bot.feeds.crypto: binance bookTicker échec pour ETHUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=ETHUSDT
+2026-07-26 22:09:27,129 WARNING bot.feeds.crypto: binance bookTicker échec pour FILUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=FILUSDT
+2026-07-26 22:09:27,140 WARNING bot.feeds.crypto: coinbase ticker périmé pour FIL
+2026-07-26 22:09:27,146 WARNING bot.feeds.crypto: binance bookTicker échec pour HBARUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=HBARUSDT
+2026-07-26 22:09:27,203 WARNING bot.feeds.crypto: binance bookTicker échec pour ICPUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=ICPUSDT
+2026-07-26 22:09:27,222 WARNING bot.feeds.crypto: binance bookTicker échec pour LINKUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=LINKUSDT
+2026-07-26 22:09:27,238 WARNING bot.feeds.crypto: binance bookTicker échec pour OPUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=OPUSDT
+2026-07-26 22:09:27,250 WARNING bot.feeds.crypto: coinbase ticker périmé pour OP
+2026-07-26 22:09:27,255 WARNING bot.feeds.crypto: binance bookTicker échec pour SOLUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=SOLUSDT
+2026-07-26 22:09:27,271 WARNING bot.feeds.crypto: binance bookTicker échec pour TRXUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=TRXUSDT
+2026-07-26 22:09:27,301 WARNING bot.feeds.crypto: coinbase ticker échec pour TRX-USD: 404 Client Error: Not Found for url: https://api.exchange.coinbase.com/products/TRX-USD/ticker
+2026-07-26 22:09:27,306 WARNING bot.feeds.crypto: binance bookTicker échec pour UNIUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=UNIUSDT
+2026-07-26 22:09:27,344 WARNING bot.feeds.crypto: binance bookTicker échec pour XLMUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=XLMUSDT
+2026-07-26 22:09:27,360 WARNING bot.feeds.crypto: binance bookTicker échec pour XRPUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/ticker/bookTicker?symbol=XRPUSDT
+2026-07-26 22:09:27,457 WARNING bot.feeds.equities: yahoo v7 quote échec pour ['AAPL', 'ABBV', 'ABT', 'ACN', 'ADBE', 'AIG', 'AMD', 'AMGN', 'AMT', 'AMZN', 'AVGO', 'AXP', 'BA', 'BAC', 'BKNG', 'BLK', 'BMY', 'BRK.B', 'C', 'CAT', 'CHTR', 'CL', 'CMCSA', 'COF', 'COP', 'COST', 'CRM', 'CSCO', 'CVS', 'CVX', 'DBC', 'DE', 'DHR', 'DIS', 'DOW', 'DUK', 'EEM', 'EFA', 'EMR', 'F', 'FDX', 'GD', 'GE', 'GILD', 'GLD', 'GM', 'GOOG', 'GOOGL', 'GS', 'HD', 'HON', 'IBM', 'IEF', 'INTC', 'INTU', 'ISRG', 'IWM', 'JNJ', 'JPM', 'KHC', 'KMI', 'KO', 'LIN', 'LLY', 'LMT', 'LOW', 'MA', 'MCD', 'MDLZ', 'MDT', 'MET', 'META', 'MMM', 'MO', 'MRK', 'MS', 'MSFT', 'NEE', 'NFLX', 'NKE', 'NVDA', 'ORCL', 'PEP', 'PFE', 'PG', 'PM', 'PYPL', 'QCOM', 'QQQ', 'RTX', 'SBUX', 'SCHW', 'SO', 'SPG', 'SPY', 'T', 'TGT', 'TJX', 'TMO', 'TMUS', 'TSLA', 'TXN', 'UNH', 'UNP', 'UPS', 'USB', 'V', 'VNQ', 'VZ', 'WFC', 'WMT', 'XOM']: 429 Client Error: Too Many Requests for url: https://query1.finance.yahoo.com/v7/finance/quote?symbols=AAPL%2CABBV%2CABT%2CACN%2CADBE%2CAIG%2CAMD%2CAMGN%2CAMT%2CAMZN%2CAVGO%2CAXP%2CBA%2CBAC%2CBKNG%2CBLK%2CBMY%2CBRK-B%2CC%2CCAT%2CCHTR%2CCL%2CCMCSA%2CCOF%2CCOP%2CCOST%2CCRM%2CCSCO%2CCVS%2CCVX%2CDBC%2CDE%2CDHR%2CDIS%2CDOW%2CDUK%2CEEM%2CEFA%2CEMR%2CF%2CFDX%2CGD%2CGE%2CGILD%2CGLD%2CGM%2CGOOG%2CGOOGL%2CGS%2CHD%2CHON%2CIBM%2CIEF%2CINTC%2CINTU%2CISRG%2CIWM%2CJNJ%2CJPM%2CKHC%2CKMI%2CKO%2CLIN%2CLLY%2CLMT%2CLOW%2CMA%2CMCD%2CMDLZ%2CMDT%2CMET%2CMETA%2CMMM%2CMO%2CMRK%2CMS%2CMSFT%2CNEE%2CNFLX%2CNKE%2CNVDA%2CORCL%2CPEP%2CPFE%2CPG%2CPM%2CPYPL%2CQCOM%2CQQQ%2CRTX%2CSBUX%2CSCHW%2CSO%2CSPG%2CSPY%2CT%2CTGT%2CTJX%2CTMO%2CTMUS%2CTSLA%2CTXN%2CUNH%2CUNP%2CUPS%2CUSB%2CV%2CVNQ%2CVZ%2CWFC%2CWMT%2CXOM (http_status=429, extrait_reponse='Too Many Requests\r\n')
+2026-07-26 22:09:27,457 INFO bot.feeds.equities: repli yfinance pour 112/112 symbole(s) sans quote v7 (['AAPL', 'ABBV', 'ABT', 'ACN', 'ADBE', 'AIG', 'AMD', 'AMGN', 'AMT', 'AMZN', 'AVGO', 'AXP', 'BA', 'BAC', 'BKNG', 'BLK', 'BMY', 'BRK.B', 'C', 'CAT', 'CHTR', 'CL', 'CMCSA', 'COF', 'COP', 'COST', 'CRM', 'CSCO', 'CVS', 'CVX', 'DBC', 'DE', 'DHR', 'DIS', 'DOW', 'DUK', 'EEM', 'EFA', 'EMR', 'F', 'FDX', 'GD', 'GE', 'GILD', 'GLD', 'GM', 'GOOG', 'GOOGL', 'GS', 'HD', 'HON', 'IBM', 'IEF', 'INTC', 'INTU', 'ISRG', 'IWM', 'JNJ', 'JPM', 'KHC', 'KMI', 'KO', 'LIN', 'LLY', 'LMT', 'LOW', 'MA', 'MCD', 'MDLZ', 'MDT', 'MET', 'META', 'MMM', 'MO', 'MRK', 'MS', 'MSFT', 'NEE', 'NFLX', 'NKE', 'NVDA', 'ORCL', 'PEP', 'PFE', 'PG', 'PM', 'PYPL', 'QCOM', 'QQQ', 'RTX', 'SBUX', 'SCHW', 'SO', 'SPG', 'SPY', 'T', 'TGT', 'TJX', 'TMO', 'TMUS', 'TSLA', 'TXN', 'UNH', 'UNP', 'UPS', 'USB', 'V', 'VNQ', 'VZ', 'WFC', 'WMT', 'XOM'])
+2026-07-26 22:09:27,459 INFO yfinance: Failed to create TzCache, reason: Error creating TzCache folder: '/home/runner/.cache/py-yfinance' reason: [Errno 17] File exists: '/home/runner/.cache/py-yfinance'. TzCache will not be used. Tip: You can direct cache to use a different location with 'set_tz_cache_location(mylocation)'
+2026-07-26 22:09:39,775 WARNING bot.feeds.equities: quote périmée pour AAPL (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,775 WARNING bot.feeds.equities: quote périmée pour ABBV (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,775 WARNING bot.feeds.equities: quote périmée pour ABT (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour ACN (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour ADBE (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour AIG (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour AMD (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour AMGN (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour AMT (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour AMZN (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour AVGO (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour AXP (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour BA (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour BAC (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour BKNG (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour BLK (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour BMY (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour BRK.B (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour C (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,776 WARNING bot.feeds.equities: quote périmée pour CAT (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour CHTR (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour CL (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour CMCSA (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour COF (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour COP (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour COST (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour CRM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour CSCO (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour CVS (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour CVX (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour DBC (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour DE (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour DHR (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour DIS (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour DOW (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour DUK (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour EEM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour EFA (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,777 WARNING bot.feeds.equities: quote périmée pour EMR (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour F (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour FDX (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour GD (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour GE (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour GILD (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour GLD (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour GM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour GOOG (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour GOOGL (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour GS (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour HD (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour HON (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour IBM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour IEF (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour INTC (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour INTU (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour ISRG (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour IWM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,778 WARNING bot.feeds.equities: quote périmée pour JNJ (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour JPM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour KHC (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour KMI (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour KO (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour LIN (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour LLY (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour LMT (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour LOW (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MA (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MCD (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MDLZ (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MDT (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MET (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour META (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MMM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MO (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MRK (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,779 WARNING bot.feeds.equities: quote périmée pour MS (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour MSFT (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour NEE (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour NFLX (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour NKE (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour NVDA (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour ORCL (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour PEP (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour PFE (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour PG (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour PM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour PYPL (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour QCOM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour QQQ (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour RTX (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour SBUX (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour SCHW (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour SO (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour SPG (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,780 WARNING bot.feeds.equities: quote périmée pour SPY (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour T (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour TGT (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour TJX (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour TMO (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour TMUS (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour TSLA (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour TXN (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour UNH (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour UNP (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour UPS (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour USB (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour V (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour VNQ (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour VZ (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour WFC (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour WMT (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,781 WARNING bot.feeds.equities: quote périmée pour XOM (source=yfinance_synthetic_spread)
+2026-07-26 22:09:39,787 WARNING bot.feeds.crypto: binance klines échec pour AVAXUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=AVAXUSDT&interval=1h&limit=1000
+2026-07-26 22:09:40,856 WARNING bot.feeds.crypto: binance klines échec pour BNBUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=BNBUSDT&interval=1h&limit=1000
+2026-07-26 22:09:41,960 WARNING bot.feeds.crypto: binance klines échec pour BTCUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=1000
+2026-07-26 22:09:42,869 WARNING bot.feeds.crypto: coinbase candles échec pour BTC-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=3600&start=2026-02-01T22%3A00%3A00%2B00%3A00&end=2026-02-14T10%3A00%3A00%2B00%3A00
+2026-07-26 22:09:42,878 WARNING bot.runner: historique indisponible pour BTC: crypto BTC: seulement 3895/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:42,884 WARNING bot.feeds.crypto: binance klines échec pour DOGEUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=DOGEUSDT&interval=1h&limit=1000
+2026-07-26 22:09:43,128 WARNING bot.feeds.crypto: coinbase candles échec pour DOGE-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/DOGE-USD/candles?granularity=3600&start=2026-06-06T22%3A00%3A00%2B00%3A00&end=2026-06-19T10%3A00%3A00%2B00%3A00
+2026-07-26 22:09:43,132 WARNING bot.runner: historique indisponible pour DOGE: crypto DOGE: seulement 900/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:43,138 WARNING bot.feeds.crypto: binance klines échec pour ETHUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=1000
+2026-07-26 22:09:43,436 WARNING bot.feeds.crypto: coinbase candles échec pour ETH-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/ETH-USD/candles?granularity=3600&start=2026-05-25T10%3A00%3A00%2B00%3A00&end=2026-06-06T22%3A00%3A00%2B00%3A00
+2026-07-26 22:09:43,440 WARNING bot.runner: historique indisponible pour ETH: crypto ETH: seulement 1200/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:43,445 WARNING bot.feeds.crypto: binance klines échec pour HBARUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=HBARUSDT&interval=1h&limit=1000
+2026-07-26 22:09:43,686 WARNING bot.feeds.crypto: coinbase candles échec pour HBAR-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/HBAR-USD/candles?granularity=3600&start=2026-06-06T22%3A00%3A00%2B00%3A00&end=2026-06-19T10%3A00%3A00%2B00%3A00
+2026-07-26 22:09:43,689 WARNING bot.runner: historique indisponible pour HBAR: crypto HBAR: seulement 900/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:43,695 WARNING bot.feeds.crypto: binance klines échec pour ICPUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=ICPUSDT&interval=1h&limit=1000
+2026-07-26 22:09:43,964 WARNING bot.feeds.crypto: coinbase candles échec pour ICP-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/ICP-USD/candles?granularity=3600&start=2026-06-06T22%3A00%3A00%2B00%3A00&end=2026-06-19T10%3A00%3A00%2B00%3A00
+2026-07-26 22:09:43,968 WARNING bot.runner: historique indisponible pour ICP: crypto ICP: seulement 900/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:43,973 WARNING bot.feeds.crypto: binance klines échec pour LINKUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=LINKUSDT&interval=1h&limit=1000
+2026-07-26 22:09:44,013 WARNING bot.feeds.crypto: coinbase candles échec pour LINK-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/LINK-USD/candles?granularity=3600&start=2026-07-14T10%3A00%3A00%2B00%3A00&end=2026-07-26T22%3A00%3A00%2B00%3A00
+2026-07-26 22:09:44,013 WARNING bot.runner: historique indisponible pour LINK: crypto LINK: seulement 0/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:44,019 WARNING bot.feeds.crypto: binance klines échec pour SOLUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=SOLUSDT&interval=1h&limit=1000
+2026-07-26 22:09:44,174 WARNING bot.feeds.crypto: coinbase candles échec pour SOL-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/SOL-USD/candles?granularity=3600&start=2026-06-06T22%3A00%3A00%2B00%3A00&end=2026-06-19T10%3A00%3A00%2B00%3A00
+2026-07-26 22:09:44,177 WARNING bot.runner: historique indisponible pour SOL: crypto SOL: seulement 900/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:44,183 WARNING bot.feeds.crypto: binance klines échec pour UNIUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=UNIUSDT&interval=1h&limit=1000
+2026-07-26 22:09:44,403 WARNING bot.feeds.crypto: coinbase candles échec pour UNI-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/UNI-USD/candles?granularity=3600&start=2026-06-19T10%3A00%3A00%2B00%3A00&end=2026-07-01T22%3A00%3A00%2B00%3A00
+2026-07-26 22:09:44,406 WARNING bot.runner: historique indisponible pour UNI: crypto UNI: seulement 600/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:44,412 WARNING bot.feeds.crypto: binance klines échec pour XLMUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=XLMUSDT&interval=1h&limit=1000
+2026-07-26 22:09:44,481 WARNING bot.feeds.crypto: coinbase candles échec pour XLM-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/XLM-USD/candles?granularity=3600&start=2026-07-01T22%3A00%3A00%2B00%3A00&end=2026-07-14T10%3A00%3A00%2B00%3A00
+2026-07-26 22:09:44,484 WARNING bot.runner: historique indisponible pour XLM: crypto XLM: seulement 300/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:44,489 WARNING bot.feeds.crypto: binance klines échec pour XRPUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=XRPUSDT&interval=1h&limit=1000
+2026-07-26 22:09:44,599 WARNING bot.feeds.crypto: coinbase candles échec pour XRP-USD: 429 Client Error: Too Many Requests for url: https://api.exchange.coinbase.com/products/XRP-USD/candles?granularity=3600&start=2026-06-19T10%3A00%3A00%2B00%3A00&end=2026-07-01T22%3A00%3A00%2B00%3A00
+2026-07-26 22:09:44,603 WARNING bot.runner: historique indisponible pour XRP: crypto XRP: seulement 600/4848 bougies clôturées obtenues (Binance + fallback Coinbase épuisés)
+2026-07-26 22:09:44,603 INFO bot.runner: TIMING phase=feeds_crypto durée=17.9s
+2026-07-26 22:09:45,286 INFO bot.feeds.daily: cache disque data-cache (généré=2026-07-25T22:26:37.174324+00:00) : 112/112 symbole(s) servis sans appel réseau
+2026-07-26 22:09:45,299 INFO bot.runner: TIMING phase=feeds_equities durée=0.7s
+2026-07-26 22:09:45,606 INFO bot.runner: TIMING phase=strategies_execution durée=0.1s
+2026-07-26 22:09:47,292 INFO bot.runner: TIMING phase=git_sync durée=1.7s
+2026-07-26 22:09:47,292 INFO bot.runner: TIMING résumé cycle : feeds_crypto=17.9s feeds_equities=0.7s strategies_execution=0.1s git_sync=1.7s total=20.9s
+2026-07-26 22:09:47,292 INFO bot.runner: git_sync SUCCESS — cycle 2026-07-26T22 terminé (🛡️ 1003€ | ⚖️ 1003€ | 🔥 1002€ | 🧪 1001€).
