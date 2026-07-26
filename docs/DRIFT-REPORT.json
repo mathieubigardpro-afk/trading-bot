@@ -1,6 +1,6 @@
 {
   "data_refresh_status": "OK",
-  "generated_at": "2026-07-24T19:37:30.066397+00:00",
+  "generated_at": "2026-07-26T23:02:06.978195+00:00",
   "recalibration": {
     "best_oos_sharpe": 0.5227648190046261,
     "best_value": 175,
@@ -28,10 +28,10 @@
       "categorie": "active",
       "dd_live_pct": 0.0,
       "dd_ref_pct": null,
-      "n_days_observed": 2,
+      "n_days_observed": 4,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 4j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
       "sharpe_live": null,
       "sharpe_ref": null,
@@ -45,10 +45,10 @@
       "categorie": "active",
       "dd_live_pct": 0.0,
       "dd_ref_pct": 8.0,
-      "n_days_observed": 2,
+      "n_days_observed": 4,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 4j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
       "sharpe_live": null,
       "sharpe_ref": 1.24,
@@ -62,10 +62,10 @@
       "categorie": "active",
       "dd_live_pct": 0.0,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 2,
+      "n_days_observed": 4,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 4j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
       "sharpe_live": null,
       "sharpe_ref": 0.8227,
@@ -79,10 +79,10 @@
       "categorie": "active",
       "dd_live_pct": 0.0,
       "dd_ref_pct": null,
-      "n_days_observed": 2,
+      "n_days_observed": 4,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 4j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
       "sharpe_live": null,
       "sharpe_ref": null,
@@ -96,10 +96,10 @@
       "categorie": "active",
       "dd_live_pct": 0.0,
       "dd_ref_pct": 16.4,
-      "n_days_observed": 2,
+      "n_days_observed": 4,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 4j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
       "sharpe_live": null,
       "sharpe_ref": 1.47,
@@ -113,10 +113,10 @@
       "categorie": "active",
       "dd_live_pct": 0.0,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 2,
+      "n_days_observed": 4,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 4j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
       "sharpe_live": null,
       "sharpe_ref": 0.8227,
@@ -128,14 +128,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.10893996100917505,
+      "dd_live_pct": 0.27388622000902435,
       "dd_ref_pct": 33.4,
-      "n_days_observed": 2,
+      "n_days_observed": 4,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 2j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 4j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
-      "sharpe_live": -13.217057552883448,
+      "sharpe_live": -6.684986873328865,
       "sharpe_ref": 1.49,
       "source": "backtest NON AUDITÉ (variante agressif_12diversifie)",
       "strategy_id": "quasi_passif_crypto",
