@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from backtest import engine, metrics
+from backtest import engine, metrics, risk_overlay
 
 
 # ------------------------------------------------------------------------------------------
@@ -76,8 +76,20 @@ def _biased_same_price_execution_returns(weights_decided: pd.DataFrame, closes: 
 def test_lookahead_cheat_collapses_under_correct_engine_but_not_under_biased_reference():
     calendar, opens, closes, weights_decided = _build_lookahead_fixture()
 
+    # Surcouche de risque (backtest/risk_overlay.py, correctif 2026-07-27) désactivée ici : ce
+    # test isole SPÉCIFIQUEMENT le décalage d'exécution close(t)->open(t+1), pas le vol
+    # targeting ni la bande de non-négociation (couverts par leurs propres tests dédiés
+    # ci-dessous).
     seg = engine.simulate_segment(
-        calendar, weights_decided, opens, closes, start_idx=1, end_idx=len(calendar) - 1, cost_bps=0.0
+        calendar,
+        weights_decided,
+        opens,
+        closes,
+        start_idx=1,
+        end_idx=len(calendar) - 1,
+        cost_bps=0.0,
+        no_trade_band=0.0,
+        apply_vol_targeting=False,
     )
     correct_sharpe = metrics.sharpe_ratio(seg.returns)
 
@@ -119,9 +131,15 @@ def test_costs_reduce_equity_proportionally_to_turnover():
     calendar, opens, closes, weights_decided = _build_cost_fixture()
     start_idx, end_idx = 1, len(calendar) - 1
 
-    seg_zero_cost = engine.simulate_segment(calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=0.0)
-    seg_low_cost = engine.simulate_segment(calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=25.0)
-    seg_high_cost = engine.simulate_segment(calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=100.0)
+    # Surcouche de risque désactivée (backtest/risk_overlay.py, correctif 2026-07-27) : ce test
+    # isole SPÉCIFIQUEMENT les coûts de transaction sur turnover à 100%/0% EXACT, et le
+    # cold-start du vol targeting (scalaire x0.5 pendant les ~30 premiers jours, cf.
+    # bot.risk.vol_targeting) casserait la formule de coût attendue ci-dessous, qui suppose des
+    # poids toujours exactement 1.0/0.0.
+    overlay_off = dict(no_trade_band=0.0, apply_vol_targeting=False)
+    seg_zero_cost = engine.simulate_segment(calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=0.0, **overlay_off)
+    seg_low_cost = engine.simulate_segment(calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=25.0, **overlay_off)
+    seg_high_cost = engine.simulate_segment(calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=100.0, **overlay_off)
 
     final_zero = seg_zero_cost.equity.iloc[-1]
     final_low = seg_low_cost.equity.iloc[-1]
@@ -143,6 +161,139 @@ def test_costs_reduce_equity_proportionally_to_turnover():
     cost_rate = 100.0 / 10000.0
     expected_high = (1.0 - 2.0 * cost_rate) ** n_switches
     assert final_high == pytest.approx(expected_high, rel=0.05)
+
+
+# ------------------------------------------------------------------------------------------
+# 2bis. Surcouche de risque (backtest/risk_overlay.py) -- correctif audit 2026-07-27
+# ------------------------------------------------------------------------------------------
+
+
+def test_default_no_trade_band_is_5pct_aligned_production():
+    """`simulate_segment` doit REFUSER un micro-rebalance (< bande) et EXÉCUTER un rebalance
+    au-delà de la bande, avec la bande PAR DÉFAUT du moteur (aucun `no_trade_band` explicite ici)
+    -- preuve que ce défaut vaut bien 0,05 (aligné `bot.config.NO_TRADE_BAND`, correctif audit :
+    la bande à 0 mesurait 16,3 fills par transition de signal réellement voulue)."""
+    assert risk_overlay.DEFAULT_NO_TRADE_BAND == pytest.approx(0.05)
+
+    calendar = pd.bdate_range("2010-01-04", periods=5)
+    # Prix constants : isole complètement l'effet de la bande (aucun autre effet possible sur
+    # l'exposition mesurée en clôture).
+    opens = pd.DataFrame({"X": 100.0}, index=calendar)
+    closes = pd.DataFrame({"X": 100.0}, index=calendar)
+    weights_decided = pd.DataFrame(
+        {"X": [0.10, 0.12, 0.20, 0.20, 0.20]}, index=calendar
+    )
+
+    seg = engine.simulate_segment(
+        calendar,
+        weights_decided,
+        opens,
+        closes,
+        start_idx=1,
+        end_idx=4,
+        cost_bps=0.0,
+        apply_vol_targeting=False,  # isole la bande, cf. test dédié au vol targeting ci-dessous
+    )
+
+    exposure = seg.gross_exposure.to_numpy()
+    # j=0 (exécute weights[0]=0.10, vs poids exécuté précédent = 0 -> écart 0.10 >= bande 0.05
+    # -> TRADE).
+    assert exposure[0] == pytest.approx(0.10, abs=1e-6)
+    # j=1 (weights[1]=0.12, vs poids exécuté précédent = 0.10 -> écart 0.02 < bande 0.05 -> PAS
+    # de trade, poids exécuté conservé).
+    assert exposure[1] == pytest.approx(0.10, abs=1e-6)
+    # j=2 (weights[2]=0.20, vs poids exécuté précédent = 0.10 -> écart 0.10 >= bande 0.05 ->
+    # TRADE).
+    assert exposure[2] == pytest.approx(0.20, abs=1e-6)
+    # j=3 (weights[3]=0.20, inchangé -> pas de trade, reste à 0.20).
+    assert exposure[3] == pytest.approx(0.20, abs=1e-6)
+
+
+def test_no_trade_band_zero_executes_every_micro_change():
+    """Contrôle négatif du test précédent : `no_trade_band=0.0` exécute bien le micro-changement
+    de 0.02 que la bande par défaut filtrait -- prouve que c'est la bande, pas autre chose, qui
+    bloquait le rebalance du test ci-dessus."""
+    calendar = pd.bdate_range("2010-01-04", periods=5)
+    opens = pd.DataFrame({"X": 100.0}, index=calendar)
+    closes = pd.DataFrame({"X": 100.0}, index=calendar)
+    weights_decided = pd.DataFrame({"X": [0.10, 0.12, 0.20, 0.20, 0.20]}, index=calendar)
+
+    seg = engine.simulate_segment(
+        calendar, weights_decided, opens, closes, start_idx=1, end_idx=4, cost_bps=0.0,
+        no_trade_band=0.0, apply_vol_targeting=False,
+    )
+    exposure = seg.gross_exposure.to_numpy()
+    assert exposure[0] == pytest.approx(0.10, abs=1e-6)
+    assert exposure[1] == pytest.approx(0.12, abs=1e-6)  # exécuté cette fois (bande désactivée)
+    assert exposure[2] == pytest.approx(0.20, abs=1e-6)
+
+
+def _build_high_vol_single_asset_fixture(n_days: int = 90, daily_std: float = 0.05, seed: int = 11):
+    """Actif unique à vol quotidienne élevée (5%/jour -> ~79% annualisé, très au-dessus de
+    `bot.config.VOL_TARGET_ANNUALIZED` = 27,5%) constamment ciblé à 100% -- fixture conçue pour
+    que le vol targeting doive réduire fortement l'exposition s'il fonctionne."""
+    rng = np.random.default_rng(seed)
+    rets = rng.normal(0.0, daily_std, n_days)
+    close = 100.0 * np.cumprod(1.0 + rets)
+    calendar = pd.bdate_range("2015-01-05", periods=n_days)
+    closes = pd.DataFrame({"X": close}, index=calendar)
+    opens = closes.shift(1).bfill()  # pas de gap overnight, hors-sujet ici
+    weights_decided = pd.DataFrame({"X": 1.0}, index=calendar)
+    return calendar, opens, closes, weights_decided
+
+
+def test_vol_targeting_reduces_exposure_vs_no_overlay():
+    """Reproduction du dimensionnement de production (bot/risk/manager.py étape 3) : une
+    stratégie qui cible 100% d'exposition sur un actif à vol réalisée trois fois supérieure à la
+    cible doit voir son exposition RÉDUITE par le moteur, pas exécutée telle quelle -- sinon le
+    backtest simule un portefeuille plus gros (donc plus risqué) que ce que la production
+    appliquerait réellement (audit 2026-07-27 : MaxDD sous-estimé d'un facteur ~2 sans cette
+    correction)."""
+    calendar, opens, closes, weights_decided = _build_high_vol_single_asset_fixture()
+    start_idx, end_idx = 1, len(calendar) - 1
+
+    seg_with_vt = engine.simulate_segment(
+        calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=0.0,
+        no_trade_band=0.0, apply_vol_targeting=True,
+    )
+    seg_without_vt = engine.simulate_segment(
+        calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=0.0,
+        no_trade_band=0.0, apply_vol_targeting=False,
+    )
+
+    exposure_with_vt = metrics.average_exposure(seg_with_vt.gross_exposure)
+    exposure_without_vt = metrics.average_exposure(seg_without_vt.gross_exposure)
+
+    # Sans vol targeting : la cible brute (100%) est exécutée telle quelle en permanence.
+    assert exposure_without_vt == pytest.approx(1.0, abs=1e-6)
+    # Avec vol targeting (jamais > 1, cf. bot.risk.vol_targeting.compute_vol_scalar) : exposition
+    # RÉDUITE de façon substantielle (cible 27,5% de vol contre ~79% réalisée -> scalaire cible
+    # ~0,35 en régime permanent, plus bas encore pendant le cold-start x0,5 des ~30 premiers
+    # jours) -- seuil large pour ne pas coupler ce test à la valeur numérique exacte.
+    assert exposure_with_vt < 0.6
+    assert exposure_with_vt < exposure_without_vt
+
+
+def test_vol_targeting_reduces_maxdd_vs_no_overlay():
+    """Même fixture que ci-dessus, mesurée sur le MaxDD plutôt que l'exposition moyenne -- c'est
+    le symptôme concret relevé par l'audit ("backtest plus généreux que la production -> MaxDD
+    sous-estimé d'un facteur ~2 sans vol targeting")."""
+    calendar, opens, closes, weights_decided = _build_high_vol_single_asset_fixture(seed=23)
+    start_idx, end_idx = 1, len(calendar) - 1
+
+    seg_with_vt = engine.simulate_segment(
+        calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=0.0,
+        no_trade_band=0.0, apply_vol_targeting=True,
+    )
+    seg_without_vt = engine.simulate_segment(
+        calendar, weights_decided, opens, closes, start_idx, end_idx, cost_bps=0.0,
+        no_trade_band=0.0, apply_vol_targeting=False,
+    )
+
+    dd_with_vt = metrics.max_drawdown(pd.concat([pd.Series([1.0]), (1.0 + seg_with_vt.returns).cumprod()]))
+    dd_without_vt = metrics.max_drawdown(pd.concat([pd.Series([1.0]), (1.0 + seg_without_vt.returns).cumprod()]))
+
+    assert dd_with_vt < dd_without_vt
 
 
 # ------------------------------------------------------------------------------------------

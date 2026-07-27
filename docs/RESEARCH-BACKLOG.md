@@ -1,5 +1,17 @@
 # RESEARCH-BACKLOG.md — Backlog d'idées de recherche, classées par priorité
 
+> **ACTION REQUISE (2026-07-27, chantier 3, dette explicite)** : `backtest/risk_overlay.py`
+> (bande de non-négociation par défaut = 0,05 + vol targeting reproduisant `bot/risk/
+> manager.py`, désormais appliqués PAR DÉFAUT par `backtest/engine.py:simulate_segment()`) n'a
+> PAS reçu l'audit adversarial indépendant que `backtest/README.md` exige avant de s'appuyer
+> sur ce moteur pour juger une candidate (budget de la session du 27/07 insuffisant pour un
+> audit séparé du correctif qu'elle vient de produire). **La prochaine session hebdomadaire
+> doit auditer `backtest/risk_overlay.py` + les changements associés de `backtest/engine.py`
+> avant toute nouvelle décision de promotion/rejet basée sur ce moteur** — vérifier notamment :
+> fidélité du vol scalar à `bot.risk.compute_vol_scalar` (mêmes formules, adaptation horaire
+> -> quotidienne correctement documentée), sémantique de la bande (comparaison au dernier poids
+> EXÉCUTÉ, pas au poids brut), absence de look-ahead dans `risk_overlay.precompute_vol_stats`.
+
 *Alimente les sessions de recherche futures qui incuberont des candidates dans le wallet
 labo 🧪. Chaque idée doit passer intégralement par `docs/PROMOTION-RULES.md` (Porte 1 puis
 Porte 2) avant tout capital réel. Ce document ne préjuge d'aucun résultat -- une idée bien

@@ -4,12 +4,21 @@
 `backtest/engine.py` (moteur commun du projet, cf. `docs/PROMOTION-RULES.md` §1.1 — ce moteur
 n'existait pas dans le dépôt avant cette session, c'était le finding critique d'audit qui motive
 la Partie A de cette mission). Résultats bruts : `backtest/results/xs_momentum_invvol_sp100/
-results.json`. Tests unitaires du moteur : `backtest/tests/test_engine.py` (7/7 verts).*
+results.json`. Tests unitaires du moteur : `backtest/tests/` (11/11 verts au 2026-07-27, chantier 3 -- 7 tests d'origine + 4 nouveaux couvrant `backtest/risk_overlay.py`).*
 
 **Ce document n'est PAS l'audit adversarial indépendant requis par `docs/PROMOTION-RULES.md`
 §1.4 avant toute entrée en incubation — c'est le backtest walk-forward lui-même (Porte 1, §1.1 à
 §1.3). L'audit §1.4, par construction, doit être mené par une session distincte de celle qui a
 produit ce backtest.**
+
+**AVERTISSEMENT (2026-07-27, chantier 3)** : ces résultats ont été produits AVANT le correctif
+`backtest/risk_overlay.py` — `engine.simulate_segment()` exécutait alors les poids décidés
+BRUTS, sans bande de non-négociation ni vol targeting. Les DÉFAUTS de `simulate_segment()` ont
+depuis changé (`no_trade_band=0.05`, `apply_vol_targeting=True`, alignés `bot/risk/manager.py`)
+— ce fichier n'a pas été régénéré avec le moteur corrigé (budget de la session insuffisant) ; la
+décision **ÉCARTÉE** ci-dessous reste inchangée (motivée par la domination du contrôle
+equal-weight, indépendante de ce correctif), mais les chiffres ne reflètent plus le
+comportement par défaut actuel du moteur.
 
 ---
 
@@ -50,7 +59,7 @@ parallèle" ; les métriques historiques de `xs_momentum_sp100` proviennent d'un
 | `backtest/metrics.py` | Sharpe, Sortino, profit factor, MaxDD, CAGR, exposition, ratio d'information, DSR/PSR (Bailey & López de Prado 2014). |
 | `backtest/engine.py` | Simulation de portefeuille (signal à la clôture `t`, exécution à l'ouverture `t+1`, coûts bps/côté sur turnover réel), fenêtres walk-forward IS/OOS, sélection de paramètres IS-only, concaténation OOS. |
 | `backtest/strategies/xsmom.py` | Version backtest, vectorisée, de `bot/strategies/xs_momentum_sp100.py` (mêmes règles, réutilise les constantes SPEC par import — jamais dupliquées), + paramètre `weighting`. |
-| `backtest/tests/test_engine.py` | 4 garanties testées : anti-look-ahead, coûts proportionnels au turnover, bornes des fenêtres walk-forward, cas limites du DSR. **7/7 tests passent** (`pytest backtest/tests/`). |
+| `backtest/tests/test_engine.py` | 4 garanties d'origine testées : anti-look-ahead, coûts proportionnels au turnover, bornes des fenêtres walk-forward, cas limites du DSR -- plus 4 tests ajoutés le 2026-07-27 (chantier 3) pour la surcouche de risque (`backtest/risk_overlay.py`) : bande de non-négociation par défaut = 0,05, vol targeting qui réduit bien l'exposition/le MaxDD. **11/11 tests passent** (`pytest backtest/tests/`). |
 | `backtest/run_xsmom_invvol.py` | Script d'exécution de la Partie B (ce rapport). |
 
 Principes non négociables implémentés (détail dans les docstrings des modules) :

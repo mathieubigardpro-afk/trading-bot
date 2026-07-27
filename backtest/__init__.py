@@ -14,8 +14,14 @@ Sous-modules :
   - `backtest.engine`       : moteur walk-forward générique (fenêtres IS/OOS, simulation de
                               portefeuille avec coûts, sélection de paramètres IS-only,
                               concaténation OOS).
+  - `backtest.risk_overlay` : bande de non-négociation + vol targeting, alignées `bot/risk/
+                              manager.py`, appliquées par défaut par `backtest.engine.
+                              simulate_segment()` (correctif audit 2026-07-27).
   - `backtest.strategies.*` : logiques de signal spécifiques à chaque stratégie candidate,
                               réutilisant le moteur ci-dessus (jamais l'inverse).
+
+Voir `backtest/README.md` pour l'usage complet et l'avertissement de gouvernance (toute
+modification de ce paquet doit être re-auditée adversarialement avant de juger une candidate).
 
 Principes non négociables (cf. docstring de `backtest/engine.py` pour le détail) :
   1. Aucun look-ahead : tout signal utilisé pour décider les poids à la clôture de `t` ne lit
@@ -26,4 +32,6 @@ Principes non négociables (cf. docstring de `backtest/engine.py` pour le détai
   4. Aucune donnée de marché n'est copiée dans ce dépôt — ce paquet lit les CSV depuis un
      `--data-dir` fourni par l'appelant (jamais un chemin en dur pointant hors du dépôt dans le
      code, toujours un paramètre).
+  5. Surcouche de risque activée par défaut (`backtest.risk_overlay`) : un backtest exécuté
+     sans elle est structurellement plus optimiste qu'une exécution réelle en production.
 """

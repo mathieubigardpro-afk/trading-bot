@@ -73,6 +73,7 @@ import numpy as np
 import pandas as pd
 
 from backtest import metrics as bt_metrics
+from backtest import risk_overlay
 
 # ------------------------------------------------------------------------------------------
 # Simulation de portefeuille sur un segment de calendrier donné
@@ -101,6 +102,13 @@ def simulate_segment(
     end_idx: int,
     cost_bps: float,
     initial_capital: float = 1.0,
+    no_trade_band: float = risk_overlay.DEFAULT_NO_TRADE_BAND,
+    apply_vol_targeting: bool = True,
+    vol_target_annualized: float = risk_overlay.DEFAULT_VOL_TARGET_ANNUALIZED,
+    vol_ewma_halflife_days: float = risk_overlay.DEFAULT_VOL_EWMA_HALFLIFE_DAYS,
+    vol_coldstart_min_points: int = risk_overlay.DEFAULT_VOL_COLDSTART_MIN_POINTS,
+    vol_coldstart_scalar: float = risk_overlay.DEFAULT_VOL_COLDSTART_SCALAR,
+    vol_periods_per_year: float = risk_overlay.DEFAULT_VOL_PERIODS_PER_YEAR,
 ) -> SegmentResult:
     """Simule le portefeuille sur `calendar[start_idx:end_idx+1]`, capital remis à
     `initial_capital` au tout début du segment (nécessaire pour produire des fenêtres OOS
@@ -111,7 +119,31 @@ def simulate_segment(
 
     `weights_decided.iloc[i]` = poids DÉCIDÉS à la clôture de `calendar[i]`, EXÉCUTÉS à
     `opens.iloc[i+1]` (ouverture du jour de bourse suivant) — jamais au même prix que celui
-    ayant servi à la décision."""
+    ayant servi à la décision.
+
+    --------------------------------------------------------------------------------------
+    Surcouche de risque (correctif audit 2026-07-27, `backtest/risk_overlay.py`)
+    --------------------------------------------------------------------------------------
+    AVANT exécution, `weights_decided.iloc[i-1]` (le poids brut DÉCIDÉ par la stratégie) passe
+    par la MÊME surcouche que `bot/risk/manager.py` applique en production (vol targeting PUIS
+    bande de non-négociation, dans cet ordre — cf. `bot/risk/manager.py` étapes 3 et 6) :
+
+      - `apply_vol_targeting` (défaut `True`) : le poids brut est multiplié par un scalaire
+        `<= 1` qui réduit l'exposition quand la vol EWMA du portefeuille dépasse
+        `vol_target_annualized` (défaut `bot.config.VOL_TARGET_ANNUALIZED`) — jamais
+        l'inverse. Mettre `False` neutralise cette étape (utile pour isoler d'autres tests du
+        moteur, cf. `backtest/tests/test_engine.py`).
+      - `no_trade_band` (défaut `bot.config.NO_TRADE_BAND` = 0,05, ALIGNÉ PRODUCTION depuis ce
+        correctif — l'audit a mesuré ~16,3 fills par transition de signal réellement voulue
+        avec la bande à 0) : si l'écart entre le poids scalé et le dernier poids RÉELLEMENT
+        EXÉCUTÉ (pas le poids brut) est strictement inférieur à cette bande, le poids exécuté
+        ce jour-là reste inchangé (aucun ordre) — exactement la sémantique de
+        `bot/risk/manager.py` étape 6. Mettre `0.0` désactive cette étape.
+
+    Cette surcouche est volontairement PLUS SIMPLE que `bot/risk/manager.py` (pas de circuit
+    breakers, pas de caps par actif, pas de bande par poche, pas de cap d'exposition brute
+    totale) — écart connu et documenté, cf. `backtest/risk_overlay.py` et la ligne de tête de
+    `docs/RESEARCH-BACKLOG.md`."""
     universe = list(weights_decided.columns)
     if start_idx <= 0:
         raise ValueError(
@@ -133,13 +165,50 @@ def simulate_segment(
     trades_closed: List[dict] = []
     realized_events: List[dict] = []
 
+    # Précalcul vectorisé (une seule fois pour tout le calendrier fourni, cf. docstring de
+    # `risk_overlay.precompute_vol_stats`) -- désactivé si `apply_vol_targeting=False`.
+    if apply_vol_targeting:
+        vol_annual_full, valid_count_full = risk_overlay.precompute_vol_stats(
+            closes, halflife_days=vol_ewma_halflife_days, periods_per_year=vol_periods_per_year
+        )
+    else:
+        vol_annual_full = valid_count_full = None
+
+    # Dernier poids RÉELLEMENT EXÉCUTÉ (pas le poids brut décidé) -- état de la bande de
+    # non-négociation, réinitialisé à 0 en tête de CHAQUE segment (cohérent avec `shares` qui
+    # démarre elle aussi à 0 : un segment OOS simule un portefeuille qui repart flat, cf.
+    # docstring module ci-dessus sur la remise à zéro du capital).
+    last_executed_w = pd.Series(0.0, index=universe)
+
     for j in range(n):
         i = start_idx + j
         date = calendar[i]
         open_price = opens.iloc[i].fillna(0.0)
         close_price = closes.iloc[i].fillna(0.0)
 
-        target_w = weights_decided.iloc[i - 1]
+        raw_w = weights_decided.iloc[i - 1]
+        if apply_vol_targeting:
+            vol_scalar = risk_overlay.compute_portfolio_vol_scalar(
+                raw_w,
+                vol_annual_full.iloc[i - 1],
+                valid_count_full.iloc[i - 1],
+                target_vol_annualized=vol_target_annualized,
+                coldstart_min_points=vol_coldstart_min_points,
+                coldstart_scalar=vol_coldstart_scalar,
+            )
+            scaled_w = raw_w * vol_scalar
+        else:
+            scaled_w = raw_w
+
+        if no_trade_band and no_trade_band > 0:
+            target_w = scaled_w.copy()
+            for sym in target_w.index:
+                if abs(float(target_w[sym]) - float(last_executed_w.get(sym, 0.0))) < no_trade_band:
+                    target_w[sym] = last_executed_w.get(sym, 0.0)
+        else:
+            target_w = scaled_w
+        last_executed_w = target_w
+
         equity_before_trade = cash + float((shares * open_price).sum())
         target_dollars = target_w * equity_before_trade
         safe_open = open_price.replace(0.0, np.nan)
