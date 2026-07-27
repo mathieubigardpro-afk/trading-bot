@@ -1,0 +1,37 @@
+== Cycle bot (job.status=success) ==
+date_utc: 2026-07-27T19:53:11+00:00
+run_id_attendu: 2026-07-27T19
+sha_main: 0a2fca3c87f84a774c4527afb6be2b9dd28a951e
+github_run_id: 30300134510
+github_run_attempt: 1
+github_run_number: 65
+workflow: Bot cycle
+event: schedule
+==========================
+2026-07-27 19:52:50,501 INFO bot.runner: Démarrage du cycle multi-wallets run_id=2026-07-27T19 (['prudent', 'equilibre', 'agressif', 'labo'])
+2026-07-27 19:52:50,503 WARNING bot.runner: trou(s) détecté(s) dans equity.jsonl (tous wallets) sur les dernières 24h : ['2026-07-26T20', '2026-07-27T00', '2026-07-27T02', '2026-07-27T03', '2026-07-27T05', '2026-07-27T06', '2026-07-27T07', '2026-07-27T09', '2026-07-27T10', '2026-07-27T12', '2026-07-27T14', '2026-07-27T15', '2026-07-27T17']
+2026-07-27 19:52:50,727 WARNING bot.feeds.crypto: coinbase ticker périmé pour OP
+2026-07-27 19:52:51,038 WARNING bot.feeds.equities: yahoo v7 quote échec pour ['AAPL', 'ABBV', 'ABT', 'ACN', 'ADBE', 'AIG', 'AMD', 'AMGN', 'AMT', 'AMZN', 'AVGO', 'AXP', 'BA', 'BAC', 'BKNG', 'BLK', 'BMY', 'BRK.B', 'C', 'CAT', 'CHTR', 'CL', 'CMCSA', 'COF', 'COP', 'COST', 'CRM', 'CSCO', 'CVS', 'CVX', 'DBC', 'DE', 'DHR', 'DIS', 'DOW', 'DUK', 'EEM', 'EFA', 'EMR', 'F', 'FDX', 'GD', 'GE', 'GILD', 'GLD', 'GM', 'GOOG', 'GOOGL', 'GS', 'HD', 'HON', 'IBM', 'IEF', 'INTC', 'INTU', 'ISRG', 'IWM', 'JNJ', 'JPM', 'KHC', 'KMI', 'KO', 'LIN', 'LLY', 'LMT', 'LOW', 'MA', 'MCD', 'MDLZ', 'MDT', 'MET', 'META', 'MMM', 'MO', 'MRK', 'MS', 'MSFT', 'NEE', 'NFLX', 'NKE', 'NVDA', 'ORCL', 'PEP', 'PFE', 'PG', 'PM', 'PYPL', 'QCOM', 'QQQ', 'RTX', 'SBUX', 'SCHW', 'SO', 'SPG', 'SPY', 'T', 'TGT', 'TJX', 'TMO', 'TMUS', 'TSLA', 'TXN', 'UNH', 'UNP', 'UPS', 'USB', 'V', 'VNQ', 'VZ', 'WFC', 'WMT', 'XOM']: 429 Client Error: Too Many Requests for url: https://query1.finance.yahoo.com/v7/finance/quote?symbols=AAPL%2CABBV%2CABT%2CACN%2CADBE%2CAIG%2CAMD%2CAMGN%2CAMT%2CAMZN%2CAVGO%2CAXP%2CBA%2CBAC%2CBKNG%2CBLK%2CBMY%2CBRK-B%2CC%2CCAT%2CCHTR%2CCL%2CCMCSA%2CCOF%2CCOP%2CCOST%2CCRM%2CCSCO%2CCVS%2CCVX%2CDBC%2CDE%2CDHR%2CDIS%2CDOW%2CDUK%2CEEM%2CEFA%2CEMR%2CF%2CFDX%2CGD%2CGE%2CGILD%2CGLD%2CGM%2CGOOG%2CGOOGL%2CGS%2CHD%2CHON%2CIBM%2CIEF%2CINTC%2CINTU%2CISRG%2CIWM%2CJNJ%2CJPM%2CKHC%2CKMI%2CKO%2CLIN%2CLLY%2CLMT%2CLOW%2CMA%2CMCD%2CMDLZ%2CMDT%2CMET%2CMETA%2CMMM%2CMO%2CMRK%2CMS%2CMSFT%2CNEE%2CNFLX%2CNKE%2CNVDA%2CORCL%2CPEP%2CPFE%2CPG%2CPM%2CPYPL%2CQCOM%2CQQQ%2CRTX%2CSBUX%2CSCHW%2CSO%2CSPG%2CSPY%2CT%2CTGT%2CTJX%2CTMO%2CTMUS%2CTSLA%2CTXN%2CUNH%2CUNP%2CUPS%2CUSB%2CV%2CVNQ%2CVZ%2CWFC%2CWMT%2CXOM (http_status=429, extrait_reponse='Too Many Requests\r\n')
+2026-07-27 19:52:51,038 INFO bot.feeds.equities: repli yfinance pour 112/112 symbole(s) sans quote v7 (['AAPL', 'ABBV', 'ABT', 'ACN', 'ADBE', 'AIG', 'AMD', 'AMGN', 'AMT', 'AMZN', 'AVGO', 'AXP', 'BA', 'BAC', 'BKNG', 'BLK', 'BMY', 'BRK.B', 'C', 'CAT', 'CHTR', 'CL', 'CMCSA', 'COF', 'COP', 'COST', 'CRM', 'CSCO', 'CVS', 'CVX', 'DBC', 'DE', 'DHR', 'DIS', 'DOW', 'DUK', 'EEM', 'EFA', 'EMR', 'F', 'FDX', 'GD', 'GE', 'GILD', 'GLD', 'GM', 'GOOG', 'GOOGL', 'GS', 'HD', 'HON', 'IBM', 'IEF', 'INTC', 'INTU', 'ISRG', 'IWM', 'JNJ', 'JPM', 'KHC', 'KMI', 'KO', 'LIN', 'LLY', 'LMT', 'LOW', 'MA', 'MCD', 'MDLZ', 'MDT', 'MET', 'META', 'MMM', 'MO', 'MRK', 'MS', 'MSFT', 'NEE', 'NFLX', 'NKE', 'NVDA', 'ORCL', 'PEP', 'PFE', 'PG', 'PM', 'PYPL', 'QCOM', 'QQQ', 'RTX', 'SBUX', 'SCHW', 'SO', 'SPG', 'SPY', 'T', 'TGT', 'TJX', 'TMO', 'TMUS', 'TSLA', 'TXN', 'UNH', 'UNP', 'UPS', 'USB', 'V', 'VNQ', 'VZ', 'WFC', 'WMT', 'XOM'])
+2026-07-27 19:53:05,809 WARNING bot.feeds.crypto: binance klines échec pour AVAXUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=AVAXUSDT&interval=1h&limit=305
+2026-07-27 19:53:05,967 WARNING bot.feeds.crypto: binance klines échec pour BNBUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=BNBUSDT&interval=1h&limit=305
+2026-07-27 19:53:06,037 WARNING bot.runner: historique indisponible pour BNB: crypto BNB: seulement 300/4848 bougies obtenues (réseau plafonné à 300h + repli cache disque journalier épuisés)
+2026-07-27 19:53:06,058 WARNING bot.feeds.crypto: binance klines échec pour BTCUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=305
+2026-07-27 19:53:06,174 WARNING bot.feeds.crypto: binance klines échec pour DOGEUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=DOGEUSDT&interval=1h&limit=305
+2026-07-27 19:53:06,321 WARNING bot.feeds.crypto: binance klines échec pour ETHUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=ETHUSDT&interval=1h&limit=305
+2026-07-27 19:53:06,460 WARNING bot.feeds.crypto: binance klines échec pour FILUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=FILUSDT&interval=1h&limit=305
+2026-07-27 19:53:06,573 WARNING bot.feeds.crypto: binance klines échec pour HBARUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=HBARUSDT&interval=1h&limit=305
+2026-07-27 19:53:06,722 WARNING bot.feeds.crypto: binance klines échec pour ICPUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=ICPUSDT&interval=1h&limit=305
+2026-07-27 19:53:06,847 WARNING bot.feeds.crypto: binance klines échec pour LINKUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=LINKUSDT&interval=1h&limit=305
+2026-07-27 19:53:06,960 WARNING bot.feeds.crypto: binance klines échec pour OPUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=OPUSDT&interval=1h&limit=305
+2026-07-27 19:53:07,142 WARNING bot.feeds.crypto: binance klines échec pour SOLUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=SOLUSDT&interval=1h&limit=305
+2026-07-27 19:53:07,299 WARNING bot.feeds.crypto: binance klines échec pour UNIUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=UNIUSDT&interval=1h&limit=305
+2026-07-27 19:53:07,451 WARNING bot.feeds.crypto: binance klines échec pour XLMUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=XLMUSDT&interval=1h&limit=305
+2026-07-27 19:53:07,597 WARNING bot.feeds.crypto: binance klines échec pour XRPUSDT: 451 Client Error:  for url: https://api.binance.com/api/v3/klines?symbol=XRPUSDT&interval=1h&limit=305
+2026-07-27 19:53:07,698 INFO bot.runner: TIMING phase=feeds_crypto durée=17.2s
+2026-07-27 19:53:08,337 INFO bot.feeds.daily: cache disque data-cache (généré=2026-07-26T22:30:20.550360+00:00) : 112/112 symbole(s) servis sans appel réseau
+2026-07-27 19:53:08,349 INFO bot.runner: TIMING phase=feeds_equities durée=0.7s
+2026-07-27 19:53:08,738 INFO bot.runner: TIMING phase=strategies_execution durée=0.2s
+2026-07-27 19:53:10,748 INFO bot.runner: TIMING phase=git_sync durée=2.0s
+2026-07-27 19:53:10,748 INFO bot.runner: TIMING résumé cycle : feeds_crypto=17.2s feeds_equities=0.7s strategies_execution=0.2s git_sync=2.0s total=20.6s
+2026-07-27 19:53:10,748 INFO bot.runner: git_sync SUCCESS — cycle 2026-07-27T19 terminé (🛡️ 998€ | ⚖️ 997€ | 🔥 990€ | 🧪 1000€).
