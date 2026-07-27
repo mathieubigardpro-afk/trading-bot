@@ -1,15 +1,11 @@
 {
-  "cash_usd": 1141.079,
+  "cash_usd": 512.4259092435383,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1141.079,
-        "ts": "2026-07-26T12:11:15.107375+00:00"
-      },
       {
         "equity": 1141.079,
         "ts": "2026-07-26T14:04:51.065458+00:00"
@@ -61,6 +57,10 @@
       {
         "equity": 1141.079,
         "ts": "2026-07-27T11:36:35.118694+00:00"
+      },
+      {
+        "equity": 1141.079,
+        "ts": "2026-07-27T13:57:26.131463+00:00"
       }
     ],
     "flatten_mode": false,
@@ -73,15 +73,28 @@
     "last_rate": 1.1377,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-27T11:36:56.466336+00:00"
+    "last_rate_ts": "2026-07-27T13:57:47.995979+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-27T11:36:35.118694+00:00",
-  "last_run_id": "2026-07-27T11",
-  "positions": {},
+  "last_run_completed_at": "2026-07-27T13:57:26.131463+00:00",
+  "last_run_id": "2026-07-27T13",
+  "positions": {
+    "EEM": {
+      "prix_moyen": 63.81602095391006,
+      "qty": 3.2807
+    },
+    "IWM": {
+      "prix_moyen": 295.0158669953201,
+      "qty": 0.7096
+    },
+    "QQQ": {
+      "prix_moyen": 687.6497586314025,
+      "qty": 0.3044
+    }
+  },
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "9e95677475411b12721b49efc1fe2486c56a5e84cb82866e2739fb6eba710ad2",
+  "state_hash_prev": "71677d8ebdbaf624450a58e3151c0458b0b3ad44b61f12a8dd56fb6fc9d78dc5",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -89,9 +102,7 @@
     },
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
-      "missing_data_cycles": {
-        "ETH": 1
-      }
+      "missing_data_cycles": {}
     }
   },
   "trade_history_for_breakers": [],
