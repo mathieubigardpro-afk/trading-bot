@@ -100,15 +100,19 @@ Principes non négociables implémentés (détail dans les docstrings des module
 | Profit factor OOS | > 1,15 | **1,718** | ✅ PASS |
 | Trades OOS clos | ≥ 80 | **1970** | ✅ PASS |
 | MaxDD OOS ≤ 1,5× MaxDD benchmark OOS aligné | ratio ≤ 1,5 | **0,898** (49,27 % / 54,84 %) | ✅ PASS |
-| DSR (K_total = 10) | ≥ 0,50 | **0,9998** | ✅ PASS |
+| DSR (K_total = 39) | ≥ 0,50 | **0,9983** | ✅ PASS |
 
 **`promotion_rules_1_2_all_pass: true`** dans `results.json`.
 
-`K_total = 10`, documenté explicitement (mission + `docs/PROMOTION-RULES.md` §1.3) : 9 lignes de
-`docs/RESEARCH-REGISTRY.json` au moment de ce test + 1 seule combinaison interne nouvelle
-(`inv_vol` — la variante `equal` est un **contrôle** de reproduction du réglage de production
-déjà existant, pas une combinaison candidate additionnelle, elle n'ajoute donc pas au compte de
-K_total).
+`K_total = 39` (CORRIGÉ 2026-07-27, chantier 2 — formule §1.3 fixée pour multiplier par le
+nombre de fenêtres walk-forward, pas seulement compter les combinaisons de grille) : 9 lignes
+de `docs/RESEARCH-REGISTRY.json` au moment de ce test + (30 fenêtres walk-forward × 1 seule
+combinaison interne `inv_vol` — la variante `equal` est un **contrôle** de reproduction du
+réglage de production déjà existant, pas une combinaison candidate additionnelle, elle n'ajoute
+donc pas au compte de K_total) = 9 + 30 = 39. Ancienne valeur (`K_total = 10`, DSR = 0,9998)
+calculée avec la formule pré-correctif, désormais fausse au sens de `docs/PROMOTION-RULES.md`
+§1.3 — conservée uniquement dans l'historique git, ne change pas le verdict (0,9983 reste
+trivialement au-dessus du seuil 0,50).
 
 **Justification "slow strategy" (§1.2, note bas de page)**, fournie par prudence même si le
 seuil brut de 80 trades est atteint : 360 cycles de rebalance mensuel dans les fenêtres OOS

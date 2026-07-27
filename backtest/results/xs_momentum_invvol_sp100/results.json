@@ -13,8 +13,8 @@
     "is_selection_note": "Aucune grille de recherche : tous les paramètres sont pré-fixés aux réglages de production (top_k=10, skip=21j, lookback=126j, régime SPY>SMA200, gel mensuel) + vol_lookback_days=63 documenté par le SPEC pour weighting='inv_vol'. L'IS de chaque fenêtre walk-forward n'est donc PAS utilisé pour sélectionner un paramètre -- choix délibérément conservateur (zéro degré de liberté nouveau, K interne=1), la structure de fenêtres est conservée uniquement pour produire une équity OOS concaténée comparable au backtest historique de xs_momentum_sp100.",
     "cost_bps_equity_per_side": 5.0,
     "cost_bps_benchmark_per_side": 3.0,
-    "k_total": 10,
-    "k_total_note": "9 entrées docs/RESEARCH-REGISTRY.json au moment de ce test + 1 combinaison interne nouvelle ('inv_vol' -- 'equal' est un CONTROLE de reproduction du réglage de production déjà existant, pas une combinaison candidate additionnelle), cf. docs/PROMOTION-RULES.md §1.3."
+    "k_total": 39,
+    "k_total_note": "CORRIGÉ 2026-07-27 (chantier 2, formule §1.3 fixée) : 9 entrées docs/RESEARCH-REGISTRY.json au moment de ce test + (30 fenêtres walk-forward x 1 combinaison interne 'inv_vol' -- 'equal' est un CONTROLE de reproduction du réglage de production, pas une combinaison candidate additionnelle) = 9 + 30 = 39, cf. docs/PROMOTION-RULES.md §1.3. Ancienne valeur k_total=10 (combinaisons seules, sans le facteur fenêtres) fausse au sens de la formule corrigée -- conservée uniquement dans l'historique git."
   },
   "historical_reference_xs_momentum_sp100_equal_weight": {
     "source": "docs/RESEARCH-REGISTRY.json:xs_momentum_sp100",
@@ -1392,9 +1392,10 @@
     "n_obs": 7549,
     "skew": -0.37414302308444236,
     "kurtosis_excess": 4.7100359973521995,
-    "trials_k": 10,
-    "sr0_benchmark_expected_max_sharpe": 0.018378592519321543,
-    "dsr": 0.9997975900293956
+    "trials_k": 39,
+    "sr0_benchmark_expected_max_sharpe": 0.02543846811648875,
+    "dsr": 0.9983164019689373,
+    "_note_correctif_2026_07_27": "trials_k recalculé (9 registre + 30 fenêtres x 1 combinaison = 39, cf. meta.k_total_note) via backtest/metrics.py:expected_max_sharpe/probabilistic_sharpe_ratio à partir des MÊMES sharpe_hat_period/n_obs/skew/kurtosis_excess (statistiques de la série de rendements, inchangées) -- ancienne valeur trials_k=10/dsr=0.9997975900293956 fausse au sens de la formule corrigée §1.3."
   },
   "promotion_rules_1_2_thresholds_verdict": {
     "sharpe_oos": {
@@ -1428,10 +1429,10 @@
       "pass": true
     },
     "dsr": {
-      "value": 0.9997975900293956,
+      "value": 0.9983164019689373,
       "threshold": 0.5,
       "rule": ">= seuil",
-      "k_total": 10,
+      "k_total": 39,
       "pass": true
     }
   },
