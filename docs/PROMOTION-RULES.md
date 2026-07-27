@@ -102,16 +102,32 @@ du jour. Concrètement :
 
 ```
 K_total = (nombre de lignes dans RESEARCH-REGISTRY.json à la date du test)
-        + (nombre de combinaisons de la grille walk-forward interne à CETTE candidate)
+        + (nombre de fenêtres walk-forward de CETTE candidate
+           × nombre de combinaisons de la grille de paramètres interne à CETTE candidate)
 ```
 
-C'est plus conservateur que la méthode `dsr_K216_conservative_all_windows_all_combos`
-déjà utilisée pour `xs_momentum_sp100` (qui ne comptait que les 216 combinaisons
-internes à cette stratégie, pas les 8 autres stratégies déjà testées avant elle) — écart
-assumé et volontaire : au moment de ce test, il n'y avait pas encore de registre commun
-inter-stratégies. **Toute nouvelle candidate, à partir de ce document, doit utiliser
-`K_total` tel que défini ci-dessus.** Documenter `K_total` et le DSR obtenu dans la fiche
-de recherche et dans `RESEARCH-REGISTRY.json`.
+Exemple : 15 fenêtres walk-forward × 6 combinaisons de grille = 90 essais internes à la
+candidate (pas 6) — chaque fenêtre exécute sa propre sélection IS parmi la grille
+(`select_params_via_is()`, `backtest/engine.py`), ce sont donc `fenêtres × combinaisons`
+essais indépendants à déflater, pas seulement `combinaisons`. Une candidate sans grille
+(1 seule combinaison, zéro degré de liberté nouveau) compte quand même `fenêtres × 1 =
+fenêtres` essais internes — jamais 1, sous peine d'ignorer que le sizing/signal a quand
+même été RÉ-ÉVALUÉ à chaque fenêtre.
+
+Correction 2026-07-27 (audit) : la version précédente de cette formule ne comptait QUE le
+nombre de combinaisons de la grille interne (sans le facteur fenêtres) et affirmait à tort
+que c'était « plus conservateur » que l'ancienne méthode `dsr_K216_conservative_
+all_windows_all_combos` (utilisée pour `xs_momentum_sp100`, qui multipliait déjà fenêtres ×
+combinaisons pour obtenir K=216) — c'est arithmétiquement faux : multiplier par le nombre de
+fenêtres ne peut que PRODUIRE UN K_total plus grand (donc une déflation plus sévère, pas
+plus généreuse) que la même grille comptée une seule fois ; l'ancienne formule de ce document
+était en réalité MOINS conservatrice que `K216`, pas l'inverse. Aucune affirmation de mérite
+comparatif n'est faite ici : selon la taille du registre et le nombre de fenêtres/combos
+d'une candidate donnée, `K_total` peut être plus grand OU plus petit que `K216` — seule la
+formule elle-même est imposée, pas une comparaison numérique a priori avec un précédent.
+**Toute nouvelle candidate, à partir de ce document, doit utiliser `K_total` tel que défini
+ci-dessus.** Documenter `K_total` (et son détail fenêtres/combinaisons) et le DSR obtenu dans
+la fiche de recherche et dans `RESEARCH-REGISTRY.json`.
 
 ### 1.4 Audit adversarial obligatoire
 
