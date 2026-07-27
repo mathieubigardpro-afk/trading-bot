@@ -1,15 +1,25 @@
 name: Bot cycle
 
 # Déclencheurs :
-#   - schedule : un cycle par heure, à la minute 7 (décalé de l'heure pile pour éviter la
-#     charge générique des runners GitHub sur ':00').
+#   - schedule : CORRECTIF PLANIFICATION (2026-07-27) : passé de 3 à 6 tentatives par heure
+#     (":00, :10, :20, :30, :40, :50") — l'ancien rythme "7,27,47" (3 tentatives) laissait un
+#     cycle entier perdu (pas de rattrapage possible avant l'heure suivante, cf. runbook
+#     ARCHITECTURE.md) dès qu'UNE SEULE tentative échouait pour une raison transitoire
+#     (timeout runner, indisponibilité GitHub Actions...). L'idempotence par `run_id` horaire
+#     (`state/cycle.json`) trie déjà tout en quelques secondes : la 2e/3e/... tentative d'une
+#     même heure constate `run_id` déjà traité et sort immédiatement (code 0, aucun appel
+#     réseau) — multiplier les tentatives est donc gratuit, seul le détecteur de trous
+#     (`bot.runner._detect_equity_gaps`, journalisé dans `decisions.jsonl` en `gap_detected`)
+#     sert désormais à repérer les heures malgré tout restées sans aucun cycle abouti, SANS
+#     jamais tenter de rattrapage rétroactif (signaux quotidiens — rejouer une heure manquée
+#     n'aurait aucune valeur et serait risqué).
 #   - workflow_dispatch : lancement manuel (rattrapage, debug).
 #   - push sur ce fichier lui-même : run de validation immédiat dès le premier push (seul
-#     moyen de vérifier le pipeline sans attendre la prochaine minute 7 ni dépendre de l'API
+#     moyen de vérifier le pipeline sans attendre le prochain créneau ni dépendre de l'API
 #     GitHub, inaccessible depuis l'environnement qui a produit ce commit).
 on:
   schedule:
-    - cron: "7,27,47 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch: {}
   push:
     branches:

@@ -203,6 +203,15 @@ def _read_jsonl(path: Path) -> List[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def _read_symbol_decisions(path: Path) -> List[dict]:
+    """Comme `_read_jsonl`, mais écarte les enregistrements `type="gap_detected"` (correctif
+    planification 2026-07-27, cf. `bot.runner._build_gap_detected_record`) : ces derniers
+    partagent `decisions.jsonl` avec les décisions PAR SYMBOLE mais n'ont pas le même schéma
+    (pas de `asset_class`/`symbol`/`decision`) -- hors périmètre des assertions ci-dessous, qui
+    ne portent que sur les décisions de trading par symbole."""
+    return [d for d in _read_jsonl(path) if d.get("type") != "gap_detected"]
+
+
 def _wallet_alloc_ex_cash(wallet_cfg: dict) -> float:
     return sum(
         float(p["capital_alloc_pct"]) for p in wallet_cfg.get("pockets", []) if p.get("strategy_ref")
@@ -260,7 +269,7 @@ def test_full_cycle_market_open_produces_coherent_orders(tmp_path, monkeypatch):
 
         trades = _read_jsonl(clone / config.wallet_trades_jsonl(wallet_id))
         equity_lines = _read_jsonl(clone / config.wallet_equity_jsonl(wallet_id))
-        decisions = _read_jsonl(clone / config.wallet_decisions_jsonl(wallet_id))
+        decisions = _read_symbol_decisions(clone / config.wallet_decisions_jsonl(wallet_id))
         assert len(equity_lines) == 1
         equity_rec = equity_lines[0]
 
@@ -303,7 +312,7 @@ def test_full_cycle_market_open_produces_coherent_orders(tmp_path, monkeypatch):
     # poche crypto.
     for wallet_cfg in config.WALLETS:
         wallet_id = wallet_cfg["id"]
-        decisions = _read_jsonl(clone / config.wallet_decisions_jsonl(wallet_id))
+        decisions = _read_symbol_decisions(clone / config.wallet_decisions_jsonl(wallet_id))
         executed_by_pocket: Dict[str, set] = {}
         raw_signal_nonzero_by_pocket: Dict[str, bool] = {}
         for d in decisions:
@@ -351,7 +360,7 @@ def test_full_cycle_market_closed_blocks_equities_etf_orders_but_not_crypto(tmp_
     for wallet_cfg in config.WALLETS:
         wallet_id = wallet_cfg["id"]
         trades = _read_jsonl(clone / config.wallet_trades_jsonl(wallet_id))
-        decisions = _read_jsonl(clone / config.wallet_decisions_jsonl(wallet_id))
+        decisions = _read_symbol_decisions(clone / config.wallet_decisions_jsonl(wallet_id))
 
         for t in trades:
             asset_class = runner._asset_class_of(t["symbol"], wallet_cfg["univers_crypto"])

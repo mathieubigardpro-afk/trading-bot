@@ -56,6 +56,7 @@ taux halluciné.
 from __future__ import annotations
 
 import dataclasses
+import json
 import logging
 import os
 import sys
@@ -446,6 +447,69 @@ def all_wallet_paths() -> List[str]:
     for wallet_id in config.WALLET_IDS:
         paths.extend(wallet_journal_paths(wallet_id))
     return paths
+
+
+# ============================================================================================
+# Correctif planification (2026-07-27) — détecteur de trous, cf. bandeau schedule de
+# .github/workflows/bot.yml. Le cron est passé de 3 à 6 tentatives/heure (idempotence par
+# run_id horaire déjà en place, une tentative "en trop" sort en quelques secondes) ; ce
+# détecteur reste le seul filet pour les heures malgré tout restées sans AUCUN cycle abouti
+# (ex. panne prolongée de GitHub Actions). Volontairement SIMPLE : aucun rattrapage rétroactif
+# (les signaux de ce bot sont horaires/quotidiens à bande de non-négociation -- rejouer une
+# heure manquée n'a aucune valeur et introduirait un risque), seulement une journalisation
+# pour que le bilan quotidien (`tools/weekly_maintenance.py`) et le dashboard puissent
+# afficher les trous constatés.
+# ============================================================================================
+
+GAP_DETECTION_WINDOW_HOURS = 24
+
+
+def _detect_equity_gaps(now: datetime, window_hours: int = GAP_DETECTION_WINDOW_HOURS) -> List[str]:
+    """Retourne la liste triée des heures (`run_id`, ex. "2026-07-27T08") des `window_hours`
+    dernières heures COMPLÈTES (strictement avant l'heure courante, qui n'a par construction
+    pas encore de cycle terminé) pour lesquelles AUCUN wallet n'a écrit d'entrée dans son
+    `equity.jsonl` -- signe qu'aucun cycle n'a abouti cette heure-là, tous wallets confondus.
+    Liste vide si aucun trou. Ne lève jamais d'exception (fichier absent/ligne malformée
+    traités comme "aucune donnée pour cette ligne", même tolérance que
+    `bot.persist.journal.records_for_run`) -- une anomalie d'observabilité ne doit jamais
+    bloquer le cycle lui-même."""
+    expected_hours = {(now - timedelta(hours=h)).strftime("%Y-%m-%dT%H") for h in range(1, window_hours + 1)}
+    seen_hours: Set[str] = set()
+    for wallet_id in config.WALLET_IDS:
+        path = config.wallet_equity_jsonl(wallet_id)
+        if not os.path.exists(path):
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        record = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if isinstance(record, dict) and record.get("run_id"):
+                        seen_hours.add(str(record["run_id"]))
+        except OSError:
+            continue
+    return sorted(expected_hours - seen_hours)
+
+
+def _build_gap_detected_record(wallet_id: str, run_id: str, now: datetime, missing_hours: List[str]) -> dict:
+    return {
+        "type": "gap_detected",
+        "run_id": run_id,
+        "ts": now.isoformat(),
+        "wallet_id": wallet_id,
+        "window_hours": GAP_DETECTION_WINDOW_HOURS,
+        "missing_hours": missing_hours,
+        "reason": (
+            f"{len(missing_hours)} heure(s) sans aucun cycle abouti (tous wallets confondus) "
+            f"sur les dernières {GAP_DETECTION_WINDOW_HOURS}h -- aucun rattrapage rétroactif "
+            "(cf. .github/workflows/bot.yml, correctif planification 2026-07-27)."
+        ),
+    }
 
 
 def _exchange_for_wallet(wallet_cfg: dict) -> ExchangeSim:
@@ -1097,6 +1161,17 @@ def main(now: Optional[datetime] = None) -> int:
 
     logger.info("Démarrage du cycle multi-wallets run_id=%s (%s)", run_id, config.WALLET_IDS)
 
+    # --- détecteur de trous (correctif planification 2026-07-27, cf. bandeau
+    # _detect_equity_gaps ci-dessus) : lu AVANT toute écriture de ce cycle (donc avant que
+    # l'équity de run_id courant n'existe), journalisé plus bas avec le reste des écritures
+    # atomiques du cycle (étape 6) si des heures manquantes sont constatées ---
+    missing_hours = _detect_equity_gaps(now)
+    if missing_hours:
+        logger.warning(
+            "trou(s) détecté(s) dans equity.jsonl (tous wallets) sur les dernières %dh : %s",
+            GAP_DETECTION_WINDOW_HOURS, missing_hours,
+        )
+
     # --- 4) univers actif ce cycle = UNION des univers des 3 wallets, toutes classes d'actifs
     # confondues (crypto + poches actions/ETF, docs/ARCHITECTURE.md §11) ---
     crypto_symbols_all: List[str] = sorted({
@@ -1230,7 +1305,15 @@ def main(now: Optional[datetime] = None) -> int:
         append_journal_many(config.wallet_trades_jsonl(wallet_id), result.trade_records)
         if result.equity_record is not None:
             append_journal_many(config.wallet_equity_jsonl(wallet_id), [result.equity_record])
-        append_journal_many(config.wallet_decisions_jsonl(wallet_id), result.decision_records)
+        decision_records = result.decision_records
+        if missing_hours:
+            # Journalisé ICI (dans le même lot d'écritures atomiques que le reste du cycle,
+            # cf. §6 tout-ou-rien) plutôt qu'au moment de la détection plus haut -- un cycle
+            # qui échouerait ensuite ne doit laisser AUCUNE trace partielle.
+            decision_records = decision_records + [
+                _build_gap_detected_record(wallet_id, run_id, now, missing_hours)
+            ]
+        append_journal_many(config.wallet_decisions_jsonl(wallet_id), decision_records)
         save_state(result.new_state, config.wallet_state_json(wallet_id))
 
     new_cycle_state = {
