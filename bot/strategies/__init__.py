@@ -231,8 +231,21 @@ def load_strategies() -> List[StrategyBase]:
     Une erreur d'import/instanciation sur UN module de stratégie ne doit jamais faire
     planter tout le cycle horaire (principe pessimiste : mieux vaut ne pas trader que
     planter) — elle est journalisée en avertissement et ce module est simplement ignoré.
+
+    CORRECTIF AUDIT F1 (CRITIQUE) : deux classes concrètes distinctes qui partagent le même
+    `name` ne sont PLUS tolérées silencieusement (l'ancien comportement laissait la dernière
+    rencontrée, dans l'ordre non garanti de `pkgutil.iter_modules`, écraser la précédente dans
+    `strategies_by_name = {s.name: s for s in load_strategies()}` côté `bot/runner.py`) --
+    vecteur de hijack démontré : un module labo (ex. une candidate d'incubation mal isolée)
+    déclarant le même `name` qu'une stratégie de PRODUCTION (`quasi_passif_crypto`,
+    `xs_momentum_sp100`, `dual_momentum_etf`) pourrait ainsi se substituer à elle dans les
+    poches des 3 wallets réels, sans aucune trace ni erreur. Une collision de `name` entre deux
+    classes concrètes lève désormais `ValueError` explicitement -- mieux vaut un cycle en échec
+    (principe pessimiste, ARCHITECTURE.md §0) qu'une substitution silencieuse de stratégie de
+    production.
     """
     strategies: List[StrategyBase] = []
+    owners: Dict[str, type] = {}  # name -> classe déjà retenue pour ce name (détection de collision)
     package = importlib.import_module(__name__)
     for module_info in pkgutil.iter_modules(package.__path__):
         mod_name = module_info.name
@@ -251,7 +264,20 @@ def load_strategies() -> List[StrategyBase]:
             if obj.__module__ != module.__name__:
                 continue  # évite les classes ré-importées (ex. StrategyBase lui-même)
             try:
-                strategies.append(obj())
+                instance = obj()
             except Exception as exc:  # noqa: BLE001
                 logger.warning("load_strategies: échec d'instanciation de %s: %s", obj, exc)
+                continue
+            existing = owners.get(instance.name)
+            if existing is not None and existing is not obj:
+                raise ValueError(
+                    f"load_strategies: collision de name={instance.name!r} entre "
+                    f"{existing.__module__}.{existing.__qualname__} et "
+                    f"{obj.__module__}.{obj.__qualname__} -- deux stratégies concrètes ne "
+                    "peuvent jamais partager le même name (risque de hijack silencieux d'une "
+                    "stratégie de production par un autre module, cf. bandeau de "
+                    "load_strategies())."
+                )
+            owners[instance.name] = obj
+            strategies.append(instance)
     return strategies

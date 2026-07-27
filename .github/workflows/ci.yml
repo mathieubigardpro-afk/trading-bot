@@ -1,0 +1,66 @@
+name: CI
+
+# F9 (MAJEUR, audit adversarial) : garde-fou mécanique minimal, absent jusqu'ici -- aucun des 5
+# workflows existants (`bot.yml`, `daily-data-cache.yml`, `fetch-data.yml`,
+# `weekly-maintenance.yml`, `pages.yml`) ne lance la suite de tests (`bot/tests`, `tools/tests`)
+# ni ne vérifie la règle de gouvernance §0 de `docs/PROMOTION-RULES.md` (F7,
+# `tools/check_governance_commit.py`) avant/après un push. Ce workflow comble ce vide, SANS
+# toucher aux 5 workflows existants (décision d'épinglage de production laissée à un humain,
+# cf. requirements.txt).
+#
+# Déclencheurs :
+#   - push sur toutes les branches SAUF celles réservées aux données/logs générées
+#     automatiquement (`market-data`, `data-cache`, `logs` -- branches orphelines, force-push,
+#     jamais de code Python dessus, cf. les workflows dédiés qui les publient) ;
+#   - workflow_dispatch : lancement manuel.
+on:
+  push:
+    branches-ignore:
+      - market-data
+      - data-cache
+      - logs
+  workflow_dispatch: {}
+
+# Lecture seule (F9, mission) : ce workflow ne committe/ne push jamais rien -- il ne fait que
+# vérifier (tests + gouvernance §0), à la différence des 5 workflows existants qui écrivent
+# tous sur le dépôt (`contents: write`).
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # tools/check_governance_commit.py (F7) a besoin de l'historique du commit vérifié
+          # (git show) -- un clone superficiel (profondeur 1) suffirait pour HEAD seul, mais
+          # fetch-depth: 0 reste cohérent avec les autres workflows de ce dépôt et sans risque
+          # ici (lecture seule, permissions contents: read).
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # pytest : dépendance de TEST uniquement, volontairement absente de requirements.txt
+          # (F12 -- ce fichier ne documente que les dépendances d'EXÉCUTION du bot/des scripts,
+          # jamais les dépendances de développement).
+          pip install pytest
+
+      - name: Run test suite (bot/tests + tools/tests)
+        run: python -m pytest bot/tests tools/tests -q
+
+      - name: Vérifie la règle de gouvernance §0 (docs/PROMOTION-RULES.md)
+        run: python tools/check_governance_commit.py HEAD

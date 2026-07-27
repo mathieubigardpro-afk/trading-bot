@@ -412,6 +412,16 @@ CRYPTO_SYMBOLS_AGRESSIF_12 = [
 #       "entry_run_id": str,         # run_id (§4.1) du cycle qui a vu la candidate trader pour
 #                                    # la première fois -- ancre non ambiguë et non falsifiable
 #                                    # a posteriori pour toute fenêtre d'observation future.
+#       "max_incubation_days": int,  # OPTIONNEL (défaut 56 si absent, cf.
+#                                    # tools/weekly_maintenance.py:INCUBATION_MAX_DAYS/
+#                                    # classify_incubating_drift()) -- durée max d'incubation
+#                                    # avant mort automatique (docs/PROMOTION-RULES.md §3.2).
+#                                    # 56 jours pour une PREMIÈRE incubation (§3.2) ; 28 jours
+#                                    # pour une stratégie RÉTROGRADÉE depuis un wallet réel
+#                                    # (§3.1 : "les 28 jours suivant la rétrogradation" avant
+#                                    # mort si elle ne satisfait pas de nouveau les critères de
+#                                    # rétablissement) -- même champ, valeur différente selon
+#                                    # l'origine de l'entrée en incubation.
 #   }
 # La somme des `capital_alloc_pct` des candidates DOIT rester <= 1.0 (le reliquat est la
 # réserve cash du labo) -- vérifié par bot/tests/test_config_strategies_sync.py, comme pour les

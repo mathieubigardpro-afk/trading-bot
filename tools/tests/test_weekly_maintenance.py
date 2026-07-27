@@ -691,3 +691,162 @@ def test_recal_wallet_universe_matches_spec():
     from bot.strategies.quasi_passif_crypto import SPEC_UNIVERSE_BY_WALLET
 
     assert wm.RECAL_WALLET_ID in SPEC_UNIVERSE_BY_WALLET
+
+
+# ============================================================================================
+# --- F8 (MAJEUR, audit adversarial) : max_incubation_days optionnel par entrée -- une
+# --- stratégie RÉTROGRADÉE (docs/PROMOTION-RULES.md §3.1) n'a que 28j, pas les 56j génériques
+# --- d'une première incubation (§3.2).
+# ============================================================================================
+
+
+def test_classify_incubating_default_max_incubation_days_still_56_when_not_provided():
+    """Non-régression : sans `max_incubation_days` explicite, le comportement historique (56j)
+    reste inchangé."""
+    v = wm.classify_incubating_drift(
+        age_days=30, sharpe_live=0.9, dd_live_pct=5.0, sharpe_ref=1.0, dd_ref_pct=10.0,
+        n_days_observed=30,
+    )
+    assert v["verdict"] == "OK"
+
+
+def test_classify_incubating_custom_max_incubation_days_28_triggers_alerte_earlier():
+    """Cas central F8 : une candidate RÉTROGRADÉE (28j max) à 30j d'âge doit être ALERTE, alors
+    que la même candidate serait seulement OK sous la limite générique de 56j (cf. test
+    ci-dessus, mêmes valeurs sinon)."""
+    v = wm.classify_incubating_drift(
+        age_days=30, sharpe_live=0.9, dd_live_pct=5.0, sharpe_ref=1.0, dd_ref_pct=10.0,
+        n_days_observed=30, max_incubation_days=28,
+    )
+    assert v["verdict"] == "ALERTE"
+    assert any("28" in r for r in v["reasons"])
+
+
+def test_classify_incubating_watch_threshold_scales_with_custom_max_incubation_days():
+    """Le seuil de vigilance interne (heuristique) doit conserver la même marge d'alerte
+    anticipée (14j par défaut : 56 - 42) quelle que soit la durée max effective — ici
+    28 - 14 = 14j de seuil de vigilance pour une candidate à 28j max."""
+    v = wm.classify_incubating_drift(
+        age_days=20, sharpe_live=0.9, dd_live_pct=5.0, sharpe_ref=1.0, dd_ref_pct=10.0,
+        n_days_observed=30, max_incubation_days=28,
+    )
+    assert v["verdict"] == "SURVEILLER"
+    assert any("14j" in r for r in v["reasons"])
+
+
+def test_build_drift_rows_honors_per_candidate_max_incubation_days_override(tmp_path, monkeypatch):
+    """Test d'intégration : `build_drift_rows()` doit lire `max_incubation_days` directement
+    sur l'entrée `bot.config.INCUBATING_STRATEGIES` (28j, simulant une rétrogradation) plutôt
+    que d'appliquer la constante générique 56j."""
+    import bot.config as config
+
+    now = datetime(2026, 8, 1, tzinfo=timezone.utc)
+    entered_at = "2026-07-02T00:00:00+00:00"  # 30 jours avant `now`
+
+    fake_candidate = {
+        "id": "retrograded_candidate",
+        "module": "bot.strategies.retrograded_candidate",
+        "params": {},
+        "asset_class": "crypto",
+        "univers": ["BTC"],
+        "capital_alloc_pct": 0.2,
+        "entered_at": entered_at,
+        "entry_run_id": "2026-07-02T00",
+        "max_incubation_days": 28,
+    }
+    monkeypatch.setattr(config, "INCUBATING_STRATEGIES", [fake_candidate])
+
+    repo_dir = tmp_path / "repo"
+    (repo_dir / "state" / "wallets" / config.LABO_WALLET_ID).mkdir(parents=True)
+
+    rows = wm.build_drift_rows(str(repo_dir), {"strategies": []}, now)
+    incubating_rows = [r for r in rows if r["categorie"] == "incubation"]
+    assert len(incubating_rows) == 1
+    row = incubating_rows[0]
+    assert row["age_days"] == 30
+    assert row["verdict"] == "ALERTE"
+    assert any("28" in reason for reason in row["reasons"])
+
+
+# ============================================================================================
+# --- F11 (MINEUR, audit adversarial) : un CSV.gz présent mais VIDE (0 ligne) doit être traité
+# --- comme un historique ABSENT (retour None), pour que `missing_symbols` reste honnête.
+# ============================================================================================
+
+
+def test_load_hourly_history_from_staging_returns_none_when_file_absent(tmp_path):
+    assert wm.load_hourly_history_from_staging(str(tmp_path), "BTC") is None
+
+
+def test_load_hourly_history_from_staging_returns_dataframe_when_populated(tmp_path):
+    staging_dir = tmp_path / "staging"
+    crypto_dir = staging_dir / "data" / "crypto"
+    crypto_dir.mkdir(parents=True)
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2026-01-01", periods=3, freq="h", tz="UTC"),
+            "open": [1.0, 2.0, 3.0],
+            "high": [1.1, 2.1, 3.1],
+            "low": [0.9, 1.9, 2.9],
+            "close": [1.05, 2.05, 3.05],
+            "volume": [10.0, 20.0, 30.0],
+        }
+    )
+    df.to_csv(crypto_dir / "BTC.csv.gz", index=False, compression="gzip")
+
+    result = wm.load_hourly_history_from_staging(str(staging_dir), "BTC")
+    assert result is not None
+    assert len(result) == 3
+
+
+def test_load_hourly_history_from_staging_returns_none_when_file_is_empty_zero_rows():
+    """Cas central F11 : un fichier PRÉSENT (en-têtes valides) mais avec 0 ligne de données
+    doit être traité comme absent (`None`), pas comme un DataFrame vide exploitable -- sinon
+    `run_recalibration()` ne compterait pas ce symbole dans `missing_symbols`
+    (`set(universe) - set(history)` ne verrait rien manquer, le symbole étant bien une clé de
+    `history`, juste avec un DataFrame vide), rendant le diagnostic malhonnête."""
+    import gzip
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as staging_dir:
+        crypto_dir = os.path.join(staging_dir, "data", "crypto")
+        os.makedirs(crypto_dir, exist_ok=True)
+        empty_df = pd.DataFrame(columns=["timestamp", "open", "high", "low", "close", "volume"])
+        path = os.path.join(crypto_dir, "ETH.csv.gz")
+        with gzip.open(path, "wt", encoding="utf-8") as f:
+            empty_df.to_csv(f, index=False)
+
+        result = wm.load_hourly_history_from_staging(staging_dir, "ETH")
+        assert result is None
+
+
+# ============================================================================================
+# --- F10 (MINEUR) : RECALIBRATION_GRIDS (code) doit rester synchronisée avec la grille
+# --- pré-enregistrée documentée dans docs/RECALIBRATION-SPEC.md (jamais une dérive silencieuse
+# --- entre la doc de gouvernance et le code qui l'applique).
+# ============================================================================================
+
+
+def _parse_regime_sma_days_grid_from_spec(spec_text: str) -> list:
+    """Extrait la grille `[150, 175, 200, 225, 250]` documentée dans le tableau §1 de
+    `docs/RECALIBRATION-SPEC.md` (ligne qui mentionne `regime_sma_days`) -- parsing minimal
+    d'une liste entre crochets, pas un parseur Markdown générique."""
+    import re
+
+    for line in spec_text.splitlines():
+        if "regime_sma_days" in line:
+            match = re.search(r"\[([0-9,\s]+)\]", line)
+            if match:
+                return [int(x.strip()) for x in match.group(1).split(",")]
+    raise AssertionError("grille regime_sma_days introuvable dans docs/RECALIBRATION-SPEC.md")
+
+
+def test_recalibration_grids_matches_recalibration_spec_markdown_table():
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    spec_path = os.path.join(repo_root, "docs", "RECALIBRATION-SPEC.md")
+    with open(spec_path, encoding="utf-8") as f:
+        spec_text = f.read()
+
+    documented_grid = _parse_regime_sma_days_grid_from_spec(spec_text)
+    assert documented_grid == [150, 175, 200, 225, 250]  # valeur attendue (mission)
+    assert wm.RECALIBRATION_GRIDS["quasi_passif_crypto"]["regime_sma_days"] == documented_grid

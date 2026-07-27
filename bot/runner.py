@@ -282,12 +282,30 @@ def _noncrypto_tradable_symbols(wallet_cfg: dict) -> List[str]:
 
 
 def _asset_class_of(symbol: str, crypto_universe) -> str:
-    if symbol in crypto_universe:
-        return "crypto"
+    """Classe d'actif d'un symbole pour CE wallet.
+
+    CORRECTIF AUDIT F2 (MAJEUR) : les ensembles actions/ETF CONNUS (`_EQUITIES_TRADABLE_SET`/
+    `_ETF_TRADABLE_SET`, dérivés de `bot.config.EQUITIES_SP100_UNIVERSE`/`ETF_RISKY_UNIVERSE`/
+    `ETF_BOND_BOGEY` -- source de vérité bas niveau, cf. `bot.config.SYMBOLS_EQUITY`) sont
+    vérifiés EN PREMIER, AVANT `crypto_universe`. `crypto_universe` (= `wallet_cfg[
+    "univers_crypto"]`) n'est PAS une source de vérité fiable pour cette classification : pour
+    le wallet labo, il dérive de `bot.config.labo_crypto_universe()`, lui-même dérivé du champ
+    déclaratif `asset_class` d'une entrée `INCUBATING_STRATEGIES` -- une candidate mal
+    configurée (ou malveillante) pourrait déclarer `asset_class="crypto"` tout en listant un
+    symbole action/ETF réel dans son `univers` (ex. AAPL). Avant ce correctif, un tel symbole
+    était classé "crypto" et forçait `market_open=True` en aval (cf. usages de cette fonction
+    et de `crypto_universe` ci-dessous), contournant le gate horaires NYSE (§7
+    ARCHITECTURE.md) pour un symbole qui reste, de fait, une action réelle -- démontré par
+    audit adversarial (candidate crypto déclarant AAPL). Un symbole listé dans les ensembles
+    actions/ETF connus est donc TOUJOURS traité comme tel, quoi que déclare la poche qui le
+    référence.
+    """
     if symbol in _EQUITIES_TRADABLE_SET:
         return "equities"
     if symbol in _ETF_TRADABLE_SET:
         return "etf"
+    if symbol in crypto_universe:
+        return "crypto"
     return "unknown"
 
 
@@ -646,7 +664,10 @@ def process_wallet(
             "wallet_id": wallet_id,
             "symbol": sym,
             "asset_class": _asset_class_of(sym, crypto_universe),
-            "market_open": True if sym in crypto_universe else market_open,
+            # CORRECTIF AUDIT F2 : dérivé de `_asset_class_of()` (qui vérifie les ensembles
+            # actions/ETF connus AVANT `crypto_universe`), jamais de `sym in crypto_universe`
+            # directement -- cf. docstring de `_asset_class_of()` pour le scénario d'attaque.
+            "market_open": True if _asset_class_of(sym, crypto_universe) == "crypto" else market_open,
             "quote_available": False,
             "quote_source": None,
             "price_mid_ideal": None,

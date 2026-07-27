@@ -452,9 +452,24 @@ def classify_incubating_drift(
     sharpe_ref: Optional[float],
     dd_ref_pct: Optional[float],
     n_days_observed: int,
+    max_incubation_days: int = INCUBATION_MAX_DAYS,
 ) -> Dict[str, Any]:
     """Verdict pour une candidate EN INCUBATION (wallet labo), selon §2.1/§2.2 (Porte 2) et
-    §3.2 (mort automatique à 56j) de `docs/PROMOTION-RULES.md`."""
+    §3.2 (mort automatique) de `docs/PROMOTION-RULES.md`.
+
+    CORRECTIF AUDIT F8 (MAJEUR) : `max_incubation_days` est PARAMÉTRABLE (défaut
+    `INCUBATION_MAX_DAYS` = 56j, §3.2, PREMIÈRE incubation) au lieu d'être une constante fixe
+    appliquée à toute candidate sans distinction. Une stratégie RÉTROGRADÉE depuis un wallet
+    réel (§3.1) n'a que **28 jours** avant d'être tuée si elle ne rétablit pas les critères
+    attendus — appliquer les 56j génériques à une telle entrée serait TROP PERMISSIF (la
+    laisserait traîner 2x plus longtemps que la règle de mort §3.1 ne l'autorise). Le seuil de
+    vigilance interne (heuristique, PAS un seuil PROMOTION-RULES) est mis à l'échelle
+    PROPORTIONNELLEMENT pour conserver la même marge d'alerte anticipée (`INCUBATION_MAX_DAYS -
+    INCUBATION_WATCH_DAYS` = 14j par défaut) avant le couperet, quelle que soit la durée max
+    effective — cf. `bot/config.py:INCUBATING_STRATEGIES` bandeau schéma, champ optionnel
+    `max_incubation_days`, résolu par l'appelant (`build_drift_rows`)."""
+    watch_days = max(0, int(max_incubation_days) - (INCUBATION_MAX_DAYS - INCUBATION_WATCH_DAYS))
+
     if age_days is None:
         return {
             "verdict": "ALERTE",
@@ -468,18 +483,19 @@ def classify_incubating_drift(
     verdict = "OK"
     reasons: List[str] = []
 
-    if age_days > INCUBATION_MAX_DAYS:
+    if age_days > max_incubation_days:
         verdict = _escalate(verdict, "ALERTE")
         reasons.append(
-            f"incubation depuis {age_days}j > {INCUBATION_MAX_DAYS}j — dépasse la fenêtre "
-            "maximale §3.2, candidate à tuer selon la prochaine session de recherche"
+            f"incubation depuis {age_days}j > {max_incubation_days}j — dépasse la fenêtre "
+            "maximale (§3.2, ou §3.1 si rétrogradée -- cf. max_incubation_days), candidate à "
+            "tuer selon la prochaine session de recherche"
         )
-    elif age_days > INCUBATION_WATCH_DAYS:
+    elif age_days > watch_days:
         verdict = _escalate(verdict, "SURVEILLER")
         reasons.append(
-            f"incubation depuis {age_days}j, approche de la limite {INCUBATION_MAX_DAYS}j "
-            f"(§3.2) — seuil de vigilance interne {INCUBATION_WATCH_DAYS}j (heuristique, PAS "
-            "un seuil PROMOTION-RULES)"
+            f"incubation depuis {age_days}j, approche de la limite {max_incubation_days}j "
+            f"— seuil de vigilance interne {watch_days}j (heuristique, PAS un seuil "
+            "PROMOTION-RULES)"
         )
 
     if n_days_observed < INCUBATION_MIN_OBSERVATION_DAYS:
@@ -564,6 +580,9 @@ def build_drift_rows(repo_dir: str, registry: dict, now: datetime) -> List[Dict[
         entry = registry_entry(registry, strategy_id)
         ref = reference_metrics_for(strategy_id, wallet_id, entry)
         age_days = _age_days(candidate.get("entered_at"), now)
+        # F8 : `max_incubation_days` optionnel par entrée (défaut 56j, cf. bot/config.py
+        # bandeau schéma INCUBATING_STRATEGIES) — 28j pour une candidate RÉTROGRADÉE (§3.1).
+        max_incubation_days = int(candidate.get("max_incubation_days", INCUBATION_MAX_DAYS) or INCUBATION_MAX_DAYS)
         verdict = classify_incubating_drift(
             age_days=age_days,
             sharpe_live=live["sharpe_live"],
@@ -571,6 +590,7 @@ def build_drift_rows(repo_dir: str, registry: dict, now: datetime) -> List[Dict[
             sharpe_ref=ref["sharpe_ref"],
             dd_ref_pct=ref["dd_ref_pct"],
             n_days_observed=live["n_days_observed"],
+            max_incubation_days=max_incubation_days,
         )
         rows.append(
             {
@@ -847,6 +867,13 @@ def load_hourly_history_from_staging(staging_dir: str, symbol: str) -> Optional[
     for col in ("open", "high", "low", "close", "volume"):
         if col not in df.columns:
             return None
+    # CORRECTIF AUDIT F11 (MINEUR) : un fichier présent mais VIDE (0 ligne, ex. entête seul ou
+    # écriture tronquée) doit être traité comme absent — sinon `missing = sorted(set(universe)
+    # - set(history))` (run_recalibration()) ne le compte PAS comme manquant (le symbole EST une
+    # clé de `history`, juste avec un DataFrame vide), ce qui rend `missing_symbols` malhonnête
+    # et laisse `simulate_daily_returns()` silencieusement ignorer ce symbole plus loin.
+    if df.empty:
+        return None
     return df[["open", "high", "low", "close", "volume"]]
 
 

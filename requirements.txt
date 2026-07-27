@@ -1,0 +1,28 @@
+# requirements.txt — dépendances Python du dépôt (F12, audit adversarial).
+#
+# Versions ÉPINGLÉES aux versions actuellement installées/vérifiées dans l'environnement de
+# développement de ce dépôt (`pip show pandas numpy requests` / `python -c "import yfinance"`),
+# sauf `pyarrow` (absent de cet environnement -- épinglé à la dernière version publiée sur PyPI
+# au moment de l'écriture de ce fichier, cf. TODO ci-dessous).
+#
+# Ce fichier est utilisé par `.github/workflows/ci.yml` (F9) uniquement. Les 5 workflows
+# existants (`bot.yml`, `daily-data-cache.yml`, `fetch-data.yml`, `weekly-maintenance.yml`,
+# `pages.yml`) continuent d'installer leurs dépendances tels quels (`pip install pandas numpy
+# requests yfinance` / `pip install requests pandas pyarrow yfinance`, sans épinglage) --
+# décision d'épinglage de PRODUCTION volontairement laissée à un humain (changer leur
+# comportement d'installation aujourd'hui n'est pas dans le périmètre de ce correctif).
+pandas==3.0.2
+numpy==2.4.4
+requests==2.33.1
+# yfinance : source primaire actions/ETF (bot/feeds/daily.py, bot/feeds/equities.py) --
+# version installée dans cet environnement de développement, qui correspond aussi à la
+# dernière version publiée sur PyPI au moment de l'écriture de ce fichier (2026-07-27).
+yfinance==1.5.2
+# pyarrow : utilisé par tools/fetch_data.py (écriture Parquet des données de marché publiées
+# sur la branche orpheline `market-data`). Non installé dans cet environnement de
+# développement (jamais importé par la suite de tests) -- épinglé à la dernière version PyPI
+# constatée au moment de l'écriture de ce fichier (25.0.0, 2026-07-27).
+# TODO(humain) : vérifier la compatibilité réelle de cette version avec le reste du pipeline
+# avant de resserrer cet épinglage en production (ce fichier ne sert aujourd'hui qu'à
+# .github/workflows/ci.yml, cf. bandeau ci-dessus).
+pyarrow==25.0.0
