@@ -32,14 +32,16 @@ Univers par wallet — panier resserré du wallet "agressif" (choix documenté)
 --------------------------------------------------------------------------------------------
 `docs/SELECTION-FINALE.md` §3 recommande de restreindre l'univers crypto du wallet agressif
 aux 30 cryptos actuelles de `bot.config.WALLETS[agressif]["univers_crypto"]` à un panier
-resserré de 12 actifs diversifiés (`agressif_12diversifie` du SPEC) — changement PROPOSÉ mais
+resserré de 11 actifs diversifiés (`agressif_12diversifie` du SPEC — identifiant historique
+inchangé malgré le retrait de TRX le 2026-07-27, cf. bandeau `CRYPTO_SYMBOLS_AGRESSIF_12` dans
+`bot/config.py`) — changement PROPOSÉ mais
 explicitement NON appliqué automatiquement à `bot/config.py` par ce document (il faudrait une
 modification hors du périmètre de cette mission, limité à `bot/strategies/` et `bot/tests/`).
 
 Cette stratégie applique donc la restriction ICI, au niveau du signal, sans toucher à
 `bot/config.py` : `SPEC_UNIVERSE_BY_WALLET` fixe, pour chaque wallet, EXACTEMENT l'univers de
 la variante SPEC correspondante (prudent = BTC/ETH, équilibré = 6 majors, agressif = panier de
-12). Pour le wallet agressif, les 18 cryptos supplémentaires que `bot/config.py` fait par
+11). Pour le wallet agressif, les 19 cryptos supplémentaires que `bot/config.py` fait par
 ailleurs suivre (prix/historique récupérés, journalisés dans `decisions.jsonl`) ne reçoivent
 simplement jamais de cible de cette stratégie — elles restent à 0 (ou à leur position
 existante si une autre pièce du pipeline en détenait une, ce qui ne devrait jamais arriver en
@@ -126,12 +128,14 @@ import pandas as pd
 from bot.strategies import StrategyBase, apply_missing_data_policy
 
 # --- Univers SPEC par wallet (docs/config-strategies.json -> variants) ---------------------
+# agressif : 11 actifs (TRX retiré le 2026-07-27, cf. bandeau CRYPTO_SYMBOLS_AGRESSIF_12 dans
+# bot/config.py -- structurellement sans donnée, quote_available=false 51/51 cycles).
 SPEC_UNIVERSE_BY_WALLET: Dict[str, List[str]] = {
     "prudent": ["BTC", "ETH"],
     "equilibre": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
     "agressif": [
         "BTC", "ETH", "SOL", "BNB", "XRP",
-        "TRX", "XLM", "HBAR", "ICP", "OP", "UNI", "FIL",
+        "XLM", "HBAR", "ICP", "OP", "UNI", "FIL",
     ],
 }
 

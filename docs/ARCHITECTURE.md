@@ -1051,6 +1051,15 @@ majors/mids vs jusqu'à 60 bps pour les "smalls" écartés). `CRYPTO_SYMBOLS_30`
 `bot/config.py` pour rétro-compatibilité bas niveau (`bot.sim.exchange.DEFAULT_QTY_STEPS`,
 tests) mais N'EST PLUS l'univers réel d'aucun wallet.
 
+**Retrait TRX** (audit 2026-07-27) : TRX retiré du panier (12 -> 11 actifs, le nom de la
+constante Python garde `_12` pour ne pas propager un renommage à faible valeur dans tout le
+dépôt, cf. bandeau de tête de `CRYPTO_SYMBOLS_AGRESSIF_12`) — TRX est structurellement sans
+donnée exploitable sur ce dépôt : Binance géo-bloque les runners GitHub Actions US pour ce
+symbole, et la paire TRX-USD n'existe pas sur Coinbase Exchange (seul repli configuré, cf.
+`bot/feeds/crypto.py`). Mesuré : `quote_available=false` sur 51/51 cycles horaires dans
+`state/wallets/agressif/decisions.jsonl` — jamais un prix, jamais un trade possible pour ce
+symbole. Univers réel désormais : BTC, ETH, SOL, BNB, XRP, XLM, HBAR, ICP, OP, UNI, FIL.
+
 ### 11.2 Agrégation par poche — `bot/runner.py:_combine_pockets()`
 
 Pour chaque poche non-cash d'un wallet, la stratégie référencée est appelée avec l'historique

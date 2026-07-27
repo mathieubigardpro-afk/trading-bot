@@ -352,19 +352,34 @@ QTY_STEP_EQUITY_ETF = 0.0001
 QTY_STEPS_EQUITIES: dict[str, float] = {sym: QTY_STEP_EQUITY_ETF for sym in SYMBOLS_EQUITY}
 
 # ======================================================================================
-# --- Univers crypto resserré du wallet AGRESSIF (12 actifs diversifiés) ---
+# --- Univers crypto resserré du wallet AGRESSIF (11 actifs diversifiés) ---
 # CHANGEMENT ADOPTÉ vs l'ancien univers 30 cryptos complet (cf. docs/SELECTION-FINALE.md §3 et
 # docs/config-strategies.json:_meta.changements_proposes_vs_config_actuel) : panier resserré
 # justifié par l'analyse de diversification (ENB) -- majors pour la liquidité/les coûts
-# (BTC, ETH, SOL, BNB, XRP) + diversificateurs à faible corrélation BTC (TRX, XLM, HBAR, ICP,
+# (BTC, ETH, SOL, BNB, XRP) + diversificateurs à faible corrélation BTC (XLM, HBAR, ICP,
 # OP, UNI, FIL). Remplace l'ancien `CRYPTO_SYMBOLS_30` comme univers du wallet agressif -- ce
 # dernier reste défini ci-dessus pour l'archive 100k$ / rétro-compatibilité bas niveau
 # (`bot.sim.exchange.DEFAULT_QTY_STEPS`, tests bas niveau), mais N'EST PLUS l'univers du wallet
 # agressif en production.
+#
+# RETRAIT TRX (audit 2026-07-27, chantier 1) : TRX est structurellement SANS DONNÉE sur ce
+# dépôt -- Binance géo-bloque les runners GitHub Actions US pour ce symbole (`bot.feeds.
+# crypto`), et la paire TRX-USD n'existe pas sur Coinbase Exchange (le repli documenté en tête
+# de `bot/feeds/crypto.py`). Mesuré : `quote_available=false` sur 51/51 cycles horaires
+# consultés dans `state/wallets/agressif/decisions.jsonl` -- aucun prix, jamais un seul trade
+# possible, seulement de la donnée manquante consommant un slot de l'univers pour rien. Retiré
+# ici (12 -> 11 actifs) plutôt que laissé "mort" dans la config -- pas de bascule vers un
+# fournisseur alternatif (ex. Kraken) aujourd'hui : budget de cette session insuffisant pour
+# qualifier une nouvelle source de données, cf. `docs/RESEARCH-BACKLOG.md`. Le nom de la
+# constante Python garde `_12` (cf. aussi l'identifiant SPEC historique `agressif_
+# 12diversifie` dans `docs/config-strategies.json`/`tools/weekly_maintenance.py`/
+# `docs/RESEARCH-REGISTRY.json`) : renommer ces identifiants historiques était hors périmètre
+# de ce correctif (impact large, aucune valeur fonctionnelle), seule la LISTE RÉELLE d'actifs
+# suivis change.
 # ======================================================================================
 CRYPTO_SYMBOLS_AGRESSIF_12 = [
     "BTC", "ETH", "SOL", "BNB", "XRP",
-    "TRX", "XLM", "HBAR", "ICP", "OP", "UNI", "FIL",
+    "XLM", "HBAR", "ICP", "OP", "UNI", "FIL",
 ]
 
 # ======================================================================================

@@ -286,11 +286,15 @@ def test_same_data_across_all_hours_of_a_day_gives_identical_decision():
 def test_spec_universe_matches_wallets():
     assert SPEC_UNIVERSE_BY_WALLET["prudent"] == ["BTC", "ETH"]
     assert SPEC_UNIVERSE_BY_WALLET["equilibre"] == ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"]
-    assert len(SPEC_UNIVERSE_BY_WALLET["agressif"]) == 12
+    # 11 (pas 12) depuis le retrait de TRX (audit 2026-07-27) : structurellement sans donnée
+    # (Binance géo-bloqué, absent de Coinbase US), cf. bandeau CRYPTO_SYMBOLS_AGRESSIF_12 dans
+    # bot/config.py.
+    assert len(SPEC_UNIVERSE_BY_WALLET["agressif"]) == 11
+    assert "TRX" not in SPEC_UNIVERSE_BY_WALLET["agressif"]
     assert set(["BTC", "ETH"]).issubset(SPEC_UNIVERSE_BY_WALLET["agressif"])
 
 
-def test_agressif_wallet_never_targets_symbols_outside_the_12_basket():
+def test_agressif_wallet_never_targets_symbols_outside_the_11_basket():
     crypto_symbols_30 = SPEC_UNIVERSE_BY_WALLET["agressif"] + ["ADA", "DOT", "ETC", "APT", "ARB", "AAVE"]
     n_hours = (REGIME_SMA_DAYS + 5) * 24
     history = {
