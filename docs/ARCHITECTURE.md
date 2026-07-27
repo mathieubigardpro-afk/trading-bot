@@ -1621,3 +1621,59 @@ existantes d'une autre brique — ex. `missing_data_cycles`, §12.4).
   tracking, pas sur le dashboard), aucune régression introduite (le labo committe ses propres
   fichiers `state/wallets/labo/*` comme les 3 autres, simplement pas encore lus par le
   dashboard) — à traiter dans une prochaine phase.
+
+## 14. Addendum — feed crypto aveugle & planification (2026-07-27)
+
+### 14.1 Diagnostic mesuré
+
+Journaux réels (`state/wallets/agressif/decisions.jsonl`, logs de cycle branche `logs`) :
+Binance renvoie **HTTP 451 sur 100% des cycles** (géo-blocage des IP US des runners GitHub
+Actions — source structurellement morte depuis ce dépôt, tous endpoints confondus) ; Coinbase
+renvoyait **HTTP 429 sur ~35% des cycles** parce que `bot/feeds/crypto.py:get_history_crypto`
+re-téléchargeait, à CHAQUE cycle horaire, ~200 jours de bougies HORAIRES pour chaque symbole de
+l'univers crypto actif (~4 900 requêtes/jour) — Binance mort en premier essai, repli Coinbase
+paginé en profondeur (jusqu'à ~20 pages/symbole). Résultat observé : jusqu'à 10 cryptos sur 12
+sans signal certains cycles (`quote_available=false` massif malgré un marché crypto 24/7).
+
+### 14.2 Correctifs
+
+**Historique** (`bot/feeds/crypto.py:get_history_crypto`) — la portion réseau "vivante" est
+plafonnée à `_RECENT_HOURLY_WINDOW_HOURS` (300h, une seule page Coinbase) quel que soit
+`n_hours` demandé ; la portion plus ancienne est complétée depuis le cache disque JOURNALIER
+crypto (`data-cache/crypto/<symbole>.csv.gz`, déjà produit quotidiennement par
+`tools/build_daily_cache.py`, lu ici exactement comme `bot/feeds/daily.py` le fait pour les
+actions/ETF depuis le 24/07), jamais par une nouvelle pagination réseau profonde. Chaque jour
+caché est répliqué sur ses 24 heures avec la MÊME clôture réelle (jamais une valeur inventée)
+— cette réplication satisfait uniquement la règle de complétude horaire de
+`bot.strategies.quasi_passif_crypto._daily_closes()` ; la décision de tendance ne consomme que
+la clôture réelle de la dernière heure du jour. Requêtes réseau mesurées : ~2/symbole/cycle
+(1 échec Binance + 1 page Coinbase) au lieu d'une pagination profonde — objectif ~290/jour.
+
+**Quotes** (`bot/feeds/crypto.py:get_prices_crypto`) — Binance rétrogradé en source de DERNIER
+RECOURS (toujours tentée, après Coinbase ET Kraken). Coinbase devient primaire ; l'API publique
+Kraken (`Ticker`, aucune clé, fonctionne depuis les IP US) ajoutée en repli intermédiaire,
+mapping vérifié symbole par symbole (`bot.config.CRYPTO_PAIR_KRAKEN` — BTC -> "XBT", DOGE ->
+"XDG"). BNB (non listé chez Kraken) saute intentionnellement ce repli : Coinbase puis Binance
+seulement, `None` si les deux échouent (no-trade strict, inchangé).
+
+**Planification** (`.github/workflows/bot.yml`) — cron `"7,27,47 * * * *"` (3 tentatives/heure)
+-> `"*/10 * * * *"` (6 tentatives/heure) : l'idempotence par `run_id` horaire trie déjà tout en
+quelques secondes, une tentative de plus est gratuite et réduit le risque de perdre une heure
+entière si une seule tentative échoue pour une raison transitoire. `bot.runner._detect_equity_
+gaps()`, lu au début de chaque cycle, journalise un enregistrement `type=gap_detected` dans
+`decisions.jsonl` (heures des dernières 24h sans aucune entrée `equity.jsonl`, tous wallets
+confondus) — observabilité uniquement, **aucun rattrapage rétroactif** des cycles manqués
+(signaux quotidiens, rejouer une heure manquée n'a aucune valeur et serait risqué).
+
+### 14.3 Explicitement laissé ouvert
+
+- `bot/feeds/daily.py:_fetch_daily_crypto` (chemin utilisé une fois par jour par
+  `tools/build_daily_cache.py`, budget généreux de 45 min, pas de pression de débit) garde
+  Binance en première tentative — non rétrogradé ici (gain marginal, hors du chemin critique
+  identifié par le diagnostic §14.1) ; à revisiter si ce chemin devient un jour sensible au
+  débit.
+- Mapping Kraken (`bot.config.CRYPTO_PAIR_KRAKEN`) construit sur la base de la documentation
+  publique Kraken (codes d'actifs XBT/XDG notamment) mais non validé par un appel réseau réel
+  depuis cet environnement (API marché bloquées ici) — un pair mal orthographié se comporte
+  comme un échec réseau ordinaire (repli suivant), jamais une exception ; à corriger dans
+  `bot/config.py` si un symbole échoue systématiquement en conditions réelles.

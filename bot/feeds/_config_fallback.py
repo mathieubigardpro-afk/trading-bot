@@ -26,6 +26,14 @@ _DEFAULTS = {
         "BTC": "BTC-USD", "ETH": "ETH-USD", "SOL": "SOL-USD",
         "DOGE": "DOGE-USD", "LINK": "LINK-USD", "AVAX": "AVAX-USD",
     },
+    # Repli Kraken (correctif 2026-07-27, feed crypto aveugle) -- cf. bot/config.py:
+    # CRYPTO_PAIR_KRAKEN pour le raisonnement complet (Binance 451 systématique depuis les
+    # runners -> rétrogradé en dernier recours ; BNB intentionnellement absent, non listé
+    # chez Kraken).
+    "CRYPTO_PAIR_KRAKEN": {
+        "BTC": "XBTUSD", "ETH": "ETHUSD", "SOL": "SOLUSD", "DOGE": "XDGUSD",
+        "LINK": "LINKUSD", "AVAX": "AVAXUSD",
+    },
     "SYMBOLS_EQUITY": ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META"],
     "SYMBOLS_ETF": ["SPY", "QQQ"],
     "STALENESS_MAX_SECONDS_CRYPTO": 300,

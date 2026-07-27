@@ -34,6 +34,29 @@ CRYPTO_PAIR_COINBASE = {  # fallback si Binance indisponible
     "BTC": "BTC-USD", "ETH": "ETH-USD", "SOL": "SOL-USD",
     "DOGE": "DOGE-USD", "LINK": "LINK-USD", "AVAX": "AVAX-USD",
 }
+# --- CORRECTIF INCIDENT PRODUCTION (2026-07-27, feed crypto aveugle) --------------------------
+# Diagnostic mesuré sur les journaux réels : Binance renvoie HTTP 451 sur 100% des cycles
+# horaires (géo-blocage des IP US des runners GitHub Actions -- source STRUCTURELLEMENT morte
+# depuis ce dépôt, quel que soit l'endpoint interrogé, cf. bot/feeds/crypto.py). Binance est
+# donc rétrogradé en source de DERNIER RECOURS (documentée, jamais supprimée -- redevient
+# utile si le géo-blocage disparaît un jour) pour les QUOTES (bot.feeds.crypto.get_prices_
+# crypto) : Coinbase devient la source primaire, avec l'API publique Kraken (endpoint public
+# `Ticker`, aucune clé requise, fonctionne depuis les IP US) ajoutée en repli intermédiaire.
+#
+# Mapping vérifié symbole par symbole (les codes d'actif Kraken ne suivent pas toujours le
+# ticker usuel) : BTC -> "XBT" (convention historique Kraken), DOGE -> "XDG" (idem). BNB
+# n'est PAS listé sur Kraken (les deux plateformes sont concurrentes) -- absence
+# INTENTIONNELLE, pas un oubli : un symbole sans entrée ici retombe simplement sur Coinbase
+# puis Binance (dernier recours), et sur `None` si les trois échouent (no-trade strict,
+# jamais de prix inventé). Un pair mal orthographié se comporte comme un échec réseau
+# ordinaire (Kraken répond avec un champ "error" non vide, jamais une exception) -- à corriger
+# ici si un symbole échoue systématiquement en conditions réelles.
+CRYPTO_PAIR_KRAKEN = {
+    "BTC": "XBTUSD", "ETH": "ETHUSD", "SOL": "SOLUSD", "DOGE": "XDGUSD",
+    "LINK": "LINKUSD", "AVAX": "AVAXUSD", "XRP": "XRPUSD", "XLM": "XLMUSD",
+    "HBAR": "HBARUSD", "ICP": "ICPUSD", "OP": "OPUSD", "UNI": "UNIUSD", "FIL": "FILUSD",
+    # "BNB" : non listé chez Kraken, cf. bandeau ci-dessus.
+}
 SYMBOLS_EQUITY = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META"]  # panel megacaps, ajustable
 
 # --- Capital (archive 100k$ uniquement — les wallets actifs utilisent WALLETS[*].capital_initial_eur) ---
@@ -60,7 +83,7 @@ MAX_QUOTE_AGE_SECONDS = 120.0  # âge maximum d'une quote pour être utilisée p
 # correctif ci-dessous inopérant en pratique.
 
 # --- Fraîcheur des prix (feeds — distinct de MAX_QUOTE_AGE_SECONDS ci-dessus utilisé par ExchangeSim) ---
-STALENESS_MAX_SECONDS_CRYPTO = 300   # 5 min — Binance/Coinbase sont réellement temps réel, INCHANGÉ.
+STALENESS_MAX_SECONDS_CRYPTO = 300   # 5 min — Coinbase/Kraken/Binance sont réellement temps réel, INCHANGÉ.
 
 # --- CORRECTIF INCIDENT PRODUCTION (2026-07-23T18/T19, marché NYSE ouvert 15h07 ET) ---
 # Diagnostic confirmé par les journaux commités (state/wallets/*/decisions.jsonl) : les 103
