@@ -105,7 +105,15 @@ avec le cadre actuel).
 
 ---
 
-### 3. Momentum actions ajusté par volatilité inverse (inverse-vol weighting)
+### 3. Momentum actions ajusté par volatilité inverse (inverse-vol weighting) — ✅ TRAITÉE 2026-07-27 : ÉCARTÉE
+
+**VERDICT (session hebdomadaire #1, cf. `RESEARCH-LOG.md` 2026-07-27 (c) et
+`RESEARCH-REGISTRY.json:xs_momentum_invvol_sp100`)** : Porte 1 §1.2 passée 5/5 (Sharpe OOS
+0.947, DSR 0.9998, K_total=10, audit `isSound: true`) mais dominée par le contrôle equal-weight
+déjà en production sur les MÊMES 30 fenêtres (IR -0.837, ≈4.6σ) — écartée, pas d'incubation.
+Le risque anticipé ci-dessous (« le gain de Sharpe pourrait ne pas venir d'un vrai edge ») s'est
+matérialisé en pire : il n'y a pas de gain du tout. Ne pas retester sans raison structurellement
+neuve (compterait dans K_total, cf. PROMOTION-RULES §3.3).
 
 **Hypothèse** : `xs_momentum_sp100` (seule stratégie active retenue à ce jour, Sharpe OOS
 0,82) pondère actuellement en `equal-weight` parmi le top 10 (cf.
@@ -354,6 +362,48 @@ disponible -- non détaillé ici, cette entrée sert de marqueur de dépendance.
 
 **Risques de biais spécifiques** : à évaluer par stratégie concrète le moment venu -- pas
 de risque spécifique identifiable avant qu'une hypothèse précise soit formulée.
+
+---
+
+## Idées ajoutées par la session hebdomadaire #1 (2026-07-27)
+
+### 11. [P0 — infrastructure] Durcissement du pipeline de données actions : détection d'anomalies de corporate actions
+
+**Hypothèse/motivation** : l'audit adversarial du backtest inverse-vol a identifié une anomalie
+concrète dans les données `market-data` : le spin-off DHR/Fortive (juillet 2016) mal ajusté
+(+62% en un jour dans la série « ajustée »), qui a fait entrer DHR artificiellement dans le
+top-10 momentum pendant 6 mois. Sans impact favorable sur CE backtest (l'exclure améliore même
+le résultat), mais rien ne garantit qu'une future anomalie du même type ne gonflera pas une
+future candidate. **À faire avant le prochain backtest actions** : un check automatique dans
+`tools/fetch_data.py` ou `backtest/data.py` (flag des rendements quotidiens > seuil ~±40% sur
+titres large-cap, croisés avec un calendrier de corporate actions ou au minimum journalisés pour
+revue humaine). Complexité : faible. Risque : faux positifs sur vrais krachs idiosyncratiques
+(à journaliser, pas à corriger silencieusement).
+
+### 12. [P1 — gouvernance, session DÉDIÉE obligatoirement, jamais une session de jugement (§0)] Deux amendements à proposer pour PROMOTION-RULES.md
+
+(a) **Critère de valeur marginale vs incumbent** : la session #1 a rencontré le cas non prévu
+« tous les seuils Porte 1 passés mais candidate dominée par la version en production de la même
+stratégie sur les mêmes fenêtres » — tranché conservativement (écartée), à formaliser.
+(b) **Discriminance du DSR sur OOS longs** : sur ~30 ans d'OOS concaténé (n≈7500), DSR≥0.50 est
+quasi automatiquement satisfait quel que soit K (constat chiffré de l'audit : DSR encore 0.89 à
+K=10 000). Pistes : seuil sur le DSR par fenêtre, ou PSR à SR* > 0 plus exigeant, ou seuil de
+significativité de l'écart vs benchmark (Jobson-Korkie déjà utilisé dans la vague 1).
+
+### 13. [P2 — dette de recherche, rappel] Retester `quasi_passif_crypto` avec le protocole complet
+
+Déjà inscrit comme dette explicite (`RESEARCH-LOG.md` 2026-07-23, backtest non audité, jamais de
+Porte 1) — rappelé ici pour qu'il ne disparaisse pas du radar : walk-forward + DSR (K_total du
+registre au jour du test) + audit adversarial sur le moteur commun `backtest/` désormais
+disponible. Prioritaire avant toute augmentation de capital sur la poche crypto.
+
+**Priorité de la prochaine session de recherche** : P0#2 (breakout de volatilité crypto avec
+filtre de régime — données horaires déjà dans `market-data`, pas d'extension du simulateur) ou
+P0#11 ci-dessus (rapide, débloque la confiance dans tous les futurs backtests actions). P0#1
+(funding carry) reste la plus grosse valeur potentielle mais exige (a) l'historique de funding
+rates (ABSENT de la branche `market-data` — extension de `tools/fetch_data.py` à faire tourner
+par les Actions AVANT toute session qui voudrait la traiter) et (b) l'extension short/perp du
+simulateur, elle-même soumise à audit adversarial préalable.
 
 ---
 

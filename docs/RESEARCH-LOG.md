@@ -227,3 +227,133 @@ absolue de ses chiffres, pas la comparaison relative entre valeurs de la grille 
 qui en est fait). `xs_momentum_sp100`/`dual_momentum_multiclasse_etf`/`quasi_passif_crypto`
 restent un antécédent hors du cadre formel §3 (cf. entrée du 2026-07-23 "Gouvernance") : le
 moniteur les évalue quand même à titre informatif, sans déclencher d'action automatique.
+
+---
+
+## 2026-07-27 — Session hebdomadaire #1 (a) : AUDIT ADVERSARIAL du système d'auto-amélioration lui-même
+
+**Contexte.** Première session hebdomadaire de recherche exécutée. Conformément au mandat de
+première session, un audit adversarial du système d'auto-amélioration (jamais réalisé — le
+workflow qui devait le porter n'a jamais tourné) a été mené AVANT toute autre activité, par un
+agent dédié sur copie isolée (remote git neutralisé), sur 3 axes : isolation du labo,
+contournabilité de `PROMOTION-RULES.md`, bornes du recalibrage `weekly_maintenance.py`.
+
+**12 findings (3 CRITIQUES, 5 MAJEURS, 2 MINEURS, 2 INFO). Les plus graves :**
+
+- **F1 (CRITIQUE, démontré par exécution)** : `load_strategies()` indexait les stratégies par
+  `name` sans contrôle d'unicité — un module candidate labo définissant `name="quasi_passif_crypto"`
+  remplaçait silencieusement la vraie stratégie de production POUR LES 3 WALLETS RÉELS
+  (démonstration : poids `{'BTC': 0.99}` servi au wallet prudent). **Corrigé** : collision de
+  `name` → `ValueError` + tests.
+- **F2 (MAJEUR, démontré)** : une candidate labo déclarant `asset_class="crypto"` avec un
+  symbole action réel (ex. AAPL) contournait le gate horaires NYSE (ordre AAPL exécuté un
+  dimanche, démontré). **Corrigé** : la classe d'actif réelle d'un symbole est désormais dérivée
+  des univers actions/ETF connus de `bot/config.py`, jamais de la déclaration de la poche + tests
+  reproduisant l'attaque.
+- **F5 (CRITIQUE)** : `backtest/engine.py`, le « moteur commun » exigé par la Porte 1 §1.1,
+  **n'existait nulle part dans le dépôt** (références `bt-final/*` = poste de travail d'origine,
+  jamais committé). La porte la plus fondamentale du protocole reposait à 100% sur la bonne foi
+  déclarative. **Corrigé** : moteur commun créé dans `backtest/` (cf. entrée (c) ci-dessous),
+  avec ses propres tests anti-look-ahead.
+- **F6 (CRITIQUE)** : aucun code ne calculait ni ne vérifiait le DSR/K_total — tout reposait sur
+  la discipline documentaire. **Corrigé** : `tools/verify_research.py` (`--check` valide le
+  registre, `--compute --grid-size N` donne le K_total du jour) + tests.
+- **F7 (MAJEUR)** : aucune vérification mécanique de la règle §0 (gouvernance et jugement jamais
+  dans le même commit). **Corrigé** : `tools/check_governance_commit.py` (échoue si un commit
+  touche à la fois `PROMOTION-RULES.md` et `bot/config.py`/`RESEARCH-REGISTRY.json`), branché en CI.
+- **F8 (MAJEUR)** : `weekly_maintenance.py` appliquait 56 jours à toute candidate, sans porter la
+  distinction §3.1 (28 jours pour une stratégie rétrogradée). **Corrigé** : champ optionnel
+  `max_incubation_days` (défaut 56 ; 28 à poser explicitement pour une rétrogradée), documenté
+  dans le schéma `INCUBATING_STRATEGIES`.
+- **F9 (MAJEUR)** : aucun workflow CI ne lançait la suite de tests (595 tests jamais vérifiés
+  avant production). **Corrigé** : `.github/workflows/ci.yml` (permissions `contents: read`,
+  pytest complet + check de gouvernance).
+- **F12 (MAJEUR, partiellement traité)** : les 4 workflows réseau ont `contents: write` et
+  installent pandas/numpy/yfinance NON épinglés (risque supply-chain avec accès en écriture au
+  dépôt entier). Traitement partiel : `requirements.txt` épinglé créé, utilisé par la CI.
+  **DÉCISION HUMAINE REQUISE** (volontairement non prise par cette session, prudence sur la
+  continuité de production) : épingler aussi les 5 workflows existants, et activer la protection
+  de branche côté GitHub.
+- Findings mineurs corrigés en passant : F3/F4 (validations structurelles max 3 candidates /
+  max 5 poches / bornes `capital_alloc_pct` — désormais testées), F10 (test de synchronisation
+  grille code ↔ `RECALIBRATION-SPEC.md`), F11 (historique 0-ligne traité comme absent).
+
+**Verdicts par axe** : isolation labo = exploitable (corrigé) ; contournabilité des règles =
+les seuils chiffrés eux-mêmes sont sans ambiguïté, mais TOUT reposait sur la confiance
+documentaire (mécanisation ajoutée) ; recalibrage = sain dans son cœur (grille infranchissable,
+seuil 10% strict, scope git étroit — vérifié par lecture ET tests), findings d'hygiène corrigés.
+
+Suite de tests après correctifs : **637 tests verts** (595 existants + 42 nouveaux).
+
+---
+
+## 2026-07-27 — Session hebdomadaire #1 (b) : REVUE des stratégies actives et candidates
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` vide — aucune Porte 2 à évaluer, aucun kill 56j.
+- **Stratégies actives** : `xs_momentum_sp100`, `dual_momentum_multiclasse_etf`,
+  `quasi_passif_crypto` sont l'antécédent explicitement HORS du cadre §3 (`PROMOTION-RULES.md`
+  §5) — pas de règle de mort applicable. À titre informatif, `DRIFT-REPORT.md` du 2026-07-26 :
+  7 lignes, toutes **SURVEILLER** pour la même raison mécanique « historique vécu 4j < 28j —
+  trop tôt pour un diagnostic fiable ». Le Sharpe vécu -6.68 affiché pour `quasi_passif_crypto`
+  (agressif) sur 4 jours est du bruit pur (n≈4 points quotidiens) — aucune action, aucune
+  décision. **Décisions de revue : zéro action requise, zéro action prise.**
+- Recalibrage automatique du 2026-07-26 : `REGIME_SMA_DAYS` inchangé (175 vs 200 : +3.0% < seuil
+  10%) — conforme à la spec, rien à redire.
+
+---
+
+## 2026-07-27 — Session hebdomadaire #1 (c) : Porte 1 de `xs_momentum_invvol_sp100` (backlog P0#3) — ÉCARTÉE
+
+**Moteur commun d'abord (correctif F5).** `backtest/` créé : `engine.py` (signal clôture t →
+exécution open t+1, coûts bps/côté sur turnover, walk-forward IS/OOS, métriques sur équity OOS
+concaténée, DSR Bailey & López de Prado), `data.py` (CSV branche `market-data`, éligibilité sans
+backfill), `strategies/xsmom.py` (fidèle à `bot/strategies/xs_momentum_sp100.py`, constantes
+importées jamais dupliquées), `tests/` (7 tests dont anti-look-ahead démonstratif : un moteur
+volontairement biaisé « en avance » donne Sharpe 1.097 vs 1.034 pour le moteur correct).
+
+**Protocole.** Walk-forward 36m IS / 12m OOS, pas 12m, 30 fenêtres (1996-2026), coûts 5 bps/côté,
+**aucune grille** : tous les paramètres pré-fixés (réglages de production + `vol_lookback_days=63`
+du SPEC d'origine, présent dans le code AVANT cette session — vérifié par l'audit dans
+l'historique git). K interne = 1, K_total = 9 + 1 = **10** (§1.3). Deux variantes sur les MÊMES
+fenêtres : contrôle equal-weight (reproduction de la version en production) et candidate inv_vol.
+
+**Résultats (OOS concaténé, net de coûts).**
+
+| | Candidate inv_vol | Contrôle equal | Benchmark SPY |
+|---|---|---|---|
+| Sharpe | 0.947 | 1.034 | 0.608 |
+| Sortino | 1.349 | 1.485 | 0.863 |
+| Profit factor | 1.718 | 1.821 | — |
+| MaxDD | 49.3% | 48.7% | 54.8% |
+| Trades clos | 1970 | 1970 | — |
+
+Porte 1 §1.2 : **5/5 seuils passés** (Sharpe 0.947≥0.70 ; PF 1.718>1.15 ; 1970≥80 trades ;
+MaxDD relatif 0.90≤1.5 ; DSR 0.9998≥0.50 avec K_total=10). Stress de coûts : PF 1.61 à 3×,
+1.50 à 5× (robuste). Audit adversarial indépendant (§1.4) : **`isSound: true`** — anti-look-ahead
+vérifié par expérience contradictoire, coûts recalculés indépendamment (identiques à 3 décimales),
+sizing compatible avec le `RiskManager` réel (poids inv_vol max 24.2%, jamais clippé par les
+wallets réels), aucune retouche post-OOS (la seule correction de bug en session a DÉGRADÉ le PF —
+sens opposé à la complaisance).
+
+**Verdict : ÉCARTÉE, pas d'incubation.** Sur les mêmes 30 fenêtres, la candidate est dominée par
+le contrôle equal-weight (= la version DÉJÀ en production) sur tous les axes ; Information Ratio
+inv_vol vs equal = **-0.837** (≈4.6σ sur 7549 obs. — pas du bruit). L'audit confirme qu'aucun des
+biais identifiés (survivant, anomalie spin-off DHR, source de données) ne peut inverser ce
+classement relatif apparié (mêmes titres, mêmes fenêtres, même moteur). Incuber une variante
+strictement dominée ne créerait aucune valeur et consommerait une place de labo + du K_total.
+**Ambiguïté de règle notée** (option conservatrice retenue) : `PROMOTION-RULES.md` §1 ne prévoit
+pas explicitement le cas « tous les seuils passés mais dominée par la version incumbent de la même
+stratégie ». Proposition pour une future session de gouvernance DÉDIÉE (jamais dans une session
+de jugement, §0) : ajouter à la Porte 1 un critère explicite de valeur marginale vs incumbent.
+
+**Réserves documentées (honnêteté).** (a) Baseline equal reproduite à Sharpe 1.034 vs 0.823
+historique (+25.6%) — données yfinance révisées/ajustées différemment du poste d'origine
+(`bt-final/` absent du dépôt, comparaison directe impossible), biais du survivant quantifié par
+l'audit (~-6% de Sharpe en excluant les IPO≥2005), anomalie de spin-off DHR identifiée (juillet
+2016, sans impact favorable — l'exclure AMÉLIORE légèrement le résultat). Le classement relatif,
+seul fondement de la décision, y est insensible. (b) Note méthodologique de l'audit : sur un
+historique OOS de ~30 ans (n=7549), le seuil DSR≥0.50 est peu discriminant quel que soit K —
+à discuter dans une future session de gouvernance.
+
+**Effets** : entrée n°10 dans `RESEARCH-REGISTRY.json` (statut `ecartee`, K_total documenté) ;
+prochaine candidate → K_total = 11. Labo toujours vide (0/3 places), état attendu.

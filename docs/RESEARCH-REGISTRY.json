@@ -177,6 +177,29 @@
       "dsr": null,
       "raison": "Base de la poche crypto des 3 wallets réels, en remplacement des 6 stratégies actives rejetées/écartées ci-dessus (long/flat vol-targeté + filtre SMA200, aucun paramètre optimisé sur ces données). NIVEAU DE RIGUEUR DÉLIBÉRÉMENT INFÉRIEUR aux 8 autres entrées de ce registre : ni walk-forward, ni audit adversarial, ni test de significativité (docs/SELECTION-FINALE.md §2.2, explicite). Sharpe élevé (1.15-1.49) expliqué par une exposition brute réalisée faible (12-48%) -- le mécanisme de vol-targeting laisse le book majoritairement en cash la majorité du temps, pas un signal miracle. N'a jamais passé de Porte 1 ni de Porte 2 telles que définies dans docs/PROMOTION-RULES.md -- antécédent explicitement non conforme (cf. _meta et PROMOTION-RULES.md §5), à retester avec le protocole complet avant de lui accorder plus de capital (critère d'échec déjà posé dans docs/SELECTION-FINALE.md §5).",
       "source": "bt-final/quasi-passif-crypto/results.json"
+    },
+    {
+      "id": "xs_momentum_invvol_sp100",
+      "famille": "equities_cross_sectional_momentum",
+      "date_test": "2026-07-27",
+      "statut": "ecartee",
+      "sharpe_oos": 0.9471,
+      "sortino_oos": 1.3493,
+      "profit_factor_oos": 1.7184,
+      "max_drawdown_oos_pct": 49.27,
+      "n_trades_oos_closed": 1970,
+      "benchmark_sharpe_oos_aligned": 0.6075,
+      "benchmark_maxdd_oos_aligned_pct": 54.84,
+      "walkforward": "36m IS / 12m OOS, pas 12m, 30 fenêtres (1996-2026), AUCUNE grille (paramètres pré-fixés : réglages de production xs_momentum_sp100 + vol_lookback_days=63 du SPEC d'origine)",
+      "univers": "S&P100, 103 titres, constituants actuels (biais du survivant documenté)",
+      "k_total": 10,
+      "dsr": 0.9998,
+      "dsr_methode": "K_total = 9 (lignes du registre à la date du test) + 1 (une seule combinaison interne, zéro grille) -- conforme PROMOTION-RULES.md §1.3. Bailey & López de Prado 2014, skew/kurtosis inclus, n=7549 obs. NOTE méthodologique de l'audit : à n aussi grand, le seuil DSR>=0.50 est peu discriminant quel que soit K -- calcul valide mais gate faiblement contraignante sur walk-forward long.",
+      "audit_adversarial_isSound": true,
+      "cost_stress_profit_factor": {"5bps": 1.7184, "15bps_3x": 1.6052, "25bps_5x": 1.5003},
+      "comparaison_controle_equal_weight_memes_fenetres": {"sharpe_equal": 1.0336, "sortino_equal": 1.485, "maxdd_equal_pct": 48.68, "information_ratio_invvol_vs_equal": -0.837},
+      "raison": "ÉCARTÉE malgré Porte 1 §1.2 intégralement passée (5/5 seuils) et audit adversarial isSound=true. Motif : sur les MÊMES 30 fenêtres OOS, la candidate est dominée par le contrôle equal-weight (= la version déjà en production de xs_momentum_sp100) sur tous les axes -- Sharpe 0.947 vs 1.034, Sortino 1.349 vs 1.485, MaxDD 49.3% vs 48.7%, Information Ratio -0.837 (≈4.6 écarts-types sur 7549 obs., pas du bruit). Incuber une variante strictement dominée par la version en production n'a aucune valeur (elle consommerait 1 des 3 places du labo et gonflerait K_total pour les candidates futures). AMBIGUÏTÉ DE RÈGLE NOTÉE : PROMOTION-RULES §1 ne prévoit pas explicitement le cas 'seuils passés mais dominée par la version incumbent de la même stratégie' -- option la plus conservatrice retenue (pas d'incubation), cohérente avec le statut 'ecartee' historique (un résultat techniquement ok n'est pas un critère suffisant de déploiement). Baseline equal-weight reproduite sur le nouveau moteur commun : Sharpe 1.034 vs 0.823 historique (+25.6%) -- écart investigué par l'audit (données yfinance révisées/ajustements différents, biais du survivant quantifié ~-6% de Sharpe sur univers réduit ex-IPO>=2005, anomalie spin-off DHR sans impact favorable), sans incidence sur le classement relatif apparié qui fonde la décision.",
+      "source": "backtest/results/xs_momentum_invvol_sp100/results.json"
     }
   ]
 }
