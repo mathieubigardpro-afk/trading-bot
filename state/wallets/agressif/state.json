@@ -1,7 +1,7 @@
 {
-  "cash_usd": 380.26489552937267,
+  "cash_usd": 572.5848887837476,
   "circuit_breakers": {
-    "consecutive_losses": 1,
+    "consecutive_losses": 2,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
@@ -49,6 +49,10 @@
       {
         "equity": 1116.6399303996097,
         "ts": "2026-07-27T23:38:52.965377+00:00"
+      },
+      {
+        "equity": 1117.62393039961,
+        "ts": "2026-07-28T01:03:15.938730+00:00"
       }
     ],
     "flatten_mode": false,
@@ -61,11 +65,11 @@
     "last_rate": 1.1389,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-07-27T23:39:11.867694+00:00"
+    "last_rate_ts": "2026-07-28T01:03:33.089246+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-07-27T23:38:52.965377+00:00",
-  "last_run_id": "2026-07-27T23",
+  "last_run_completed_at": "2026-07-28T01:03:15.938730+00:00",
+  "last_run_id": "2026-07-28T01",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -110,21 +114,17 @@
     "UNI": {
       "prix_moyen": 3.7707669999999993,
       "qty": 54.5
-    },
-    "XLM": {
-      "prix_moyen": 0.18244416,
-      "qty": 1125.0
     }
   },
-  "realized_pnl_cumulative_usd": -6.140460811799984,
+  "realized_pnl_cumulative_usd": -19.07014755742499,
   "schema_version": 1,
-  "state_hash_prev": "fc807dc3677a0c131d027c50112cd8be749e69ad3223e0103590837d58f84f3b",
+  "state_hash_prev": "966ac72c0d62e1254717b54c5e551d574508a87cc7f68e8af33f4d0087cfcb39",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "BNB": 7,
-        "OP": 7
+        "BNB": 8,
+        "OP": 8
       }
     },
     "xs_momentum_sp100": {
@@ -142,6 +142,11 @@
       "realized_pnl_usd": -6.308956340279967,
       "symbol": "XLM",
       "ts": "2026-07-25T04:34:47.322129+00:00"
+    },
+    {
+      "realized_pnl_usd": -12.929686745625004,
+      "symbol": "XLM",
+      "ts": "2026-07-28T01:03:15.938730+00:00"
     }
   ],
   "wallet_id": "agressif"
