@@ -589,6 +589,10 @@ def test_get_history_crypto_binance_451_coinbase_429_no_exception_leaks(tmp_path
 
 
 def test_synthesize_hourly_from_daily_cache_replicates_real_close_24x_per_day(tmp_path, monkeypatch):
+    # _now_utc DOIT être figé comme dans les tests voisins : la fraîcheur du manifest
+    # (CACHE_MAX_AGE_DAYS=5) est comparée à "maintenant" -- sans ce patch, le test pourrit
+    # mécaniquement 5 jours après _FIXED_NOW (constaté le 2026-08-03, session hebdo #2).
+    monkeypatch.setattr(crypto_mod, "_now_utc", lambda: _FIXED_NOW)
     cache_dir = tmp_path / "data-cache"
     monkeypatch.setenv("BOT_DATA_CACHE_DIR", str(cache_dir))
     _write_daily_cache(cache_dir, "BTC", n_days=10, generated_at=_FIXED_NOW)
