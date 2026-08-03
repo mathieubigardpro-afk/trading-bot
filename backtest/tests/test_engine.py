@@ -370,3 +370,106 @@ def test_expected_max_sharpe_zero_for_k_le_1():
     assert metrics.expected_max_sharpe(1, sr_std=0.05) == 0.0
     assert metrics.expected_max_sharpe(0, sr_std=0.05) == 0.0
     assert metrics.expected_max_sharpe(50, sr_std=0.05) > 0.0
+
+
+# ------------------------------------------------------------------------------------------
+# 5. Correctifs de l'audit adversarial du 2026-08-03 (F1/F2/F3, cf. RESEARCH-LOG.md)
+# ------------------------------------------------------------------------------------------
+
+
+def _daily_calendar(n_days: int):
+    return pd.date_range("2024-01-01", periods=n_days, freq="D", tz="UTC")
+
+
+def test_f1_band_holds_position_no_phantom_rebalance():
+    """F1 : signal CONSTANT (0.50) + prix qui bougent (mais dérive de poids < bande) ->
+    exactement UN ordre (l'établissement initial), plus JAMAIS rien : la position dérive
+    librement, jamais reprojetée sur le poids cible à chaque barre. L'ancienne implémentation
+    générait un ordre à quasi chaque barre (96,9% des bougies BTC réelles, audit 2026-08-03)."""
+    n = 120
+    cal = _daily_calendar(n)
+    rng = np.random.default_rng(11)
+    # Marche aléatoire douce : ±0.5%/jour, la dérive du poids reste très en-deçà de 0.05.
+    closes_arr = 100.0 * np.cumprod(1.0 + rng.normal(0.0, 0.005, n))
+    closes = pd.DataFrame({"X": closes_arr}, index=cal)
+    opens = closes.shift(1).bfill()  # open(t) = close(t-1) : prix mouvants, pas de gap exotique
+    weights = pd.DataFrame({"X": [0.50] * n}, index=cal)
+
+    seg = engine.simulate_segment(
+        cal, weights, opens, closes, start_idx=1, end_idx=n - 1, cost_bps=25.0,
+        no_trade_band=0.05, apply_vol_targeting=False,
+    )
+    # Turnover après le jour 0 : aucun évènement de réalisation (aucune vente) et l'exposition
+    # DOIT dériver (elle n'est pas re-clouée à 0.50 chaque jour).
+    assert len(seg.realized_events) == 0, "aucune vente ne doit avoir lieu : le signal n'a jamais changé"
+    drift = (seg.gross_exposure - 0.50).abs()
+    assert float(drift.max()) > 1e-4, "l'exposition doit dériver avec le prix (position non reprojetée)"
+
+    # Contrôle : même setup avec bande à 0 -> reprojection continue assumée -> des ventes
+    # partielles apparaissent (rebalancing) ; la bande fait donc une différence mesurable.
+    seg0 = engine.simulate_segment(
+        cal, weights, opens, closes, start_idx=1, end_idx=n - 1, cost_bps=25.0,
+        no_trade_band=0.0, apply_vol_targeting=False,
+    )
+    assert len(seg0.realized_events) > 0
+
+
+def test_f1_band_still_trades_when_decision_really_changes():
+    """La bande ne doit PAS bloquer un vrai changement de décision (0 -> 0.5 -> 0)."""
+    n = 60
+    cal = _daily_calendar(n)
+    closes = pd.DataFrame({"X": np.full(n, 100.0)}, index=cal)
+    opens = closes.copy()
+    w = np.zeros(n)
+    w[10:40] = 0.5
+    weights = pd.DataFrame({"X": w}, index=cal)
+
+    seg = engine.simulate_segment(
+        cal, weights, opens, closes, start_idx=1, end_idx=n - 1, cost_bps=0.0,
+        no_trade_band=0.05, apply_vol_targeting=False,
+    )
+    assert seg.n_trades_closed() == 1  # une ligne ouverte puis fermée
+    assert float(seg.gross_exposure.iloc[15]) == pytest.approx(0.5, abs=1e-9)
+    assert float(seg.gross_exposure.iloc[-1]) == pytest.approx(0.0, abs=1e-9)
+
+
+def test_f2_hourly_calendar_with_daily_vol_defaults_raises():
+    """F2 : calendrier horaire + défauts quotidiens de vol targeting -> ValueError explicite.
+    Avec les constantes HOURLY_* le même appel doit passer."""
+    n = 200
+    cal = pd.date_range("2024-01-01", periods=n, freq="h", tz="UTC")
+    closes = pd.DataFrame({"X": np.linspace(100.0, 110.0, n)}, index=cal)
+    opens = closes.shift(1).bfill()
+    weights = pd.DataFrame({"X": [0.3] * n}, index=cal)
+
+    with pytest.raises(ValueError, match="intra-journalier"):
+        engine.simulate_segment(cal, weights, opens, closes, 1, n - 1, cost_bps=10.0)
+
+    seg = engine.simulate_segment(
+        cal, weights, opens, closes, 1, n - 1, cost_bps=10.0,
+        vol_ewma_halflife_days=risk_overlay.HOURLY_VOL_EWMA_HALFLIFE_PERIODS,
+        vol_periods_per_year=risk_overlay.HOURLY_VOL_PERIODS_PER_YEAR,
+    )
+    assert len(seg.returns) == n - 1
+
+
+def test_f3_nan_weight_raises_instead_of_disabling_vol_targeting():
+    """F3 : un poids NaN levait silencieusement le vol targeting de TOUT le portefeuille
+    (min(1.0, nan) -> 1.0). Le moteur doit désormais refuser bruyamment."""
+    n = 80
+    cal = _daily_calendar(n)
+    closes = pd.DataFrame({"X": np.full(n, 100.0), "Y": np.full(n, 50.0)}, index=cal)
+    opens = closes.copy()
+    w = pd.DataFrame({"X": [0.8] * n, "Y": [0.1] * n}, index=cal)
+    w.iloc[20, w.columns.get_loc("Y")] = float("nan")
+
+    with pytest.raises(ValueError, match="NaN"):
+        engine.simulate_segment(cal, w, opens, closes, 1, n - 1, cost_bps=10.0)
+
+    # Défense en profondeur : l'overlay lui-même refuse aussi un poids NaN.
+    with pytest.raises(ValueError, match="NaN"):
+        risk_overlay.compute_portfolio_vol_scalar(
+            pd.Series({"X": 0.8, "Y": float("nan")}),
+            pd.Series({"X": 0.5, "Y": 0.5}),
+            pd.Series({"X": 100, "Y": 100}),
+        )

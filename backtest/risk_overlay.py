@@ -59,8 +59,20 @@ DEFAULT_VOL_TARGET_ANNUALIZED = float(bot_cfg.VOL_TARGET_ANNUALIZED)  # 0.275
 DEFAULT_VOL_COLDSTART_MIN_POINTS = int(bot_cfg.VOL_COLDSTART_MIN_POINTS)  # 30
 DEFAULT_VOL_COLDSTART_SCALAR = float(bot_cfg.VOL_COLDSTART_SCALAR)  # 0.5
 # 60h de production -> 2.5 jours (même demi-vie physique, cf. docstring module).
+# ATTENTION (audit 2026-08-03, F2) : `halflife` est passé tel quel à pandas.ewm(), qui compte
+# en LIGNES de la série, jamais en temps réel. Ces défauts ne sont donc corrects QUE pour des
+# séries à 1 ligne = 1 jour. Pour des données HORAIRES, utiliser les constantes HOURLY_*
+# ci-dessous — `backtest/engine.py:simulate_segment` refuse désormais (ValueError) un
+# calendrier intra-journalier combiné aux défauts quotidiens.
 DEFAULT_VOL_EWMA_HALFLIFE_DAYS = float(bot_cfg.VOL_EWMA_HALFLIFE_HOURS) / 24.0
 DEFAULT_VOL_PERIODS_PER_YEAR = 252.0  # jours de bourse -- cf. backtest/metrics.py, pas 8760
+
+# --- Équivalents HORAIRES (audit 2026-08-03, F2) : à passer EXPLICITEMENT à simulate_segment
+# pour toute candidate sur bougies horaires (crypto). Mêmes valeurs physiques que la
+# production (`bot/risk/vol_targeting.py` : halflife 60 observations horaires, annualisation
+# sqrt(8760)) — ici exprimées dans l'unité "lignes de la série" attendue par pandas.ewm().
+HOURLY_VOL_EWMA_HALFLIFE_PERIODS = float(bot_cfg.VOL_EWMA_HALFLIFE_HOURS)  # 60 lignes horaires
+HOURLY_VOL_PERIODS_PER_YEAR = 8760.0  # heures/an, comme bot/risk/vol_targeting.py
 
 
 def precompute_vol_stats(
@@ -101,7 +113,20 @@ def compute_portfolio_vol_scalar(
     portfolio_vol = 0.0
     coldstart = False
     for sym, w in raw_weights.items():
-        if w is None or abs(float(w)) < 1e-12:
+        if w is None:
+            continue
+        wf = float(w)
+        if math.isnan(wf):
+            # Audit 2026-08-03 (F3) : NaN n'est ni filtré par `abs(w) < eps` (toute
+            # comparaison avec NaN est False) ni propagé jusqu'au scalar final --
+            # `min(1.0, nan)` renvoie 1.0 en Python, donc UN SEUL poids NaN désactivait
+            # silencieusement le vol targeting pour TOUT le portefeuille. Échec bruyant
+            # obligatoire (principe pessimiste ARCHITECTURE.md §0.2).
+            raise ValueError(
+                f"compute_portfolio_vol_scalar: poids NaN pour {sym!r} -- un poids invalide "
+                "ne doit jamais neutraliser silencieusement le vol targeting (audit F3)."
+            )
+        if abs(wf) < 1e-12:
             continue
         vc = valid_count_row.get(sym) if valid_count_row is not None else None
         if vc is None or (isinstance(vc, float) and math.isnan(vc)) or vc < coldstart_min_points:

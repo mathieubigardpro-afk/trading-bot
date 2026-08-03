@@ -133,12 +133,16 @@ def simulate_segment(
         `vol_target_annualized` (défaut `bot.config.VOL_TARGET_ANNUALIZED`) — jamais
         l'inverse. Mettre `False` neutralise cette étape (utile pour isoler d'autres tests du
         moteur, cf. `backtest/tests/test_engine.py`).
-      - `no_trade_band` (défaut `bot.config.NO_TRADE_BAND` = 0,05, ALIGNÉ PRODUCTION depuis ce
-        correctif — l'audit a mesuré ~16,3 fills par transition de signal réellement voulue
-        avec la bande à 0) : si l'écart entre le poids scalé et le dernier poids RÉELLEMENT
-        EXÉCUTÉ (pas le poids brut) est strictement inférieur à cette bande, le poids exécuté
-        ce jour-là reste inchangé (aucun ordre) — exactement la sémantique de
-        `bot/risk/manager.py` étape 6. Mettre `0.0` désactive cette étape.
+      - `no_trade_band` (défaut `bot.config.NO_TRADE_BAND` = 0,05, ALIGNÉ PRODUCTION) : si
+        l'écart entre le poids scalé et le poids RÉELLEMENT PORTÉ ce matin (position dérivée,
+        marquée au prix d'ouverture — `poids_actuel` au sens de `bot/risk/manager.py` étape 6,
+        jamais le poids brut du signal) est strictement inférieur à cette bande, AUCUN ordre
+        n'est émis pour ce symbole : ses `shares` restent STRICTEMENT inchangées et la position
+        dérive librement avec le prix. Correctif audit 2026-08-03 (F1) : l'implémentation
+        précédente figeait le POIDS puis reprojetait les shares sur ce poids à chaque barre
+        (equity et prix bougeant) — 96,9% des bougies BTC généraient un ordre malgré un signal
+        constant, vidant la bande de son effet et créant coûts + rebalancing premium fantômes.
+        Mettre `0.0` désactive cette étape (reprojection continue assumée).
 
     Cette surcouche est volontairement PLUS SIMPLE que `bot/risk/manager.py` (pas de circuit
     breakers, pas de caps par actif, pas de bande par poche, pas de cap d'exposition brute
@@ -152,6 +156,34 @@ def simulate_segment(
         )
     if end_idx < start_idx:
         raise ValueError("end_idx doit être >= start_idx")
+
+    # --- Gardes défensives (audit adversarial 2026-08-03) --------------------------------
+    # F3 : un NaN dans les poids décidés désactivait silencieusement le vol targeting de tout
+    # le portefeuille (cf. risk_overlay.compute_portfolio_vol_scalar). Refus bruyant en amont,
+    # une seule vérification vectorisée sur les lignes réellement consommées par ce segment.
+    w_slice = weights_decided.iloc[start_idx - 1 : end_idx]
+    if bool(w_slice.isna().any().any()):
+        bad_cols = [c for c in w_slice.columns if bool(w_slice[c].isna().any())]
+        raise ValueError(
+            f"weights_decided contient des NaN (colonnes {bad_cols}) sur le segment demandé -- "
+            "la stratégie doit produire des poids définis (0.0 = flat), jamais NaN (audit F3)."
+        )
+    # F2 : les défauts de vol targeting (halflife 2.5 « jours » = 2.5 LIGNES, sqrt(252)) ne
+    # sont valides que sur des barres quotidiennes. Sur un calendrier intra-journalier ils
+    # sous-estiment la vol d'un facteur ~12 (mesuré sur BTC horaire) et neutralisent le
+    # dérisking. Refus explicite : l'appelant doit passer les constantes HOURLY_* de
+    # risk_overlay pour des bougies horaires.
+    if apply_vol_targeting and len(calendar) >= 3:
+        _steps_s = np.diff(calendar.values).astype("timedelta64[s]").astype(float)
+        _median_step_hours = float(np.median(_steps_s)) / 3600.0
+        if _median_step_hours <= 2.0 and float(vol_periods_per_year) <= 1000.0:
+            raise ValueError(
+                f"Calendrier intra-journalier détecté (pas médian ≈ {_median_step_hours:.2f}h) "
+                f"mais paramètres de vol targeting quotidiens (vol_periods_per_year="
+                f"{vol_periods_per_year}, halflife={vol_ewma_halflife_days} lignes). Passer "
+                "vol_ewma_halflife_days=risk_overlay.HOURLY_VOL_EWMA_HALFLIFE_PERIODS et "
+                "vol_periods_per_year=risk_overlay.HOURLY_VOL_PERIODS_PER_YEAR (audit F2)."
+            )
 
     shares = pd.Series(0.0, index=universe)
     avg_cost = pd.Series(0.0, index=universe)
@@ -174,12 +206,6 @@ def simulate_segment(
     else:
         vol_annual_full = valid_count_full = None
 
-    # Dernier poids RÉELLEMENT EXÉCUTÉ (pas le poids brut décidé) -- état de la bande de
-    # non-négociation, réinitialisé à 0 en tête de CHAQUE segment (cohérent avec `shares` qui
-    # démarre elle aussi à 0 : un segment OOS simule un portefeuille qui repart flat, cf.
-    # docstring module ci-dessus sur la remise à zéro du capital).
-    last_executed_w = pd.Series(0.0, index=universe)
-
     for j in range(n):
         i = start_idx + j
         date = calendar[i]
@@ -200,19 +226,25 @@ def simulate_segment(
         else:
             scaled_w = raw_w
 
-        if no_trade_band and no_trade_band > 0:
-            target_w = scaled_w.copy()
-            for sym in target_w.index:
-                if abs(float(target_w[sym]) - float(last_executed_w.get(sym, 0.0))) < no_trade_band:
-                    target_w[sym] = last_executed_w.get(sym, 0.0)
-        else:
-            target_w = scaled_w
-        last_executed_w = target_w
-
         equity_before_trade = cash + float((shares * open_price).sum())
-        target_dollars = target_w * equity_before_trade
         safe_open = open_price.replace(0.0, np.nan)
+        target_dollars = scaled_w * equity_before_trade
         target_shares = (target_dollars / safe_open).fillna(0.0)
+
+        if no_trade_band and no_trade_band > 0:
+            # Correctif audit 2026-08-03 (F1) : la bande compare le poids cible au poids
+            # RÉELLEMENT PORTÉ ce matin (position dérivée marquée à l'open — `poids_actuel`
+            # de bot/risk/manager.py étape 6). Symbole dans la bande -> AUCUN ordre : shares
+            # strictement conservées (la position dérive), jamais reprojetées sur un poids
+            # figé (l'ancienne implémentation générait un ordre à quasi chaque barre dès que
+            # le prix bougeait, cf. docstring).
+            if equity_before_trade > 0:
+                current_w = (shares * open_price) / equity_before_trade
+            else:
+                current_w = pd.Series(0.0, index=universe)
+            hold = (scaled_w - current_w).abs() < no_trade_band
+            target_shares = target_shares.where(~hold, shares)
+
         trade_shares = target_shares - shares
 
         changed = trade_shares[trade_shares.abs() > 1e-9]
@@ -370,12 +402,18 @@ def select_params_via_is(
     is_start_idx: int,
     is_end_idx: int,
     param_grid: Sequence[dict],
+    sim_kwargs: Optional[dict] = None,
 ) -> ParamSelectionResult:
     """Sélectionne, PARMI `param_grid`, la combinaison de paramètres maximisant le Sharpe mesuré
     sur la fenêtre IS UNIQUEMENT (`docs/PROMOTION-RULES.md` §1.1/§1.4) — jamais l'OOS. Si
     `param_grid` contient 0 ou 1 combinaison, AUCUNE sélection n'a lieu (cette fonction retourne
     directement l'unique combinaison, `is_sharpe=NaN` documentant explicitement "non applicable,
-    zéro degré de liberté" plutôt qu'un chiffre qui laisserait croire à une sélection réelle)."""
+    zéro degré de liberté" plutôt qu'un chiffre qui laisserait croire à une sélection réelle).
+
+    `sim_kwargs` (audit 2026-08-03, F2) : kwargs passés tels quels à `simulate_segment` (ex.
+    paramètres de vol targeting HORAIRES pour un calendrier intra-journalier) — la sélection IS
+    doit simuler avec EXACTEMENT la même surcouche de risque que l'évaluation OOS, jamais avec
+    les défauts quotidiens si l'OOS utilise autre chose."""
     grid = list(param_grid) if param_grid else [{}]
     if len(grid) <= 1:
         params = grid[0]
@@ -386,7 +424,9 @@ def select_params_via_is(
     best_sharpe = float("-inf")
     for params in grid:
         wdf = weights_provider(params)
-        seg = simulate_segment(calendar, wdf, opens, closes, is_start_idx, is_end_idx, cost_bps)
+        seg = simulate_segment(
+            calendar, wdf, opens, closes, is_start_idx, is_end_idx, cost_bps, **(sim_kwargs or {})
+        )
         sh = bt_metrics.sharpe_ratio(seg.returns)
         candidates.append({"params": params, "is_sharpe": sh})
         if not math.isnan(sh) and sh > best_sharpe:
