@@ -357,3 +357,98 @@ historique OOS de ~30 ans (n=7549), le seuil DSR≥0.50 est peu discriminant que
 
 **Effets** : entrée n°10 dans `RESEARCH-REGISTRY.json` (statut `ecartee`, K_total documenté) ;
 prochaine candidate → K_total = 11. Labo toujours vide (0/3 places), état attendu.
+
+---
+
+## 2026-08-03 — Session hebdomadaire #2 (a) : REVUE des stratégies actives et candidates
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56j. **Zéro action requise, zéro action prise.**
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-08-02 : 7 lignes, toutes **SURVEILLER**
+  pour la même raison mécanique (11j vécus < 28j — trop tôt). Les Sharpe vécus extrêmes
+  (dual_momentum 10.11, quasi_passif agressif -2.28) sont du bruit d'échantillon court —
+  aucune action. Recalibrage du 2026-08-02 : SAUTÉ par le workflow (données crypto
+  indisponibles ce cycle-là) — non bloquant, le moniteur retentera dimanche prochain ; à
+  surveiller si le saut se répète 2 semaines de suite.
+- Hygiène : correctif d'un test qui pourrissait avec le temps (`test_crypto.py`, `_now_utc`
+  non figé — vert à l'écriture le 27/07, rouge mécaniquement dès J+5). Suite : 670 verts.
+
+---
+
+## 2026-08-03 — Session hebdomadaire #2 (b) : AUDIT ADVERSARIAL de `backtest/risk_overlay.py` (dette du 27/07) — 3 CRITIQUES corrigés
+
+**Contexte.** Dette explicite en tête de `RESEARCH-BACKLOG.md` : la surcouche de risque du
+moteur commun (ajoutée le 27/07) n'avait jamais reçu d'audit adversarial indépendant. Audit
+mené par un agent dédié sur copie isolée (remote neutralisé), scripts d'attaque exécutés sur
+données réelles, AVANT toute décision fondée sur ce moteur. Verdict initial : **isSound: false**,
+3 findings CRITIQUES — tous corrigés dans la même session (commit 2be992b) :
+
+- **F1 (CRITIQUE, démontré)** : la no-trade band figeait le POIDS cible puis reprojetait les
+  shares dessus À CHAQUE barre (equity/prix mouvants) → un ordre sur **96,9% des bougies BTC
+  réelles malgré un signal constant** — bande vidée de son effet, coûts et « rebalancing
+  premium » fantômes, sémantique opposée à `bot/risk/manager.py` étape 6. Corrigé : la bande
+  compare désormais le poids cible au poids réellement PORTÉ (position dérivée marquée à
+  l'open) ; symbole dans la bande = shares strictement conservées. Le masquage venait des
+  fixtures de tests à prix CONSTANTS (reprojection invisible) — 2 tests à prix mouvants ajoutés.
+- **F2 (CRITIQUE, démontré)** : les défauts de vol targeting « quotidiens » (halflife 2.5
+  LIGNES, √252) appliqués tels quels à des bougies horaires sous-estimaient la vol ~12× (BTC
+  réel : 0.04 au lieu de 0.48) → scalar cloué à 1.0, aucun dérisking. Corrigé : garde
+  explicite (ValueError sur calendrier intra-journalier + défauts quotidiens), constantes
+  `HOURLY_*` alignées production (60 lignes, √8760), `sim_kwargs` propagés à
+  `select_params_via_is` (la sélection IS doit simuler comme l'OOS).
+- **F3 (CRITIQUE, démontré)** : un poids NaN n'était ni filtré (`NaN < eps` = False) ni
+  propagé (`min(1.0, nan)` = 1.0 en Python) → UN SEUL poids NaN désactivait silencieusement
+  le vol targeting de TOUT le portefeuille. Corrigé : refus bruyant (engine + overlay).
+- Axes vérifiés SANS finding : causalité de `precompute_vol_stats` (attaque par perturbation
+  des données futures : propre), coûts sur turnover post-bande (arithmétique correcte),
+  réinitialisation d'état entre segments walk-forward (correcte et voulue).
+
+**Portée sur l'antécédent** : les chiffres de `xs_momentum_invvol_sp100` (session #1) ont été
+produits sur le moteur pré-correctif. Le biais F1 s'appliquait identiquement aux deux variantes
+comparées (même moteur, mêmes fenêtres) — le verdict apparié « ecartee » tient ; les NIVEAUX
+absolus (Sharpe 1.034/0.947) ne doivent plus servir de référence sans re-run (note ajoutée au
+registre). Suite complète après correctifs : **674 tests verts** (+4).
+
+---
+
+## 2026-08-03 — Session hebdomadaire #2 (c) : Porte 1 de `vol_breakout_6majors` (backlog P0#2) — ÉCHEC, ÉCARTÉE
+
+**Protocole.** SPEC intégralement PRÉ-ENREGISTRÉE et committée AVANT toute exécution (commit
+59647d3) : grille figée 4 combos (W∈{55,110} × P∈{0.20,0.35}, valeurs reprises des lookbacks
+Donchian/EMA du projet, pas optimisées pour l'idée), coûts 25 bps/côté (palier « mids »
+uniforme, pessimiste pour BTC/ETH/SOL), walk-forward 9m IS / 3m OOS / pas 3m sur bougies
+horaires 2022-01→2026-06 (14 fenêtres, 30 671 h OOS), moteur commun post-correctifs F1/F2/F3
+avec paramètres horaires explicites. Signal : squeeze Bollinger (percentile de bandwidth sur
+90j ≤ P dans les 24 dernières heures) + cassure de la bande haute + filtre de régime SMA 200j,
+sortie sous la bande médiane, long-only 1/6 par actif. Implémentation par agent dédié,
+chargeur horaire commun livré au passage (`backtest/data_hourly.py`, réutilisable).
+
+**Résultats (OOS concaténé, net de coûts, √8760).**
+
+| | Candidate | Benchmark B&H équipondéré |
+|---|---|---|
+| Sharpe | **0,434** | 0,653 |
+| Profit factor | 1,209 | — |
+| MaxDD | 23,3% | 66,8% |
+| Trades clos | 302 | — |
+
+Porte 1 §1.2 : **2/5 seuils manqués, marges larges** — Sharpe 0,434 < 0,70 (−38%) et DSR
+0,058 < 0,50 (−88%, K_total = 10 + 14×4 = 66). PF sous 1,0 dès 3× les coûts (0,77). Sharpe
+par sous-période : **−0,58 en 2022-2023 vs +0,95 en 2024-2026** — tout l'edge apparent vient
+de la moitié récente, motif classique à ne PAS retester en variante (§3.3). Analyses
+d'honnêteté saines : 299 épisodes de squeeze distincts pour 302 trades (le faible nombre
+d'épisodes indépendants redouté par le backlog ne s'est pas matérialisé), corrélation 0,45 au
+proxy quasi-passif.
+
+**Contre-audit adversarial indépendant : `isSound: true`** — results.json REPRODUIT BIT-À-BIT
+depuis les données brutes par re-exécution indépendante, causalité attaquée sur données
+réelles (16 perturbations, zéro fuite), DSR/K_total/seuils recalculés indépendamment,
+aucun signe de retouche post-OOS. Un finding cosmétique : `select_params_via_is` annualise le
+Sharpe IS d'affichage à √252 au lieu de √8760 (facteur constant, argmax inchangé, aucun
+chiffre de décision affecté — à corriger à l'occasion).
+
+**Verdict : ÉCARTÉE, pas d'incubation.** 3e stratégie technique active de suite sous le simple
+buy & hold sur l'univers 6 majors (après Donchian 0,31 et EMA 0,24) — le constat de la vague 1
+se confirme sur une famille de signal pourtant structurellement différente. Entrée n°11 au
+registre ; prochaine candidate → K_total = 11 lignes + sa grille. Labo toujours vide (0/3).

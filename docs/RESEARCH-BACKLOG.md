@@ -1,16 +1,12 @@
 # RESEARCH-BACKLOG.md — Backlog d'idées de recherche, classées par priorité
 
-> **ACTION REQUISE (2026-07-27, chantier 3, dette explicite)** : `backtest/risk_overlay.py`
-> (bande de non-négociation par défaut = 0,05 + vol targeting reproduisant `bot/risk/
-> manager.py`, désormais appliqués PAR DÉFAUT par `backtest/engine.py:simulate_segment()`) n'a
-> PAS reçu l'audit adversarial indépendant que `backtest/README.md` exige avant de s'appuyer
-> sur ce moteur pour juger une candidate (budget de la session du 27/07 insuffisant pour un
-> audit séparé du correctif qu'elle vient de produire). **La prochaine session hebdomadaire
-> doit auditer `backtest/risk_overlay.py` + les changements associés de `backtest/engine.py`
-> avant toute nouvelle décision de promotion/rejet basée sur ce moteur** — vérifier notamment :
-> fidélité du vol scalar à `bot.risk.compute_vol_scalar` (mêmes formules, adaptation horaire
-> -> quotidienne correctement documentée), sémantique de la bande (comparaison au dernier poids
-> EXÉCUTÉ, pas au poids brut), absence de look-ahead dans `risk_overlay.precompute_vol_stats`.
+> ~~ACTION REQUISE (2026-07-27, chantier 3, dette explicite) : audit adversarial de
+> `backtest/risk_overlay.py` + `backtest/engine.py`~~ — **✅ SOLDÉE 2026-08-03 (session #2)** :
+> audit mené sur copie isolée, verdict initial `isSound: false` (3 findings CRITIQUES : bande
+> vidée de son effet par reprojection continue des shares ; défauts de vol quotidiens
+> silencieusement faux sur données horaires ; poids NaN désactivant le vol targeting), tous
+> corrigés + tests de non-régression (commit 2be992b, détail : `RESEARCH-LOG.md` 2026-08-03 (b)).
+> Le moteur est désormais audité pour usage quotidien ET horaire.
 
 *Alimente les sessions de recherche futures qui incuberont des candidates dans le wallet
 labo 🧪. Chaque idée doit passer intégralement par `docs/PROMOTION-RULES.md` (Porte 1 puis
@@ -83,9 +79,17 @@ même de pouvoir backtester quoi que ce soit.
 
 ---
 
-### 2. Breakout de volatilité crypto avec filtre de régime
+### 2. Breakout de volatilité crypto avec filtre de régime — ✅ TRAITÉE 2026-08-03 : ÉCARTÉE
 
-**Hypothèse** : les expansions soudaines de range (ex. cassure de bande de Bollinger/ATR
+**VERDICT (session hebdomadaire #2, cf. `RESEARCH-LOG.md` 2026-08-03 (c) et
+`RESEARCH-REGISTRY.json:vol_breakout_6majors`)** : ÉCHEC Porte 1, 2/5 seuils manqués avec
+marges larges (Sharpe OOS 0,434 < 0,70 ; DSR 0,058 avec K_total=66), sous le buy & hold
+équipondéré (0,65), PF < 1 dès 3× les coûts, edge apparent concentré sur 2024-2026 seulement
+(Sharpe −0,58 avant / +0,95 après). Contre-audit `isSound: true` (reproduit bit-à-bit).
+3e signal technique actif de suite sous le B&H sur les 6 majors — ne pas retester de variante
+sans raison structurellement neuve (§3.3, compterait dans K_total).
+
+**Hypothèse (historique)** : les expansions soudaines de range (ex. cassure de bande de Bollinger/ATR
 après une phase de compression -- "squeeze") précèdent statistiquement des mouvements
 directionnels significatifs en crypto, marché structurellement plus sujet aux régimes de
 compression/expansion que les actions (liquidité fragmentée, catalyseurs on-chain/news
@@ -409,13 +413,22 @@ Porte 1) — rappelé ici pour qu'il ne disparaisse pas du radar : walk-forward 
 registre au jour du test) + audit adversarial sur le moteur commun `backtest/` désormais
 disponible. Prioritaire avant toute augmentation de capital sur la poche crypto.
 
-**Priorité de la prochaine session de recherche** : P0#2 (breakout de volatilité crypto avec
-filtre de régime — données horaires déjà dans `market-data`, pas d'extension du simulateur) ou
-P0#11 ci-dessus (rapide, débloque la confiance dans tous les futurs backtests actions). P0#1
-(funding carry) reste la plus grosse valeur potentielle mais exige (a) l'historique de funding
-rates (ABSENT de la branche `market-data` — extension de `tools/fetch_data.py` à faire tourner
-par les Actions AVANT toute session qui voudrait la traiter) et (b) l'extension short/perp du
-simulateur, elle-même soumise à audit adversarial préalable.
+**Priorité de la prochaine session de recherche (revue 2026-08-03, session #2)** :
+1. **P2#13 (retest `quasi_passif_crypto` avec protocole complet)** remonte en tête : c'est la
+   SEULE brique crypto en production et elle n'a jamais eu de walk-forward/DSR/audit — le
+   chargeur horaire (`backtest/data_hourly.py`) et le moteur audité pour l'horaire (session #2)
+   rendent ce retest désormais peu coûteux, et 3 échecs de stratégies actives de suite sur cet
+   univers renforcent l'importance de valider la brique passive réellement déployée.
+2. P0#11 (détection d'anomalies de corporate actions — rapide, débloque la confiance des
+   futurs backtests actions).
+3. P0#1 (funding carry) : toujours la plus grosse valeur potentielle, toujours bloquée par
+   (a) l'historique de funding rates ABSENT de `market-data` (étendre `tools/fetch_data.py`
+   et laisser les Actions le faire tourner AVANT toute session qui voudrait la traiter) et
+   (b) l'extension short/perp du simulateur, soumise à audit adversarial préalable.
+4. Note moteur (session #2) : les niveaux absolus de `xs_momentum_invvol_sp100`/contrôle
+   equal-weight (session #1) ont été produits sur le moteur PRÉ-correctif F1 — tout futur
+   usage de ces chiffres comme référence exige un re-run sur moteur corrigé (le verdict
+   apparié 'ecartee', lui, tient — cf. note au registre).
 
 ---
 

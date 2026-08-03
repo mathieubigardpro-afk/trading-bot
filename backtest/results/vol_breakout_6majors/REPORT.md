@@ -69,6 +69,6 @@ sous-évalué ~5,9×).
 
 ## Effets
 
-- Entrée n°11 au registre (`statut: "ecartee"`), K_total de la prochaine candidate = 12
-  lignes + sa grille interne.
+- Entrée n°11 au registre (`statut: "ecartee"`), K_total de la prochaine candidate = 11
+  lignes de registre + sa grille interne.
 - Aucune incubation. Labo toujours vide (0/3).
