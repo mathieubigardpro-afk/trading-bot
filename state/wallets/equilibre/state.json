@@ -1,15 +1,11 @@
 {
-  "cash_usd": 452.0136723343565,
+  "cash_usd": 455.9191839416981,
   "circuit_breakers": {
-    "consecutive_losses": 1,
+    "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1135.4832959949113,
-        "ts": "2026-08-04T12:21:36.549512+00:00"
-      },
       {
         "equity": 1151.2794780548766,
         "ts": "2026-08-04T15:01:55.792908+00:00"
@@ -57,6 +53,10 @@
       {
         "equity": 1135.4832959949113,
         "ts": "2026-08-05T12:13:11.150020+00:00"
+      },
+      {
+        "equity": 1148.4774107269957,
+        "ts": "2026-08-05T14:40:16.098117+00:00"
       }
     ],
     "flatten_mode": false,
@@ -66,14 +66,14 @@
   "equity_peak_usd": 1157.0843897965149,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1515,
+    "last_rate": 1.1554,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-05T12:13:29.227409+00:00"
+    "last_rate_ts": "2026-08-05T14:40:39.422276+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-05T12:13:11.150020+00:00",
-  "last_run_id": "2026-08-05T12",
+  "last_run_completed_at": "2026-08-05T14:40:16.098117+00:00",
+  "last_run_id": "2026-08-05T14",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -90,6 +90,10 @@
     "CVS": {
       "prix_moyen": 104.80472312018966,
       "qty": 0.3764
+    },
+    "DBC": {
+      "prix_moyen": 28.412715647660065,
+      "qty": 3.3711
     },
     "DE": {
       "prix_moyen": 605.5350739009551,
@@ -111,10 +115,6 @@
       "prix_moyen": 295.0158669953201,
       "qty": 0.3225
     },
-    "QQQ": {
-      "prix_moyen": 687.6497586314025,
-      "qty": 0.1383
-    },
     "TGT": {
       "prix_moyen": 139.6745735495224,
       "qty": 0.2862
@@ -128,9 +128,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": -4.792319723039082,
+  "realized_pnl_cumulative_usd": -0.11088190887372829,
   "schema_version": 1,
-  "state_hash_prev": "0e844ebeb636f25c6252aeb616d71e4575fd2d6f89d3081beae00789bf108580",
+  "state_hash_prev": "a769ccbe8ef258045f5e8ca807d959df1c5cbdf5ae17ece3d0cc5ddbde628efa",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -160,6 +160,11 @@
       "realized_pnl_usd": -6.3929346001453995,
       "symbol": "QCOM",
       "ts": "2026-08-03T13:46:15.865189+00:00"
+    },
+    {
+      "realized_pnl_usd": 4.681437814165354,
+      "symbol": "QQQ",
+      "ts": "2026-08-05T14:40:16.098117+00:00"
     }
   ],
   "wallet_id": "equilibre"

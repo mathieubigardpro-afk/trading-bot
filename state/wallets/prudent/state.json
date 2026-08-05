@@ -1,15 +1,11 @@
 {
-  "cash_usd": 512.4259092435383,
+  "cash_usd": 518.5769766753888,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1140.4509749343092,
-        "ts": "2026-08-04T12:21:36.549512+00:00"
-      },
       {
         "equity": 1158.3675040013813,
         "ts": "2026-08-04T15:01:55.792908+00:00"
@@ -57,6 +53,10 @@
       {
         "equity": 1140.4509749343092,
         "ts": "2026-08-05T12:13:11.150020+00:00"
+      },
+      {
+        "equity": 1162.3191955968402,
+        "ts": "2026-08-05T14:40:16.098117+00:00"
       }
     ],
     "flatten_mode": false,
@@ -66,15 +66,19 @@
   "equity_peak_usd": 1163.6319837338947,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1515,
+    "last_rate": 1.1554,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-05T12:13:29.227409+00:00"
+    "last_rate_ts": "2026-08-05T14:40:39.422276+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-05T12:13:11.150020+00:00",
-  "last_run_id": "2026-08-05T12",
+  "last_run_completed_at": "2026-08-05T14:40:16.098117+00:00",
+  "last_run_id": "2026-08-05T14",
   "positions": {
+    "DBC": {
+      "prix_moyen": 28.412715647660065,
+      "qty": 7.5058
+    },
     "EEM": {
       "prix_moyen": 63.81602095391006,
       "qty": 3.2807
@@ -82,15 +86,11 @@
     "IWM": {
       "prix_moyen": 295.0158669953201,
       "qty": 0.7096
-    },
-    "QQQ": {
-      "prix_moyen": 687.6497586314025,
-      "qty": 0.3044
     }
   },
-  "realized_pnl_cumulative_usd": 0.0,
+  "realized_pnl_cumulative_usd": 10.303902173766694,
   "schema_version": 1,
-  "state_hash_prev": "b15766c6fc0ea843e694a3c96050fb42b12f590f7d2dcfb92db860764ba51043",
+  "state_hash_prev": "5c48d649d62e6803460ba25ba7f3c1369f56e57081779071f8a2626265f30f8b",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -101,6 +101,12 @@
       "missing_data_cycles": {}
     }
   },
-  "trade_history_for_breakers": [],
+  "trade_history_for_breakers": [
+    {
+      "realized_pnl_usd": 10.303902173766694,
+      "symbol": "QQQ",
+      "ts": "2026-08-05T14:40:16.098117+00:00"
+    }
+  ],
   "wallet_id": "prudent"
 }
