@@ -1,6 +1,6 @@
 # DRIFT-REPORT.md — Moniteur de dérive (backtest vs vécu)
 
-*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-08-02T22:59:06.046182+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
+*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-08-09T22:35:47.895550+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
 
 ## 1. Moniteur de dérive par stratégie
 
@@ -8,30 +8,30 @@ Compare les métriques VÉCUES (journaux `state/wallets/*/`) aux métriques OOS 
 
 | Stratégie | Wallet | Statut | Jours observés | Sharpe vécu | Sharpe attendu | DD vécu | DD attendu | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| dual_momentum_etf | prudent | active | 11 | 2.71 | n/d | 0.0% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | prudent | active | 11 | n/d | 1.24 | 0.0% | 8.0% | **SURVEILLER** |
-| xs_momentum_sp100 | equilibre | active | 11 | 2.72 | 0.82 | 0.0% | 50.3% | **SURVEILLER** |
-| dual_momentum_etf | equilibre | active | 11 | 10.11 | n/d | 0.0% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | equilibre | active | 11 | n/d | 1.47 | 0.0% | 16.4% | **SURVEILLER** |
-| xs_momentum_sp100 | agressif | active | 11 | 1.39 | 0.82 | 0.6% | 50.3% | **SURVEILLER** |
-| quasi_passif_crypto | agressif | active | 11 | -2.28 | 1.49 | 0.9% | 33.4% | **SURVEILLER** |
+| dual_momentum_etf | prudent | active | 18 | 2.37 | n/d | 0.6% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | prudent | active | 18 | n/d | 1.24 | 0.0% | 8.0% | **SURVEILLER** |
+| xs_momentum_sp100 | equilibre | active | 18 | 0.04 | 0.82 | 0.3% | 50.3% | **SURVEILLER** |
+| dual_momentum_etf | equilibre | active | 18 | 0.27 | n/d | 0.2% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | equilibre | active | 18 | n/d | 1.47 | 0.0% | 16.4% | **SURVEILLER** |
+| xs_momentum_sp100 | agressif | active | 18 | -0.08 | 0.82 | 0.8% | 50.3% | **SURVEILLER** |
+| quasi_passif_crypto | agressif | active | 18 | -2.43 | 1.49 | 0.9% | 33.4% | **SURVEILLER** |
 
 ### Détail des raisons
 
 - **dual_momentum_etf** (prudent, active) — **SURVEILLER**
-  - historique vécu 11j < 28j (§2.1) — trop tôt pour un diagnostic fiable
+  - historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable
 - **quasi_passif_crypto** (prudent, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - historique vécu 11j < 28j (§2.1) — trop tôt pour un diagnostic fiable
+  - historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable
 - **xs_momentum_sp100** (equilibre, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - historique vécu 11j < 28j (§2.1) — trop tôt pour un diagnostic fiable
+  - historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable
 - **dual_momentum_etf** (equilibre, active) — **SURVEILLER**
-  - historique vécu 11j < 28j (§2.1) — trop tôt pour un diagnostic fiable
+  - historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable
 - **quasi_passif_crypto** (equilibre, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - historique vécu 11j < 28j (§2.1) — trop tôt pour un diagnostic fiable
+  - historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable
 - **xs_momentum_sp100** (agressif, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - historique vécu 11j < 28j (§2.1) — trop tôt pour un diagnostic fiable
+  - historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable
 - **quasi_passif_crypto** (agressif, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - historique vécu 11j < 28j (§2.1) — trop tôt pour un diagnostic fiable
+  - historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable
 
 *Note : `xs_momentum_sp100`, `dual_momentum_multiclasse_etf` et `quasi_passif_crypto` sont un antécédent explicitement HORS du cadre formel §3 de `PROMOTION-RULES.md` (cf. §5) — leur verdict ci-dessus reste informatif (« si cette règle s'appliquait ») et ne déclenche aucune rétrogradation automatique.*
 
@@ -41,4 +41,10 @@ Rafraîchissement des données de marché (`tools/fetch_data.py --only crypto`) 
 
 Grille pré-enregistrée (`docs/RECALIBRATION-SPEC.md`) : `REGIME_SMA_DAYS ∈ [150, 175, 200, 225, 250]` (seuil de changement : amélioration OOS relative > 10%).
 
-_Recalibrage SAUTÉ : données insuffisantes ou indisponibles ce cycle (['AVAX', 'BTC', 'DOGE', 'ETH', 'LINK', 'SOL'])._
+- Fenêtres walk-forward (9m IS / 3m OOS) : **15**
+- Valeur en production : `REGIME_SMA_DAYS = 200` (Sharpe OOS concaténé : 0.508)
+- Meilleure valeur de la grille : `REGIME_SMA_DAYS = 175` (Sharpe OOS concaténé : 0.523)
+- Valeur la plus souvent sélectionnée en IS (informatif) : `175`
+- Amélioration relative : 3.0%
+- **Décision : aucun changement**
+  - amélioration OOS relative 3.0% <= seuil 10% — pas assez significatif, aucun changement
