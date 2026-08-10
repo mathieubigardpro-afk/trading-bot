@@ -466,3 +466,56 @@ registre ; prochaine candidate → K_total = 11 lignes + sa grille. Labo toujour
   répété), `REGIME_SMA_DAYS` inchangé (175 vs 200 : +3.0% < seuil 10%) — conforme à la spec.
 - Wallets au cycle 2026-08-10T06 : 🛡️ 997 € | ⚖️ 988 € | 🔥 984 € | 🧪 988 € (labo 100% cash,
   état attendu).
+
+---
+
+## 2026-08-10 — Session hebdomadaire #3 (b) : RETEST de `quasi_passif_crypto` (backlog P2#13, dette de recherche) — ÉCHEC 3/3, dette soldée
+
+**Contexte.** La seule brique crypto en production (poche crypto des 3 wallets réels) avait été
+déployée le 2026-07-23 sur un backtest explicitement NON audité (exécution unique, ni
+walk-forward ni DSR ni audit — `SELECTION-FINALE.md` §2.2). Dette de recherche inscrite dès
+l'origine, promue priorité n°1 par la revue de la session #2. SPEC intégralement PRÉ-ENREGISTRÉE
+et committée AVANT toute exécution (commit fb5b8b5), y compris la sémantique des issues : un
+échec ne déclenche AUCUNE action automatique sur la production (antécédent hors §3, §5).
+
+**Protocole.** Moteur commun post-correctifs F1/F2/F3, chargeur horaire commun, 14 fenêtres
+9m IS / 3m OOS (2022-10→2026-03, 30 671 h OOS/variante), AUCUNE grille (paramètres de production
+gelés, helpers de production IMPORTÉS jamais réimplémentés), 3 variantes = les 3 déploiements
+réels, coûts au palier le plus défavorable par univers (15/25/45 bps/côté), K_total = 11 + 3×14×1
+= **53**, benchmark B&H équipondéré par univers sur fenêtres OOS alignées.
+
+**Résultats (chiffres de décision, post-correctif de fidélité — cf. finding ci-dessous).**
+
+| Variante | Sharpe OOS | PF | MaxDD | Trades | DSR | Bench Sharpe | Verdict §1.2 |
+|---|---|---|---|---|---|---|---|
+| prudent (BTC+ETH, 15 bps) | 0,808 | 1,080 | 8,4% | 28 | 0,215 | 0,761 | ÉCHEC 2/5 (PF, DSR) |
+| équilibré (6 majors, 25 bps) | 0,283 | 0,718 | 27,3% | 92 | 0,038 | 0,653 | ÉCHEC 3/5 (Sharpe, PF, DSR) |
+| agressif (11 divers., 45 bps) | 0,069 | 0,771 | 56,4% | 192 | 0,015 | 0,537 | ÉCHEC 3/5 (Sharpe, PF, DSR) |
+
+Équilibré et agressif : SOUS leur benchmark ET perdants nets aux coûts nominaux. Rupture
+temporelle (motif `vol_breakout_6majors`) : Sharpe avant 2024 = 1,16/1,02/1,14, depuis 2024 =
+0,61/**−0,17**/**−0,55** — tout l'edge apparent vient de 2022-2023. Corrélation inter-variantes
+0,75-0,83 (~1 pari corrélé). Les Sharpe non audités d'origine (1,24/1,47/1,49) ne sont PAS
+reproduits — écart ×1,5 à ×21, note ajoutée au registre : ils ne doivent plus servir de référence.
+
+**Audit adversarial indépendant (copie isolée, remote neutralisé) : `isSound: true`** —
+reproduction bit-à-bit des 3 variantes depuis les données brutes, zéro look-ahead (attaque par
+perturbation), DSR réimplémenté from scratch, fidélité à la production confirmée par confrontation
+directe adaptateur vs `QuasiPassifCrypto.target_weights` (21 tests, 0 mismatch). **1 finding
+CRITIQUE corrigé en session** : le runner de backtest appliquait à l'overlay du moteur le
+vol_target du wallet (2e couche de vol-targeting) alors que la production le NEUTRALISE
+(`bot/runner.py:_risk_manager_for_wallet`, vol_target=50.0 — le seul vol-targeting réel est
+interne à la stratégie). Corrigé, re-exécuté (Sharpe 0,786/0,224/0,083 → 0,808/0,283/0,069),
+**aucun des 15 verdicts ne bascule** ; chiffres pré-correctif conservés dans results.json.
+Point d'attention pour TOUTE future candidate à sizing interne : la configuration de l'overlay
+doit être explicitement décidée d'après le chemin de production réel, pas par défaut.
+
+**Décision (conforme à la sémantique pré-enregistrée).** Aucune action automatique :
+`quasi_passif_crypto` reste en production (antécédent hors §3), son critère d'échec opérationnel
+reste `SELECTION-FINALE.md` §5 (bascule si sous-performance vécue 3 mois). MAIS le constat est
+lourd : la seule brique crypto des 3 wallets repose sur un backtest désormais NON confirmé par le
+protocole complet. **Signalement priorité haute à Mathieu + session de gouvernance DÉDIÉE requise**
+(jamais celle-ci, §0) pour statuer sur l'alignement de l'antécédent — options à trancher hors
+session de jugement : conserver sous critère §5 vécu, resserrer, ou retirer/réduire la poche.
+Entrée n°12 au registre ; prochaine candidate → K_total = 12 lignes + sa grille. Labo toujours
+vide (0/3). Suite de tests : 684 verts.

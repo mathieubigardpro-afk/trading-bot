@@ -3,7 +3,13 @@
   "_meta": {
     "description": "Registre de TOUTES les stratégies/candidates jamais testées pour ce projet, quel que soit leur verdict final. Append-only : une entrée n'est JAMAIS supprimée, même après rejet ou mort (cf. docs/PROMOTION-RULES.md §3.3 -- une stratégie tuée compte dans K_total pour toute future tentative sur la même idée). L'honnêteté de ce fichier conditionne directement la validité du Deflated Sharpe Ratio (DSR) de toute future candidate : docs/PROMOTION-RULES.md §1.3 impose K_total = nombre de lignes ici + grille interne de la nouvelle candidate. Falsifier ou omettre une entrée ici revient à tricher sur le DSR de tout ce qui suit.",
     "k_total_at_registry_init": 9,
-    "statuts_possibles": ["active", "ecartee", "rejetee", "en_incubation", "tuee"],
+    "statuts_possibles": [
+      "active",
+      "ecartee",
+      "rejetee",
+      "en_incubation",
+      "tuee"
+    ],
     "note_statuts": "'rejetee' = verdict de l'audit walk-forward lui-même défavorable (Sharpe négatif et/ou ne bat pas son propre benchmark buy&hold, souvent de façon catastrophique). 'ecartee' = résultat techniquement 'ok' (Sharpe positif) mais décision de ne PAS déployer car nettement sous-performant le benchmark de sa classe -- nuance introduite dans docs/SELECTION-FINALE.md §1.3, reprise ici car importante : un Sharpe positif n'est pas un critère suffisant en soi. 'active' = déployée en production dans au moins un wallet réel au moment de l'écriture de ce registre.",
     "avertissement_antecedent": "Les 9 entrées ci-dessous constituent la 1ère vague de recherche (RESEARCH-LOG.md), menée AVANT l'existence de docs/PROMOTION-RULES.md et du wallet labo. Elles n'ont donc PAS suivi le protocole Porte 1/Porte 2 formalisé -- notamment aucune n'a de DSR calculé sur un K_total inter-stratégies (chaque DSR historique, quand il existe, ne déflate que sur la grille interne à sa propre stratégie). Elles sont néanmoins intégrées ici intégralement car c'est leur existence, pas leur conformité au protocole, qui compte pour la validité du DSR des candidates futures.",
     "sources_racine": "/home/claude/trading-bot/bt-final/*/results.json (8 stratégies auditées avec walk-forward + REPORT.md) et /home/claude/trading-bot/bt-final/quasi-passif-crypto/results.json (backtest complémentaire non audité, cf. docs/SELECTION-FINALE.md §2.2)",
@@ -21,7 +27,14 @@
       "n_trades_oos_closed": 658,
       "benchmark_sharpe_oos_aligned": 0.5495,
       "walkforward": "9m IS / 3m OOS, 15 fenêtres",
-      "univers": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "univers": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "DOGE",
+        "LINK",
+        "AVAX"
+      ],
       "dsr": null,
       "raison": "Sharpe OOS positif (0.31) mais nettement inférieur au buy & hold équipondéré du même panier (0.55) sur la fenêtre OOS alignée -- destructeur de valeur ajustée du risque par rapport à ne rien faire d'actif. Non retenue pour la poche crypto, remplacée par le quasi-passif vol-targeté (cf. quasi_passif_crypto ci-dessous).",
       "source": "bt-final/donchian-6/results.json"
@@ -37,7 +50,14 @@
       "n_trades_oos_closed": 460,
       "benchmark_sharpe_oos_aligned": 0.5495,
       "walkforward": "9m IS / 3m OOS, 15 fenêtres",
-      "univers": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "univers": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "DOGE",
+        "LINK",
+        "AVAX"
+      ],
       "dsr": null,
       "raison": "Même verdict que donchian_ensemble_6majors : Sharpe OOS positif (0.24) mais très inférieur au buy & hold équipondéré (0.55). Non retenue.",
       "source": "bt-final/ema-momentum-6/results.json"
@@ -53,7 +73,14 @@
       "n_trades_oos_closed": 4148,
       "benchmark_sharpe_oos_aligned": 0.819,
       "walkforward": "9m IS / 3m OOS, 13 fenêtres",
-      "univers": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "univers": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "DOGE",
+        "LINK",
+        "AVAX"
+      ],
       "dsr": null,
       "raison": "Rejet catastrophique. MaxDD OOS 94.9% -- la queue de distribution du mean reversion en tendance forte, identifiée comme risque n°1 par rapport-recherche.md §2C, s'est matérialisée exactement comme redouté malgré le filtre de tendance SMA200 obligatoire et le stop ATR.",
       "source": "bt-final/meanrev-rsi2-6/results.json"
@@ -90,7 +117,10 @@
         "univers_15_restreint_majors_mids": 259
       },
       "walkforward": "9m IS / 3m OOS, 9 fenêtres",
-      "univers_size_variantes": [30, 15],
+      "univers_size_variantes": [
+        30,
+        15
+      ],
       "dsr": null,
       "raison": "Rejetée sur les 2 variantes testées (30 cryptos complet et 15 majors/mids restreint) : Sharpe négatif dans les deux cas, ne bat pas le benchmark buy & hold (lui-même négatif sur la période). Restreindre l'univers ne sauve pas le signal cross-sectionnel en crypto sur cette fenêtre.",
       "source": "bt-final/xs-momentum-30/results.json"
@@ -114,7 +144,10 @@
         "univers_15_restreint_majors_mids": 5156
       },
       "walkforward": "9m IS / 3m OOS, 9 fenêtres",
-      "univers_size_variantes": [30, 15],
+      "univers_size_variantes": [
+        30,
+        15
+      ],
       "dsr": null,
       "raison": "Rejet catastrophique sur les 2 variantes (Sharpe -10 à -11, MaxDD jusqu'à 96%) -- même échec structurel que meanrev_rsi2_6majors, confirmé et amplifié à plus grande échelle d'univers. 6/6 stratégies actives crypto testées lors de cette vague sont soit rejetées soit sous-benchmark : aucune n'est retenue en production.",
       "source": "bt-final/meanrev-30/results.json"
@@ -149,7 +182,17 @@
       "n_trades_oos_closed": 91,
       "benchmark_sharpe_oos_aligned_60_40": 1.0778,
       "walkforward": "36m IS / 12m OOS, 18 fenêtres",
-      "univers": ["SPY", "QQQ", "IWM", "EFA", "EEM", "VNQ", "GLD", "DBC", "IEF"],
+      "univers": [
+        "SPY",
+        "QQQ",
+        "IWM",
+        "EFA",
+        "EEM",
+        "VNQ",
+        "GLD",
+        "DBC",
+        "IEF"
+      ],
       "dsr": null,
       "raison": "RETENUE AVEC RÉSERVE MAJEURE : ne bat le 60/40 SPY/IEF sur AUCUN des 3 axes mesurés (Sharpe, CAGR, MaxDD). Test de significativité (Jobson-Korkie/Memmel) p=0.069-0.089 -- écart non significatif statistiquement, ET de toute façon défavorable à la stratégie active. Gardée pour sa diversification structurelle (8 classes d'actifs vs 2 pour le 60/40) et sa faible corrélation au BTC, avec un critère d'échec chiffré explicite (docs/SELECTION-FINALE.md §5) : bascule vers 60/40 statique si sous-performance nette sur 3 mois réels. N'a jamais passé de Porte 2 labo (antécédent, cf. _meta).",
       "source": "bt-final/dual-momentum-etf/results.json"
@@ -176,7 +219,8 @@
       "univers": "dépend du wallet : BTC+ETH (prudent), 6 majors V1 (équilibré), 12 diversifié (agressif)",
       "dsr": null,
       "raison": "Base de la poche crypto des 3 wallets réels, en remplacement des 6 stratégies actives rejetées/écartées ci-dessus (long/flat vol-targeté + filtre SMA200, aucun paramètre optimisé sur ces données). NIVEAU DE RIGUEUR DÉLIBÉRÉMENT INFÉRIEUR aux 8 autres entrées de ce registre : ni walk-forward, ni audit adversarial, ni test de significativité (docs/SELECTION-FINALE.md §2.2, explicite). Sharpe élevé (1.15-1.49) expliqué par une exposition brute réalisée faible (12-48%) -- le mécanisme de vol-targeting laisse le book majoritairement en cash la majorité du temps, pas un signal miracle. N'a jamais passé de Porte 1 ni de Porte 2 telles que définies dans docs/PROMOTION-RULES.md -- antécédent explicitement non conforme (cf. _meta et PROMOTION-RULES.md §5), à retester avec le protocole complet avant de lui accorder plus de capital (critère d'échec déjà posé dans docs/SELECTION-FINALE.md §5).",
-      "source": "bt-final/quasi-passif-crypto/results.json"
+      "source": "bt-final/quasi-passif-crypto/results.json",
+      "note_retest_2026-08-10": "Retest walk-forward complet (protocole Porte 1, SPEC pré-enregistrée) mené en session #3 : cf. entrée quasi_passif_crypto_wf_retest ci-dessous. ÉCHEC 3/3 variantes — les Sharpe non audités 1.24/1.47/1.49 de cette entrée NE SONT PAS reproduits sur le moteur commun audité (0.808/0.283/0.069, walk-forward, coûts pessimistes, fidélité production vérifiée par audit adversarial isSound=true). Ces chiffres non audités ne doivent PLUS servir de référence. La stratégie reste 'active' en production (antécédent hors §3, PROMOTION-RULES.md §5) dans l'attente d'une session de gouvernance dédiée et/ou du critère d'échec vécu de SELECTION-FINALE.md §5."
     },
     {
       "id": "xs_momentum_invvol_sp100",
@@ -196,8 +240,17 @@
       "dsr": 0.9983,
       "dsr_methode": "CORRIGÉ 2026-07-27 (chantier 2, formule §1.3 fixée) : K_total = 9 (lignes du registre à la date du test) + 30 fenêtres walk-forward x 1 combinaison interne (zéro grille -- select_params_via_is() ré-évalue quand même la même combinaison à chaque fenêtre) = 9 + 30 = 39 -- ancienne valeur K_total=10 (dsr=0.9998) calculée avec la formule pré-correctif (combinaisons seules, sans le facteur fenêtres), désormais fausse au sens de PROMOTION-RULES.md §1.3, conservée nulle part ailleurs que dans l'historique git. Bailey & López de Prado 2014, skew/kurtosis inchangés (sharpe_hat_period, n=7549 obs, skew, kurtosis identiques -- seul trials_k change), recalcul via backtest/metrics.py:expected_max_sharpe/probabilistic_sharpe_ratio à partir des mêmes statistiques stockées. NOTE méthodologique de l'audit, toujours valable : à n aussi grand, le seuil DSR>=0.50 est peu discriminant quel que soit K -- calcul valide mais gate faiblement contraignante sur walk-forward long (0.9983 encore trivialement au-dessus du seuil, ne change pas la décision 'ecartee' motivée ailleurs par la domination du contrôle equal-weight).",
       "audit_adversarial_isSound": true,
-      "cost_stress_profit_factor": {"5bps": 1.7184, "15bps_3x": 1.6052, "25bps_5x": 1.5003},
-      "comparaison_controle_equal_weight_memes_fenetres": {"sharpe_equal": 1.0336, "sortino_equal": 1.485, "maxdd_equal_pct": 48.68, "information_ratio_invvol_vs_equal": -0.837},
+      "cost_stress_profit_factor": {
+        "5bps": 1.7184,
+        "15bps_3x": 1.6052,
+        "25bps_5x": 1.5003
+      },
+      "comparaison_controle_equal_weight_memes_fenetres": {
+        "sharpe_equal": 1.0336,
+        "sortino_equal": 1.485,
+        "maxdd_equal_pct": 48.68,
+        "information_ratio_invvol_vs_equal": -0.837
+      },
       "note_moteur_2026-08-03": "Chiffres produits AVANT le correctif F1 du moteur (audit 2026-08-03 : la no-trade band reprojetait les shares à chaque barre au lieu de laisser dériver la position). Le biais s'appliquait IDENTIQUEMENT aux deux variantes comparées (candidate inv_vol et contrôle equal-weight, mêmes fenêtres, même moteur) — le classement relatif apparié qui fonde la décision 'ecartee' n'est pas remis en cause ; les niveaux absolus (Sharpe 0.947/1.034) ne sont en revanche plus reproductibles sur le moteur corrigé et ne doivent plus servir de référence chiffrée sans re-run.",
       "raison": "ÉCARTÉE malgré Porte 1 §1.2 intégralement passée (5/5 seuils) et audit adversarial isSound=true. Motif : sur les MÊMES 30 fenêtres OOS, la candidate est dominée par le contrôle equal-weight (= la version déjà en production de xs_momentum_sp100) sur tous les axes -- Sharpe 0.947 vs 1.034, Sortino 1.349 vs 1.485, MaxDD 49.3% vs 48.7%, Information Ratio -0.837 (≈4.6 écarts-types sur 7549 obs., pas du bruit). Incuber une variante strictement dominée par la version en production n'a aucune valeur (elle consommerait 1 des 3 places du labo et gonflerait K_total pour les candidates futures). AMBIGUÏTÉ DE RÈGLE NOTÉE : PROMOTION-RULES §1 ne prévoit pas explicitement le cas 'seuils passés mais dominée par la version incumbent de la même stratégie' -- option la plus conservatrice retenue (pas d'incubation), cohérente avec le statut 'ecartee' historique (un résultat techniquement ok n'est pas un critère suffisant de déploiement). Baseline equal-weight reproduite sur le nouveau moteur commun : Sharpe 1.034 vs 0.823 historique (+25.6%) -- écart investigué par l'audit (données yfinance révisées/ajustements différents, biais du survivant quantifié ~-6% de Sharpe sur univers réduit ex-IPO>=2005, anomalie spin-off DHR sans impact favorable), sans incidence sur le classement relatif apparié qui fonde la décision.",
       "source": "backtest/results/xs_momentum_invvol_sp100/results.json"
@@ -215,14 +268,114 @@
       "benchmark_sharpe_oos_aligned": 0.6527,
       "benchmark_maxdd_oos_aligned_pct": 66.8,
       "walkforward": "9m IS / 3m OOS, pas 3m, 14 fenêtres (2022-01 -> 2026-06, horaire), grille pré-enregistrée 4 combos (W in {55,110} x P in {0.20,0.35}, SPEC committée AVANT exécution, commit 59647d3)",
-      "univers": ["BTC", "ETH", "SOL", "DOGE", "LINK", "AVAX"],
+      "univers": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "DOGE",
+        "LINK",
+        "AVAX"
+      ],
       "k_total": 66,
       "dsr": 0.0582,
       "dsr_methode": "K_total = 10 (lignes du registre au 2026-08-03) + 14 fenêtres x 4 combos = 66 (PROMOTION-RULES.md §1.3). Bailey & López de Prado 2014 sur rendements horaires OOS concaténés (n=30671, skew -0.477, kurtosis excess 89.3 -- 70.5% de rendements exactement nuls, stratégie flat ~92% du temps).",
       "audit_adversarial_isSound": true,
-      "cost_stress_profit_factor": {"25bps": 1.2087, "75bps_3x": 0.771, "125bps_5x": 0.5206},
+      "cost_stress_profit_factor": {
+        "25bps": 1.2087,
+        "75bps_3x": 0.771,
+        "125bps_5x": 0.5206
+      },
       "raison": "ÉCHEC Porte 1 §1.2 : 2/5 seuils manqués avec marges larges (Sharpe OOS 0.434 < 0.70 ; DSR 0.058 < 0.50). Sous son benchmark buy & hold équipondéré (0.434 vs 0.653) -- même famille d'échec que donchian/ema sur cet univers. PF sous 1.0 dès 3x les coûts nominaux. Instabilité temporelle majeure : Sharpe -0.58 (2022-2023) vs +0.95 (2024-2026) -- tout l'edge apparent vient de la sous-période récente, NE PAS retester une variante sur cette seule base (§3.3, compterait dans K_total). Analyses d'honnêteté saines : 299 épisodes de squeeze distincts pour 302 trades, corrélation 0.45 au proxy quasi-passif. Contre-audit adversarial indépendant : backtest reproduit bit-à-bit depuis les données brutes, causalité attaquée sur données réelles, verdict et seuils recalculés indépendamment -- l'échec est solide, pas un artefact. Premier test exécuté sur le moteur corrigé des findings F1/F2/F3 (audit du même jour).",
       "source": "backtest/results/vol_breakout_6majors/results.json"
+    },
+    {
+      "id": "quasi_passif_crypto_wf_retest",
+      "famille": "crypto_vol_targeted_trend_filter",
+      "date_test": "2026-08-10",
+      "statut": "rejetee",
+      "nature": "RETEST de validation de l'antécédent quasi_passif_crypto (seule brique crypto en production) — pas une nouvelle candidate d'incubation. Dette de recherche P2#13 du backlog, soldée.",
+      "sharpe_oos_variantes": {
+        "prudent_btc_eth": 0.808,
+        "equilibre_6majors": 0.283,
+        "agressif_11diversifie": 0.069
+      },
+      "sortino_oos_variantes": {
+        "prudent_btc_eth": 1.127,
+        "equilibre_6majors": 0.387,
+        "agressif_11diversifie": 0.095
+      },
+      "profit_factor_oos_variantes": {
+        "prudent_btc_eth": 1.08,
+        "equilibre_6majors": 0.718,
+        "agressif_11diversifie": 0.771
+      },
+      "max_drawdown_oos_pct_variantes": {
+        "prudent_btc_eth": 8.4,
+        "equilibre_6majors": 27.3,
+        "agressif_11diversifie": 56.4
+      },
+      "n_trades_oos_closed_variantes": {
+        "prudent_btc_eth": 28,
+        "equilibre_6majors": 92,
+        "agressif_11diversifie": 192
+      },
+      "benchmark_sharpe_oos_aligned_variantes": {
+        "prudent_btc_eth": 0.761,
+        "equilibre_6majors": 0.653,
+        "agressif_11diversifie": 0.537
+      },
+      "benchmark_maxdd_oos_aligned_pct_variantes": {
+        "prudent_btc_eth": 55.9,
+        "equilibre_6majors": 66.8,
+        "agressif_11diversifie": 69.9
+      },
+      "walkforward": "9m IS / 3m OOS, pas 3m, 14 fenêtres (2022-10 -> 2026-03, horaire, 30671 h OOS/variante), AUCUNE grille (parametres de production geles, 1 combo/variante), SPEC pre-enregistree committee AVANT execution (commit fb5b8b5)",
+      "univers": "3 variantes = les 3 deploiements reels : BTC+ETH (prudent), 6 majors (equilibre), 11 diversifie (agressif)",
+      "k_total": 53,
+      "dsr_variantes": {
+        "prudent_btc_eth": 0.215,
+        "equilibre_6majors": 0.038,
+        "agressif_11diversifie": 0.015
+      },
+      "dsr_methode": "K_total = 11 (lignes du registre au 2026-08-10) + 3 variantes x 14 fenetres x 1 combo = 53 (PROMOTION-RULES.md §1.3), commun aux 3 variantes (3 essais de la meme session). Bailey & Lopez de Prado 2014 sur rendements horaires OOS concatenes, recalcule independamment par l'audit (identique a la precision flottante).",
+      "audit_adversarial_isSound": true,
+      "cost_stress_profit_factor_variantes": {
+        "prudent_15bps": [
+          1.08,
+          0.927,
+          0.805
+        ],
+        "equilibre_25bps": [
+          0.718,
+          0.582,
+          0.482
+        ],
+        "agressif_45bps": [
+          0.771,
+          0.531,
+          0.389
+        ],
+        "_format": "PF a [1x, 3x, 5x] le cout nominal/cote de la variante"
+      },
+      "sous_periodes_sharpe": {
+        "avant_2024": {
+          "prudent": 1.162,
+          "equilibre": 1.018,
+          "agressif": 1.137
+        },
+        "depuis_2024": {
+          "prudent": 0.614,
+          "equilibre": -0.165,
+          "agressif": -0.548
+        }
+      },
+      "correlation_oos_inter_variantes": {
+        "prudent_equilibre": 0.829,
+        "prudent_agressif": 0.748,
+        "equilibre_agressif": 0.811
+      },
+      "raison": "ECHEC de la validation Porte 1 §1.2 pour les 3 variantes (verdicts par variante, aucune compensation) : prudent 2/5 seuils manques (PF 1.080 <= 1.15 ; DSR 0.215 < 0.50 — Sharpe 0.808, MaxDD relatif 0.15x et critere de substitution <80 trades passes) ; equilibre 3/5 (Sharpe 0.283 < 0.70 ; PF 0.718 < 1.0 = perdant net ; DSR 0.038) ; agressif 3/5 (Sharpe 0.069 ; PF 0.771 ; DSR 0.015). Equilibre et agressif sont SOUS leur benchmark buy & hold equipondere ET perdants nets aux couts nominaux. Rupture temporelle majeure : tout l'edge vient de 2022-2023, Sharpe negatif depuis 2024 pour equilibre/agressif — meme motif que vol_breakout_6majors. Correlation inter-variantes 0.75-0.83 : ~1 pari correle, pas 3 validations independantes. Audit adversarial independant isSound=true (reproduction bit-a-bit depuis les donnees brutes, zero look-ahead par perturbation, DSR reimplemente from scratch) ; 1 finding CRITIQUE de fidelite corrige en session (l'overlay du moteur appliquait un 2e vol-targeting que la production neutralise — bot/runner.py:_risk_manager_for_wallet vol_target=50.0 ; corrige, re-execute, AUCUN des 15 verdicts ne bascule ; chiffres pre-correctif conserves dans results.json). Couts au palier le plus defavorable de chaque univers (15/25/45 bps/cote — pessimiste surtout pour agressif dont 5/11 actifs sont majors ; l'audit note que le cout reel pondere serait ~29.5 bps pour agressif, ce qui ne suffit pas a inverser un PF de 0.771). CONSEQUENCE (semantique figee dans la SPEC AVANT execution) : aucune action automatique sur la production — quasi_passif_crypto reste l'antecedent hors §3 (PROMOTION-RULES.md §5), son critere d'echec operationnel reste SELECTION-FINALE.md §5 (bascule si sous-performance vecue 3 mois). Signalement priorite haute a Mathieu + session de gouvernance DEDIEE requise pour statuer sur l'alignement de l'antecedent (jamais dans cette session de jugement, §0).",
+      "source": "backtest/results/quasi_passif_crypto_wf_retest/results.json"
     }
   ]
 }

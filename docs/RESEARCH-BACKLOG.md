@@ -406,19 +406,34 @@ quasi automatiquement satisfait quel que soit K (constat chiffré de l'audit : D
 K=10 000). Pistes : seuil sur le DSR par fenêtre, ou PSR à SR* > 0 plus exigeant, ou seuil de
 significativité de l'écart vs benchmark (Jobson-Korkie déjà utilisé dans la vague 1).
 
-### 13. [P2 — dette de recherche, rappel] Retester `quasi_passif_crypto` avec le protocole complet
+### 13. [P2 — dette de recherche] Retester `quasi_passif_crypto` avec le protocole complet — ✅ TRAITÉE 2026-08-10 : ÉCHEC 3/3
 
-Déjà inscrit comme dette explicite (`RESEARCH-LOG.md` 2026-07-23, backtest non audité, jamais de
-Porte 1) — rappelé ici pour qu'il ne disparaisse pas du radar : walk-forward + DSR (K_total du
-registre au jour du test) + audit adversarial sur le moteur commun `backtest/` désormais
-disponible. Prioritaire avant toute augmentation de capital sur la poche crypto.
+**VERDICT (session hebdomadaire #3, cf. `RESEARCH-LOG.md` 2026-08-10 (b) et
+`RESEARCH-REGISTRY.json:quasi_passif_crypto_wf_retest`)** : les 3 variantes déployées échouent
+la validation Porte 1 (prudent : PF 1,08 et DSR 0,215 sous seuils ; équilibré/agressif : sous
+leur benchmark B&H ET perdants nets aux coûts, Sharpe négatif depuis 2024). Audit adversarial
+`isSound: true`. Les Sharpe non audités d'origine (1,24/1,47/1,49) ne sont pas reproduits et ne
+doivent plus servir de référence. Aucune action automatique (antécédent hors §3, sémantique
+pré-enregistrée dans la SPEC) — **une session de gouvernance DÉDIÉE doit statuer sur
+l'alignement de l'antécédent (cf. idée #14 ci-dessous, désormais LA priorité)**.
 
-**Priorité de la prochaine session de recherche (revue 2026-08-03, session #2)** :
-1. **P2#13 (retest `quasi_passif_crypto` avec protocole complet)** remonte en tête : c'est la
-   SEULE brique crypto en production et elle n'a jamais eu de walk-forward/DSR/audit — le
-   chargeur horaire (`backtest/data_hourly.py`) et le moteur audité pour l'horaire (session #2)
-   rendent ce retest désormais peu coûteux, et 3 échecs de stratégies actives de suite sur cet
-   univers renforcent l'importance de valider la brique passive réellement déployée.
+### 14. [P0 — gouvernance, session DÉDIÉE obligatoirement (§0), AJOUTÉE 2026-08-10] Statuer sur l'antécédent `quasi_passif_crypto` après l'échec du retest
+
+La seule brique crypto des 3 wallets réels repose sur un backtest non confirmé par le protocole
+complet (idée #13). Options à instruire hors de toute session de jugement de candidate :
+(a) statu quo sous le critère d'échec vécu de `SELECTION-FINALE.md` §5 (bascule à 3 mois de
+sous-performance vécue — les wallets n'ont que ~18j de vécu) ; (b) alignement formel de
+l'antécédent sur les règles de mort §3 ; (c) réduction/retrait de la poche crypto (équilibré et
+agressif sont les plus atteints ; la variante prudente BTC+ETH est la moins loin des seuils :
+Sharpe 0,81 > benchmark 0,76, MaxDD 8,4%). Décision humaine requise — la boucle de recherche ne
+touche pas à la composition des wallets réels de sa propre initiative (§4.3 et SPEC du retest).
+
+**Priorité de la prochaine session (revue 2026-08-10, session #3)** :
+1. **#14 (gouvernance : statuer sur l'antécédent `quasi_passif_crypto`)** — LA priorité, en
+   session DÉDIÉE (§0, jamais mêlée à un jugement de candidate). L'échec 3/3 du retest laisse
+   la seule brique crypto de production sans validation protocolaire ; à défaut, le critère
+   vécu de `SELECTION-FINALE.md` §5 (3 mois) tranchera de lui-même vers fin octobre 2026.
+   Peut absorber aussi les amendements #12 (valeur marginale vs incumbent, discriminance DSR).
 2. P0#11 (détection d'anomalies de corporate actions — rapide, débloque la confiance des
    futurs backtests actions).
 3. P0#1 (funding carry) : toujours la plus grosse valeur potentielle, toujours bloquée par
@@ -429,6 +444,11 @@ disponible. Prioritaire avant toute augmentation de capital sur la poche crypto.
    equal-weight (session #1) ont été produits sur le moteur PRÉ-correctif F1 — tout futur
    usage de ces chiffres comme référence exige un re-run sur moteur corrigé (le verdict
    apparié 'ecartee', lui, tient — cf. note au registre).
+5. Note moteur (session #3) : pour toute candidate à SIZING INTERNE (vol-targeting dans la
+   stratégie), la configuration de l'overlay du moteur doit répliquer le chemin de production
+   réel (`bot/runner.py:_risk_manager_for_wallet` neutralise le vol-targeting portefeuille,
+   vol_target=50.0) — jamais les défauts de l'overlay. Précédent : finding CRITIQUE corrigé
+   du retest #13 (`backtest/run_quasi_passif.py`).
 
 ---
 
