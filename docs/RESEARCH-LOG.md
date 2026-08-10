@@ -452,3 +452,17 @@ chiffre de décision affecté — à corriger à l'occasion).
 buy & hold sur l'univers 6 majors (après Donchian 0,31 et EMA 0,24) — le constat de la vague 1
 se confirme sur une famille de signal pourtant structurellement différente. Entrée n°11 au
 registre ; prochaine candidate → K_total = 11 lignes + sa grille. Labo toujours vide (0/3).
+
+---
+
+## 2026-08-10 — Session hebdomadaire #3 (a) : REVUE des stratégies actives et candidates
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56j. **Zéro action requise, zéro action prise.**
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-08-09 : 7 lignes, toutes **SURVEILLER**
+  pour la même raison mécanique (18j vécus < 28j — trop tôt pour un diagnostic fiable). Aucune
+  action. Recalibrage du 2026-08-09 : exécuté normalement (le saut du 2026-08-02 ne s'est pas
+  répété), `REGIME_SMA_DAYS` inchangé (175 vs 200 : +3.0% < seuil 10%) — conforme à la spec.
+- Wallets au cycle 2026-08-10T06 : 🛡️ 997 € | ⚖️ 988 € | 🔥 984 € | 🧪 988 € (labo 100% cash,
+  état attendu).
