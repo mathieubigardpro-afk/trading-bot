@@ -1,6 +1,6 @@
 {
   "data_refresh_status": "OK",
-  "generated_at": "2026-08-09T22:35:47.895550+00:00",
+  "generated_at": "2026-08-16T22:25:57.597298+00:00",
   "recalibration": {
     "best_oos_sharpe": 0.5227648190046261,
     "best_value": 175,
@@ -26,14 +26,14 @@
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 0.5500723033455538,
+      "dd_live_pct": 0.5807750254258794,
       "dd_ref_pct": null,
-      "n_days_observed": 18,
+      "n_days_observed": 25,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
-      "sharpe_live": 2.366435970119101,
+      "sharpe_live": 1.8964019357126747,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -45,10 +45,10 @@
       "categorie": "active",
       "dd_live_pct": 0.0,
       "dd_ref_pct": 8.0,
-      "n_days_observed": 18,
+      "n_days_observed": 25,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
       "sharpe_live": null,
       "sharpe_ref": 1.24,
@@ -62,12 +62,12 @@
       "categorie": "active",
       "dd_live_pct": 0.29473164376324784,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 18,
+      "n_days_observed": 25,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
-      "sharpe_live": 0.04496151514548925,
+      "sharpe_live": 1.2973109368405937,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -77,14 +77,14 @@
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 0.2147054806458589,
+      "dd_live_pct": 0.33968788984052745,
       "dd_ref_pct": null,
-      "n_days_observed": 18,
+      "n_days_observed": 25,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
-      "sharpe_live": 0.273854529590949,
+      "sharpe_live": 0.01764531569923946,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -94,14 +94,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.0,
+      "dd_live_pct": 0.01053712843265621,
       "dd_ref_pct": 16.4,
-      "n_days_observed": 18,
+      "n_days_observed": 25,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
-      "sharpe_live": null,
+      "sharpe_live": 3.4942844391318495,
       "sharpe_ref": 1.47,
       "source": "backtest NON AUDITÉ (variante equilibre_6majors)",
       "strategy_id": "quasi_passif_crypto",
@@ -111,14 +111,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.7929484658891415,
+      "dd_live_pct": 1.7172972706377627,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 18,
+      "n_days_observed": 25,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
-      "sharpe_live": -0.07861581820505459,
+      "sharpe_live": -3.782468841692402,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -128,14 +128,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.9171472639269593,
+      "dd_live_pct": 1.2099240721239761,
       "dd_ref_pct": 33.4,
-      "n_days_observed": 18,
+      "n_days_observed": 25,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 18j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
       ],
-      "sharpe_live": -2.4345069419045613,
+      "sharpe_live": -4.532370904268922,
       "sharpe_ref": 1.49,
       "source": "backtest NON AUDITÉ (variante agressif_12diversifie)",
       "strategy_id": "quasi_passif_crypto",
