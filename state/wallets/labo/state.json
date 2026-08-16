@@ -8,10 +8,6 @@
     "equity_window_24h": [
       {
         "equity": 1139.2,
-        "ts": "2026-08-15T14:28:13.987404+00:00"
-      },
-      {
-        "equity": 1139.2,
         "ts": "2026-08-15T15:21:23.572522+00:00"
       },
       {
@@ -97,6 +93,10 @@
       {
         "equity": 1139.2,
         "ts": "2026-08-16T13:37:52.537208+00:00"
+      },
+      {
+        "equity": 1139.2,
+        "ts": "2026-08-16T14:31:34.478780+00:00"
       }
     ],
     "flatten_mode": false,
@@ -109,15 +109,15 @@
     "last_rate": 1.1567,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-16T13:38:09.554428+00:00"
+    "last_rate_ts": "2026-08-16T14:31:54.067591+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-16T13:37:52.537208+00:00",
-  "last_run_id": "2026-08-16T13",
+  "last_run_completed_at": "2026-08-16T14:31:34.478780+00:00",
+  "last_run_id": "2026-08-16T14",
   "positions": {},
   "realized_pnl_cumulative_usd": 0.0,
   "schema_version": 1,
-  "state_hash_prev": "6ef30f159cdf1555b141f9a1e9de81dec2969e6c1b09f0829c97d88c7f88b56e",
+  "state_hash_prev": "fe90926d0e4c86204a63f8a1bd203f2248f9e5c4759ea962d4081515906d3550",
   "strategy_state": {},
   "trade_history_for_breakers": [],
   "wallet_id": "labo"
