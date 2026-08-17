@@ -1,0 +1,11 @@
+== Cycle bot (job.status=success) ==
+date_utc: 2026-08-17T21:34:46+00:00
+run_id_attendu: 2026-08-17T21
+sha_main: 1c66fe7fd4837b89adabe55350da988192d7ac70
+github_run_id: 32071742612
+github_run_attempt: 1
+github_run_number: 510
+workflow: Bot cycle
+event: schedule
+==========================
+2026-08-17 21:34:45,057 INFO bot.runner: cycle déjà traité pour run_id=2026-08-17T21 (last_run_id=2026-08-17T21) — abandon silencieux propre.
