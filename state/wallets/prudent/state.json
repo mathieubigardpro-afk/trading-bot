@@ -1,15 +1,11 @@
 {
-  "cash_usd": 518.5769766753888,
+  "cash_usd": 301.5513525528414,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1150.5416169469677,
-        "ts": "2026-08-16T13:37:52.537208+00:00"
-      },
       {
         "equity": 1150.5416169469677,
         "ts": "2026-08-16T14:31:34.478780+00:00"
@@ -97,23 +93,27 @@
       {
         "equity": 1150.5416169469677,
         "ts": "2026-08-17T12:57:13.285786+00:00"
+      },
+      {
+        "equity": 1181.706857480595,
+        "ts": "2026-08-17T13:42:55.039410+00:00"
       }
     ],
     "flatten_mode": false,
     "manual_review_required": false
   },
-  "equity_peak_ts": "2026-08-14T20:18:41.199499+00:00",
-  "equity_peak_usd": 1178.7631641494488,
+  "equity_peak_ts": "2026-08-17T13:42:55.039410+00:00",
+  "equity_peak_usd": 1181.706857480595,
   "fx": {
     "initial_rate": 1.141079,
     "last_rate": 1.1567,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-17T12:57:31.582279+00:00"
+    "last_rate_ts": "2026-08-17T13:43:18.054100+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-17T12:57:13.285786+00:00",
-  "last_run_id": "2026-08-17T12",
+  "last_run_completed_at": "2026-08-17T13:42:55.039410+00:00",
+  "last_run_id": "2026-08-17T13",
   "positions": {
     "DBC": {
       "prix_moyen": 28.412715647660065,
@@ -123,6 +123,10 @@
       "prix_moyen": 63.81602095391006,
       "qty": 3.2807
     },
+    "EFA": {
+      "prix_moyen": 108.80699352967986,
+      "qty": 1.9926
+    },
     "IWM": {
       "prix_moyen": 295.0158669953201,
       "qty": 0.7096
@@ -130,12 +134,12 @@
   },
   "realized_pnl_cumulative_usd": 10.303902173766694,
   "schema_version": 1,
-  "state_hash_prev": "6faa9124f5f846ca4fb792d0583011629fecc812d3f4ec822c25ed74ae06d3ee",
+  "state_hash_prev": "649ac4a5a73efb9fa33cad545d4f5cbf57fc55aed5bfe65f724e06168aa69a02",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "DBC": 14
+        "DBC": 15
       }
     },
     "quasi_passif_crypto": {
