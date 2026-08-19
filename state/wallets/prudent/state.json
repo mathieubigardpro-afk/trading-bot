@@ -3,13 +3,9 @@
   "circuit_breakers": {
     "consecutive_losses": 1,
     "cooldown_until": null,
-    "daily_loss_freeze_until": "2026-08-19T13:01:45.680688+00:00",
+    "daily_loss_freeze_until": "2026-08-20T13:14:26.703571+00:00",
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1150.3248081316603,
-        "ts": "2026-08-18T13:01:45.680688+00:00"
-      },
       {
         "equity": 1175.6410360722048,
         "ts": "2026-08-18T14:35:31.184165+00:00"
@@ -97,6 +93,10 @@
       {
         "equity": 1147.7528195602276,
         "ts": "2026-08-19T12:14:53.573572+00:00"
+      },
+      {
+        "equity": 1147.7528195602276,
+        "ts": "2026-08-19T13:14:26.703571+00:00"
       }
     ],
     "flatten_mode": false,
@@ -109,11 +109,11 @@
     "last_rate": 1.1576,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-19T12:15:16.215016+00:00"
+    "last_rate_ts": "2026-08-19T13:14:46.496728+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-19T12:14:53.573572+00:00",
-  "last_run_id": "2026-08-19T12",
+  "last_run_completed_at": "2026-08-19T13:14:26.703571+00:00",
+  "last_run_id": "2026-08-19T13",
   "positions": {
     "DBC": {
       "prix_moyen": 28.412715647660065,
@@ -130,7 +130,7 @@
   },
   "realized_pnl_cumulative_usd": 7.731913602334045,
   "schema_version": 1,
-  "state_hash_prev": "e2df37f82ac805f4ec8927d23c1226761c59330c499b7ca5d276dbc8fa51b113",
+  "state_hash_prev": "e86cce73d64b9b3cac40e79bbc31500c65e95cfbb1b1ba17bb8801da6d6e4841",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
