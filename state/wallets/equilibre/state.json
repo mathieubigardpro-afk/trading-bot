@@ -1,19 +1,11 @@
 {
-  "cash_usd": 368.8977987708328,
+  "cash_usd": 386.2519907173228,
   "circuit_breakers": {
-    "consecutive_losses": 1,
+    "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1150.7099148989914,
-        "ts": "2026-08-18T20:05:28.878918+00:00"
-      },
-      {
-        "equity": 1144.3944665324916,
-        "ts": "2026-08-18T21:00:21.340693+00:00"
-      },
       {
         "equity": 1144.5006165324914,
         "ts": "2026-08-18T22:26:03.949283+00:00"
@@ -101,6 +93,10 @@
       {
         "equity": 1154.3548727359057,
         "ts": "2026-08-19T20:03:31.270272+00:00"
+      },
+      {
+        "equity": 1157.3447665324916,
+        "ts": "2026-08-19T21:12:04.812166+00:00"
       }
     ],
     "flatten_mode": false,
@@ -113,11 +109,11 @@
     "last_rate": 1.1605,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-19T20:03:55.159771+00:00"
+    "last_rate_ts": "2026-08-19T21:12:24.843690+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-19T20:03:31.270272+00:00",
-  "last_run_id": "2026-08-19T20",
+  "last_run_completed_at": "2026-08-19T21:12:04.812166+00:00",
+  "last_run_id": "2026-08-19T21",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -161,7 +157,7 @@
     },
     "LINK": {
       "prix_moyen": 8.868859999999998,
-      "qty": 9.65
+      "qty": 8.040000000000001
     },
     "TGT": {
       "prix_moyen": 139.6745735495224,
@@ -176,9 +172,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": -1.3227802878422037,
+  "realized_pnl_cumulative_usd": 1.7525470586477976,
   "schema_version": 1,
-  "state_hash_prev": "e24f3225ba34617ccfe17b9cf9f5c57015183655cef1995b4d6bd5745a34706d",
+  "state_hash_prev": "bd64f67d611ac345757907b19451059666523b4ee5271ac24fbe721d7035c903",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -218,6 +214,11 @@
       "realized_pnl_usd": -1.2118983789684754,
       "symbol": "EFA",
       "ts": "2026-08-18T14:35:31.184165+00:00"
+    },
+    {
+      "realized_pnl_usd": 3.0753273464900013,
+      "symbol": "LINK",
+      "ts": "2026-08-19T21:12:04.812166+00:00"
     }
   ],
   "wallet_id": "equilibre"
