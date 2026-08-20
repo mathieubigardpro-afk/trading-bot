@@ -1,19 +1,11 @@
 {
-  "cash_usd": 750.5695096712037,
+  "cash_usd": 360.68209804949583,
   "circuit_breakers": {
     "consecutive_losses": 2,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1091.3547889076824,
-        "ts": "2026-08-18T23:23:13.242556+00:00"
-      },
-      {
-        "equity": 1091.3547889076824,
-        "ts": "2026-08-19T00:23:50.047397+00:00"
-      },
       {
         "equity": 1091.3547889076824,
         "ts": "2026-08-19T02:01:50.461085+00:00"
@@ -101,6 +93,10 @@
       {
         "equity": 1091.3547889076824,
         "ts": "2026-08-19T23:00:08.049693+00:00"
+      },
+      {
+        "equity": 1091.3547889076824,
+        "ts": "2026-08-20T01:23:03.142924+00:00"
       }
     ],
     "flatten_mode": false,
@@ -113,15 +109,19 @@
     "last_rate": 1.1605,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-19T23:00:38.828434+00:00"
+    "last_rate_ts": "2026-08-20T01:23:21.626695+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-19T23:00:08.049693+00:00",
-  "last_run_id": "2026-08-19T23",
+  "last_run_completed_at": "2026-08-20T01:23:03.142924+00:00",
+  "last_run_id": "2026-08-20T01",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
       "qty": 0.0673
+    },
+    "BTC": {
+      "prix_moyen": 69393.4794,
+      "qty": 0.0014
     },
     "CAT": {
       "prix_moyen": 879.75409471875,
@@ -139,6 +139,10 @@
       "prix_moyen": 605.5350739009551,
       "qty": 0.0559
     },
+    "ETH": {
+      "prix_moyen": 2259.2890799999996,
+      "qty": 0.0431
+    },
     "FDX": {
       "prix_moyen": 313.77352981153103,
       "qty": 0.1089
@@ -146,6 +150,10 @@
     "INTC": {
       "prix_moyen": 91.31124402692413,
       "qty": 0.3743
+    },
+    "SOL": {
+      "prix_moyen": 84.92244,
+      "qty": 1.148
     },
     "TGT": {
       "prix_moyen": 139.6745735495224,
@@ -158,16 +166,21 @@
     "UNH": {
       "prix_moyen": 415.727916328125,
       "qty": 0.0815
+    },
+    "UNI": {
+      "prix_moyen": 3.6628591999999993,
+      "qty": 26.6
     }
   },
   "realized_pnl_cumulative_usd": -47.37809031243063,
   "schema_version": 1,
-  "state_hash_prev": "01497bd3e9bccec6ab0557dfae98329721a1e69e015c87fa12d5f83893c68233",
+  "state_hash_prev": "b131450212c185a6d4975fbd34b6aaeca3debff0438717e00258ece296ed0403",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "BNB": 20
+        "BNB": 21,
+        "OP": 1
       }
     },
     "xs_momentum_sp100": {
