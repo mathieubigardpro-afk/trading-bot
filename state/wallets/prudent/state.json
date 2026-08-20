@@ -1,15 +1,11 @@
 {
-  "cash_usd": 515.7881792886488,
+  "cash_usd": 299.3828041531676,
   "circuit_breakers": {
     "consecutive_losses": 1,
     "cooldown_until": null,
-    "daily_loss_freeze_until": "2026-08-20T13:14:26.703571+00:00",
+    "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1147.7528195602276,
-        "ts": "2026-08-19T13:14:26.703571+00:00"
-      },
       {
         "equity": 1177.367968423628,
         "ts": "2026-08-19T14:01:18.409159+00:00"
@@ -101,6 +97,10 @@
       {
         "equity": 1147.7528195602276,
         "ts": "2026-08-20T13:10:07.671867+00:00"
+      },
+      {
+        "equity": 1178.282241293501,
+        "ts": "2026-08-20T14:00:43.669899+00:00"
       }
     ],
     "flatten_mode": false,
@@ -110,14 +110,14 @@
   "equity_peak_usd": 1183.686336475418,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1605,
+    "last_rate": 1.1681,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-20T13:10:28.413750+00:00"
+    "last_rate_ts": "2026-08-20T14:01:24.040396+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-20T13:10:07.671867+00:00",
-  "last_run_id": "2026-08-20T13",
+  "last_run_completed_at": "2026-08-20T14:00:43.669899+00:00",
+  "last_run_id": "2026-08-20T14",
   "positions": {
     "DBC": {
       "prix_moyen": 28.412715647660065,
@@ -127,6 +127,10 @@
       "prix_moyen": 63.81602095391006,
       "qty": 3.2807
     },
+    "EFA": {
+      "prix_moyen": 107.46591735822028,
+      "qty": 2.0117
+    },
     "IWM": {
       "prix_moyen": 295.0158669953201,
       "qty": 0.7096
@@ -134,12 +138,12 @@
   },
   "realized_pnl_cumulative_usd": 7.731913602334045,
   "schema_version": 1,
-  "state_hash_prev": "be2df9fbaabaffbf5c7e0698d975868caf3d143673b330b832c11d96538dfd6a",
+  "state_hash_prev": "789d705c0dba593ff8ec7b69ba96530648184c143bb0d332cc0dd6058ccf1f54",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "DBC": 15
+        "DBC": 16
       }
     },
     "quasi_passif_crypto": {

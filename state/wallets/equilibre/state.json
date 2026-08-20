@@ -1,15 +1,11 @@
 {
-  "cash_usd": 350.72018691553484,
+  "cash_usd": 253.83959793754883,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1146.7249415324916,
-        "ts": "2026-08-19T13:14:26.703571+00:00"
-      },
       {
         "equity": 1153.9128434069871,
         "ts": "2026-08-19T14:01:18.409159+00:00"
@@ -101,6 +97,10 @@
       {
         "equity": 1157.1923833271937,
         "ts": "2026-08-20T13:10:07.671867+00:00"
+      },
+      {
+        "equity": 1160.513441292485,
+        "ts": "2026-08-20T14:00:43.669899+00:00"
       }
     ],
     "flatten_mode": false,
@@ -110,14 +110,14 @@
   "equity_peak_usd": 1168.1023715849187,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1605,
+    "last_rate": 1.1681,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-20T13:10:28.413750+00:00"
+    "last_rate_ts": "2026-08-20T14:01:24.040396+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-20T13:10:07.671867+00:00",
-  "last_run_id": "2026-08-20T13",
+  "last_run_completed_at": "2026-08-20T14:00:43.669899+00:00",
+  "last_run_id": "2026-08-20T14",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -150,6 +150,10 @@
     "EEM": {
       "prix_moyen": 63.81602095391006,
       "qty": 1.4912
+    },
+    "EFA": {
+      "prix_moyen": 107.46591735822028,
+      "qty": 0.9006
     },
     "ETH": {
       "prix_moyen": 2259.2890799999996,
@@ -190,12 +194,12 @@
   },
   "realized_pnl_cumulative_usd": 10.009121208177813,
   "schema_version": 1,
-  "state_hash_prev": "de7d3aa825117a19a789c6eb7d2482640b0f68244a9c6292208dc70b3a8bc61b",
+  "state_hash_prev": "28febb300d7c9655d46093593369d1dfbf028186c55fd30be98af98b114a65aa",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "DBC": 15
+        "DBC": 16
       }
     },
     "quasi_passif_crypto": {
