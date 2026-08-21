@@ -97,6 +97,10 @@
       {
         "equity": 1187.763614579499,
         "ts": "2026-08-21T19:27:02.215322+00:00"
+      },
+      {
+        "equity": 1187.3611513820595,
+        "ts": "2026-08-21T20:10:10.169173+00:00"
       }
     ],
     "flatten_mode": false,
@@ -109,11 +113,11 @@
     "last_rate": 1.1699,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-21T19:27:21.801401+00:00"
+    "last_rate_ts": "2026-08-21T20:10:33.702883+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-21T19:27:02.215322+00:00",
-  "last_run_id": "2026-08-21T19",
+  "last_run_completed_at": "2026-08-21T20:10:10.169173+00:00",
+  "last_run_id": "2026-08-21T20",
   "positions": {
     "BTC": {
       "prix_moyen": 72253.058475,
@@ -138,7 +142,7 @@
   },
   "realized_pnl_cumulative_usd": 8.606229672730622,
   "schema_version": 1,
-  "state_hash_prev": "b42c71feb774a60fef9474d4ddb47e8ae63a2d067718a5bb90951f8a9b36405c",
+  "state_hash_prev": "42f44bd2f6723a22654f2e012e39586a3c989326be9b32226d5a10de3c058f4e",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
