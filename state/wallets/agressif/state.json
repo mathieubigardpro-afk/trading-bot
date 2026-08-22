@@ -1,15 +1,11 @@
 {
-  "cash_usd": 365.47228542205136,
+  "cash_usd": 506.0532433047891,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1113.7232974047145,
-        "ts": "2026-08-21T05:16:42.503509+00:00"
-      },
       {
         "equity": 1115.0469219047145,
         "ts": "2026-08-21T06:49:02.294893+00:00"
@@ -101,6 +97,10 @@
       {
         "equity": 1132.45152550853,
         "ts": "2026-08-22T05:14:08.867233+00:00"
+      },
+      {
+        "equity": 1136.4727115085302,
+        "ts": "2026-08-22T06:15:29.310137+00:00"
       }
     ],
     "flatten_mode": false,
@@ -113,11 +113,11 @@
     "last_rate": 1.1699,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-22T05:14:32.084045+00:00"
+    "last_rate_ts": "2026-08-22T06:15:46.873107+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-22T05:14:08.867233+00:00",
-  "last_run_id": "2026-08-22T05",
+  "last_run_completed_at": "2026-08-22T06:15:29.310137+00:00",
+  "last_run_id": "2026-08-22T06",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -125,7 +125,7 @@
     },
     "BTC": {
       "prix_moyen": 69393.4794,
-      "qty": 0.00093
+      "qty": 0.00047000000000000004
     },
     "CAT": {
       "prix_moyen": 879.75409471875,
@@ -145,7 +145,7 @@
     },
     "ETH": {
       "prix_moyen": 2259.2890799999996,
-      "qty": 0.0289
+      "qty": 0.014899999999999998
     },
     "FDX": {
       "prix_moyen": 313.77352981153103,
@@ -161,7 +161,7 @@
     },
     "SOL": {
       "prix_moyen": 84.92244,
-      "qty": 0.7599999999999999
+      "qty": 0.3859999999999999
     },
     "TGT": {
       "prix_moyen": 139.6745735495224,
@@ -177,7 +177,7 @@
     },
     "UNI": {
       "prix_moyen": 3.6628591999999993,
-      "qty": 17.6
+      "qty": 8.8
     },
     "XLM": {
       "prix_moyen": 0.18557941800000002,
@@ -188,15 +188,16 @@
       "qty": 32.6
     }
   },
-  "realized_pnl_cumulative_usd": -32.65937320294502,
+  "realized_pnl_cumulative_usd": -19.623616484207297,
   "schema_version": 1,
-  "state_hash_prev": "b807e182c48ce78d8dd5e75ccb4886667a49f18c543dee2eeb316035ad1973ab",
+  "state_hash_prev": "f280ee6ca51ef9d8659f5c83d3c68e1e3da820fbe046478e7ccc1cc244fed7d0",
   "strategy_state": {
     "quasi_passif_crypto": {
-      "liquidated_by_missing_data_this_cycle": {},
+      "liquidated_by_missing_data_this_cycle": {
+        "BNB": 24
+      },
       "missing_data_cycles": {
-        "BNB": 23,
-        "OP": 7
+        "OP": 8
       }
     },
     "xs_momentum_sp100": {
@@ -269,6 +270,26 @@
       "realized_pnl_usd": 3.6890655143699926,
       "symbol": "XLM",
       "ts": "2026-08-22T01:16:58.924517+00:00"
+    },
+    {
+      "realized_pnl_usd": 3.5377446388977054,
+      "symbol": "BTC",
+      "ts": "2026-08-22T06:15:29.310137+00:00"
+    },
+    {
+      "realized_pnl_usd": 2.3473272942000074,
+      "symbol": "ETH",
+      "ts": "2026-08-22T06:15:29.310137+00:00"
+    },
+    {
+      "realized_pnl_usd": 3.252665613120003,
+      "symbol": "SOL",
+      "ts": "2026-08-22T06:15:29.310137+00:00"
+    },
+    {
+      "realized_pnl_usd": 3.8980191725200086,
+      "symbol": "UNI",
+      "ts": "2026-08-22T06:15:29.310137+00:00"
     }
   ],
   "wallet_id": "agressif"
