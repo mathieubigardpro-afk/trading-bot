@@ -1,6 +1,6 @@
 {
   "data_refresh_status": "OK",
-  "generated_at": "2026-08-16T22:25:57.597298+00:00",
+  "generated_at": "2026-08-23T22:27:27.262028+00:00",
   "recalibration": {
     "best_oos_sharpe": 0.5227648190046261,
     "best_value": 175,
@@ -26,14 +26,15 @@
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 0.5807750254258794,
+      "dd_live_pct": 1.2327188515465655,
       "dd_ref_pct": null,
-      "n_days_observed": 25,
+      "n_days_observed": 32,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "DD de référence indisponible dans le registre — comparaison impossible",
+        "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 1.8964019357126747,
+      "sharpe_live": 1.4096118580990433,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -43,14 +44,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.0,
+      "dd_live_pct": 0.1264028139622786,
       "dd_ref_pct": 8.0,
-      "n_days_observed": 25,
+      "n_days_observed": 32,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": null,
+      "sharpe_live": -2.572076887556072,
       "sharpe_ref": 1.24,
       "source": "backtest NON AUDITÉ (variante prudent_btc_eth)",
       "strategy_id": "quasi_passif_crypto",
@@ -62,12 +63,12 @@
       "categorie": "active",
       "dd_live_pct": 0.29473164376324784,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 25,
+      "n_days_observed": 32,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 1.2973109368405937,
+      "sharpe_live": 4.379398822306592,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -79,12 +80,13 @@
       "categorie": "active",
       "dd_live_pct": 0.33968788984052745,
       "dd_ref_pct": null,
-      "n_days_observed": 25,
+      "n_days_observed": 32,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "DD de référence indisponible dans le registre — comparaison impossible",
+        "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 0.01764531569923946,
+      "sharpe_live": 3.8026932107462486,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -94,14 +96,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.01053712843265621,
+      "dd_live_pct": 0.04374223957285644,
       "dd_ref_pct": 16.4,
-      "n_days_observed": 25,
+      "n_days_observed": 32,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 3.4942844391318495,
+      "sharpe_live": 5.4112618516439746,
       "sharpe_ref": 1.47,
       "source": "backtest NON AUDITÉ (variante equilibre_6majors)",
       "strategy_id": "quasi_passif_crypto",
@@ -113,12 +115,12 @@
       "categorie": "active",
       "dd_live_pct": 1.7172972706377627,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 25,
+      "n_days_observed": 32,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": -3.782468841692402,
+      "sharpe_live": 0.057331733561809484,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -130,12 +132,12 @@
       "categorie": "active",
       "dd_live_pct": 1.2099240721239761,
       "dd_ref_pct": 33.4,
-      "n_days_observed": 25,
+      "n_days_observed": 32,
       "negative_rolling_streak_days": null,
       "reasons": [
-        "historique vécu 25j < 28j (§2.1) — trop tôt pour un diagnostic fiable"
+        "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": -4.532370904268922,
+      "sharpe_live": 0.6792816338019926,
       "sharpe_ref": 1.49,
       "source": "backtest NON AUDITÉ (variante agressif_12diversifie)",
       "strategy_id": "quasi_passif_crypto",
