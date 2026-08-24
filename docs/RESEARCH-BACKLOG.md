@@ -32,7 +32,14 @@ des pièges génériques déjà couverts par `docs/PROMOTION-RULES.md` §1.4 -- 
 
 ## P0 — Priorité haute
 
-### 1. Funding carry sur perpétuels SIMULÉS (crypto)
+### 1. Funding carry sur perpétuels SIMULÉS (crypto) — ⏳ ÉTAPE DONNÉES LIVRÉE 2026-08-24
+
+**AVANCEMENT (session #4)** : le pipeline de données est étendu (`tools/fetch_data.py`, sections
+`funding` + `perp` par défaut) — funding rates 8h/4h et klines 1h des perpétuels USDT-M Binance
+seront publiés sur `market-data` au prochain run du workflow fetch-data (**vérifier le premier
+run réel** : formats d'archives et budget temps non validables hors Actions, cf. RESEARCH-LOG
+2026-08-24 (b)). **Reste bloquant avant toute Porte 1** : l'extension short/perp du simulateur
+(`bot/sim/`/moteur commun), soumise à audit adversarial préalable obligatoire.
 
 **Hypothèse** : capter le funding rate versé/perçu périodiquement entre positions long et
 short sur futures perpétuels crypto, en restant delta-neutre (long spot + short perp, ou
@@ -383,7 +390,15 @@ de risque spécifique identifiable avant qu'une hypothèse précise soit formul�
 
 ## Idées ajoutées par la session hebdomadaire #1 (2026-07-27)
 
-### 11. [P0 — infrastructure] Durcissement du pipeline de données actions : détection d'anomalies de corporate actions
+### 11. [P0 — infrastructure] Durcissement du pipeline de données actions : détection d'anomalies de corporate actions — ✅ TRAITÉE 2026-08-24
+
+**LIVRÉ (session hebdomadaire #4, cf. `RESEARCH-LOG.md` 2026-08-24 (b))** :
+`tools/check_data_anomalies.py` + intégration dans `tools/fetch_data.py` — chaque régénération
+de `market-data` publie désormais `DATA_ANOMALIES.md`/`anomalies.json` (journal de revue humaine,
+jamais de correction silencieuse). Démonstration sur données réelles : 21 anomalies, dont le cas
+DHR/Fortive fondateur (+61,2% 2016-07-05) et 2 incohérences OHLC récentes (ABT/MS, séance du
+2026-07-24 — à vérifier après la prochaine régénération hebdo). Audit adversarial : 1 CRITIQUE +
+2 MAJEURS corrigés en session, contre-vérification `isSound: true`.
 
 **Hypothèse/motivation** : l'audit adversarial du backtest inverse-vol a identifié une anomalie
 concrète dans les données `market-data` : le spin-off DHR/Fortive (juillet 2016) mal ajusté
@@ -428,7 +443,35 @@ agressif sont les plus atteints ; la variante prudente BTC+ETH est la moins loin
 Sharpe 0,81 > benchmark 0,76, MaxDD 8,4%). Décision humaine requise — la boucle de recherche ne
 touche pas à la composition des wallets réels de sa propre initiative (§4.3 et SPEC du retest).
 
-**Priorité de la prochaine session (revue 2026-08-10, session #3)** :
+### 15. [P2 — hygiène monitoring, AJOUTÉE 2026-08-24] Re-baser la référence « attendue » du DRIFT-REPORT pour `quasi_passif_crypto`
+
+`tools/weekly_maintenance.py` lit encore dans le registre les Sharpe/MaxDD non audités d'origine
+(1,24/1,47/1,49) comme référence « attendue » — chiffres explicitement discrédités par le retest
+#3 (`quasi_passif_crypto_wf_retest`). La référence devrait devenir celle du retest audité
+(0,808/0,283/0,069 ; MaxDD 8,4/27,3/56,4%). Attention : registre append-only — ne pas réécrire
+l'entrée d'origine ; faire pointer le moniteur vers l'entrée de retest (ou une résolution
+explicite « entrée la plus récente de la même famille »). Simple outil de monitoring (aucune
+règle de PROMOTION-RULES en jeu), mais à tester avec les fixtures existantes.
+
+**Priorité de la prochaine session (revue 2026-08-24, session #4)** :
+
+1. **#14 : le dossier d'instruction est prêt** (`docs/GOVERNANCE-DOSSIER-2026-08-24-quasi-passif.md`)
+   — décision HUMAINE attendue (Mathieu). Si une option est choisie, l'appliquer en session
+   dédiée (§0), avec les amendements #12a/#12b proposés dans le même dossier. À défaut de
+   décision, le critère vécu de `SELECTION-FINALE.md` §5 tranche de lui-même vers fin octobre.
+2. Vérifier le premier run réel du workflow fetch-data étendu (sections funding/perp +
+   publication de `DATA_ANOMALIES.md`) : formats d'archives, budget temps (75 min), paires perp
+   réellement disponibles ; puis vérifier si les incohérences OHLC ABT/MS (2026-07-24) ont
+   disparu à la régénération.
+3. P0#1 étape simulateur : conception + audit adversarial de l'extension short/perp de
+   `bot/sim`/du moteur commun (pré-requis Porte 1 du funding carry). Grosse pièce — peut
+   occuper une session entière.
+4. Alternative si les données funding ne sont pas encore disponibles : P1#4 (saisonnalité
+   horaire BTC 21h-23h UTC, test strictement confiné à la fenêtre pré-identifiée par la
+   littérature) — première candidate possible d'incubation depuis l'ouverture du labo.
+5. P2#15 ci-dessus (rapide, améliore la lisibilité du DRIFT-REPORT).
+
+**Priorité de la session #3 (2026-08-10, conservée pour mémoire)** :
 1. **#14 (gouvernance : statuer sur l'antécédent `quasi_passif_crypto`)** — LA priorité, en
    session DÉDIÉE (§0, jamais mêlée à un jugement de candidate). L'échec 3/3 du retest laisse
    la seule brique crypto de production sans validation protocolaire ; à défaut, le critère

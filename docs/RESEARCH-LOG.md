@@ -519,3 +519,90 @@ protocole complet. **Signalement priorité haute à Mathieu + session de gouvern
 session de jugement : conserver sous critère §5 vécu, resserrer, ou retirer/réduire la poche.
 Entrée n°12 au registre ; prochaine candidate → K_total = 12 lignes + sa grille. Labo toujours
 vide (0/3). Suite de tests : 684 verts.
+
+---
+
+## 2026-08-24 — Session hebdomadaire #4 (a) : REVUE des stratégies actives et candidates
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56j. **Zéro action requise, zéro action prise.**
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-08-23 : 7 lignes, toutes **SURVEILLER**
+  pour la même raison mécanique (32j vécus < 60j — Sharpe roulant 60j non calculable). Les
+  Sharpe vécus extrêmes (quasi_passif équilibré +5,41, prudent −2,57) restent du bruit
+  d'échantillon court — aucune action. NOTE d'hygiène : le rapport affiche encore comme
+  « attendu » les Sharpe non audités discrédités par le retest #3 (1,24/1,47/1,49 lus dans le
+  registre) — inscrit au backlog (#15), la référence devrait devenir celle du retest audité.
+- Recalibrage du 2026-08-23 : exécuté normalement, `REGIME_SMA_DAYS` inchangé (175 vs 200 :
+  +3,0% < seuil 10%) — conforme à la spec.
+- Wallets au cycle 2026-08-24T07 : 🛡️ 985 € | ⚖️ 998 € | 🔥 970 € | 🧪 974 € (labo 100% cash,
+  état attendu).
+
+---
+
+## 2026-08-24 — Session hebdomadaire #4 (b) : infrastructure P0#11 (anomalies de données) et P0#1 étape données (funding/perp) — audit adversarial, 3 findings corrigés
+
+**Contexte.** La priorité n°1 du backlog (#14, gouvernance de l'antécédent `quasi_passif_crypto`)
+exige une décision humaine hors boucle de recherche — traitée en (c) ci-dessous par un dossier
+d'instruction, sans décision. Conformément à l'ordre pré-enregistré par la revue de la session #3,
+cette session n'a jugé AUCUNE candidate et a livré les deux chantiers d'infrastructure suivants
+(implémentation par 2 agents dédiés, audit par un agent adversarial indépendant sur copie isolée,
+remote neutralisé).
+
+**P0#11 — Détecteur d'anomalies de corporate actions (livré).**
+`tools/check_data_anomalies.py` (+ 24 tests) : détection sur les CSV quotidiens actions/ETF de
+(a) |rendement close-to-close| > 40%, (b) incohérences OHLC (avec tolérance de comparaison 1e-8
+documentée contre le bruit de flottant des prix ajustés — jamais une correction de donnée),
+(c) trous de calendrier > 10 j. Principe : JOURNALISER pour revue humaine, jamais corriger, jamais
+bloquer. Intégré à `tools/fetch_data.py:main()` : chaque régénération de `market-data` publie
+désormais `DATA_ANOMALIES.md` + `anomalies.json` sur la branche et résume dans `DATA_REPORT.md`.
+**Démonstration sur les données réelles actuelles : 21 anomalies** — le spin-off DHR/Fortive
+(+61,2% le 2016-07-05) qui motivait l'idée est bien détecté ; la plupart des autres spikes sont de
+vrais mouvements de crise 2008-2009 (faux positifs assumés, à trancher par revue humaine) ; et
+**2 incohérences OHLC réelles et récentes** (ABT et MS, séance du 2026-07-24 : open hors du range
+high/low, volumes anormalement bas — capture de séance vraisemblablement tronquée côté
+fournisseur), dignes de revue — elles devraient disparaître à la prochaine régénération hebdo,
+sinon investiguer.
+
+**P0#1 étape (a) — Pipeline de données funding rates + klines perp (livré, PREMIER RUN RÉEL À
+SURVEILLER).** `tools/fetch_data.py` étendu (sections `funding` et `perp` de `--only`, actives
+par défaut) : archives bulk Binance Vision USDT-M (fundingRate + klines 1h) + complément mois
+courant via fapi, publication `data/funding/*.csv.gz` et `data/perp/*.csv.gz` sur `market-data`,
+manifest/rapport étendus, tolérance aux perps listés après le spot (skip AVANT listing = normal
+journalisé ; trou AU MILIEU = anomalie journalisée), flag |funding| > 3% sans suppression.
+38 tests offline (réseau bloqué dans le conteneur de session — les formats réels d'archives et le
+budget temps seront validés au premier run GitHub Actions ; timeout du workflow porté à 75 min).
+Ceci débloque la moitié « données » du funding carry — reste l'extension short/perp du simulateur
+(audit adversarial préalable obligatoire) avant toute Porte 1.
+
+**Audit adversarial indépendant (copie isolée) : verdict initial `isSound: false` — corrigé puis
+contre-vérifié `isSound: true`.** 3 findings, tous démontrés par exécution :
+- **F1 (CRITIQUE)** : l'intégration du scan dans `main()` pointait `staging/equities` au lieu de
+  `staging/data/equities` — le scan n'aurait JAMAIS rien scanné en production (« 0 anomalie sur
+  0 fichier » présenté fièrement). Corrigé, re-démontré (104/104 fichiers scannés).
+- **F2 (MAJEUR)** : `anomalies.json`/`DATA_ANOMALIES.md` écrits en staging mais absents de
+  `_DEFAULT_PUBLISH_ENTRIES` — jamais publiés sur la branche (lien mort dans DATA_REPORT.md).
+  Corrigé + test de publication réelle sur dépôt jetable.
+- **F3 (MAJEUR, tests)** : le test d'intégration mockait le même chemin erroné que le code testé
+  (raison structurelle pour laquelle 748 tests verts n'avaient pas attrapé F1). Corrigé ;
+  l'auditeur a vérifié par expérience rouge/vert que le test corrigé attrape la réintroduction
+  du bug.
+Axes vérifiés sains par l'audit : zéro régression des sections crypto/equities/etf existantes
+(diff 100% additif, fonction par fonction), parseurs funding/perp corrects sur variantes de
+schéma, aucun fichier interdit touché (bot/risk/, config WALLETS, PROMOTION-RULES, state/ —
+§4.3), workflow modifié a minima (timeout uniquement). Suite finale : **749 tests verts + 1 skip**
+(683 baseline + 66 nouveaux).
+
+---
+
+## 2026-08-24 — Session hebdomadaire #4 (c) : dossier d'instruction gouvernance #14/#12 — AUCUNE DÉCISION PRISE
+
+`docs/GOVERNANCE-DOSSIER-2026-08-24-quasi-passif.md` : instruction complète de la décision
+requise sur l'antécédent `quasi_passif_crypto` (options (a) statu quo sous critère vécu
+`SELECTION-FINALE.md` §5 — échéance naturelle fin octobre 2026 ; (b) alignement formel sur les
+règles de mort §3 avec référence attendue re-basée sur le retest audité ; (c) réduction/retrait
+ciblé des variantes équilibré/agressif, conservation de la variante prudente), plus les textes
+proposés pour les amendements #12a (valeur marginale vs incumbent) et #12b (discriminance du DSR
+sur OOS longs — recommandation : test Jobson-Korkie vs benchmark en priorité). **Décision humaine
+requise (Mathieu), adoption en session dédiée uniquement (§0), rien n'est appliqué par cette
+session** — la composition des wallets réels et PROMOTION-RULES.md sont inchangés.
