@@ -12,6 +12,12 @@ Sources publiques utilisées (aucune clé API requise) :
     l'API publique `GET https://api.binance.com/api/v3/klines`.
   - Actions (S&P 100) et ETF, quotidien : `https://stooq.com/q/d/l/?s={ticker}.us&i=d`
     (prix ajustés, historique complet disponible côté stooq).
+  - Funding rate et klines horaires des perpétuels USDT-M (idée backlog P0#1, "funding
+    carry sur perpétuels simulés" — collecte de donnée UNIQUEMENT, aucune stratégie ici) :
+    archives bulk mensuelles Binance Futures
+    (`https://data.binance.vision/data/futures/um/monthly/{fundingRate,klines}/{PAIR}/...`),
+    même univers/fenêtre que la crypto spot, complétées pour le mois courant via l'API
+    publique `https://fapi.binance.com/fapi/v1/{fundingRate,klines}`.
 
 Principes de conception (ce script tournera pour de vrai sur GitHub Actions, jamais
 testé en réseau réel dans l'environnement de développement où il a été écrit — voir
@@ -124,8 +130,17 @@ YFINANCE_TICKER_OVERRIDES = {
 CRYPTO_ARCHIVE_START = (2022, 1)  # première année-mois de l'archive bulk téléchargée
 CRYPTO_FULL_COVERAGE_REQUIRED_FROM = (2023, 7)  # fenêtre de complétude obligatoire
 
+# Funding/perp (futures USDT-M) : même fenêtre d'archive que le spot (les perpétuels les
+# plus anciens de l'univers curaté existent depuis 2019-2020, largement avant 2022-01) --
+# PAS de règle de complétude obligatoire à la spot (idée #1 backlog : la tolérance aux perps
+# listés plus tard que leur jambe spot est une caractéristique attendue, pas une exclusion).
+# |funding_rate| > ce seuil = flag dans le rapport (jamais une suppression silencieuse de
+# la donnée -- un funding extrême est un événement réel, pas nécessairement une erreur).
+FUNDING_RATE_ABS_FLAG_THRESHOLD = 0.03  # 3%
+
 BINANCE_VISION_BASE = "https://data.binance.vision"
 BINANCE_API_BASE = "https://api.binance.com"
+BINANCE_FAPI_BASE = "https://fapi.binance.com"  # API futures USDT-M (funding rate + klines perp)
 STOOQ_BASE = "https://stooq.com/q/d/l/"
 
 _HTTP_TIMEOUT_SECONDS = 30
@@ -557,6 +572,502 @@ def process_crypto_symbol(
 
 
 # --------------------------------------------------------------------------------------
+# Funding rate + klines perpétuelles (futures USDT-M) : archives bulk mensuelles Binance
+# --------------------------------------------------------------------------------------
+#
+# Idée backlog P0#1 (`docs/RESEARCH-BACKLOG.md`, "funding carry sur perpétuels simulés") :
+# cette section ne fait QUE collecter la donnée (historique funding rate + klines perp),
+# aucune logique de stratégie/backtest ici.
+#
+# Univers = EXACTEMENT le même que `CRYPTO_SYMBOLS` (source de vérité unique, pas de liste
+# dupliquée) -- un perp `{SYMBOL}USDT` n'existe pas forcément pour toute la fenêtre du spot
+# (voire pas du tout) : c'est géré explicitement ci-dessous (skip journalisé si le perp a été
+# listé après le spot, exclusion journalisée si le perp n'a jamais existé), jamais un échec
+# global du run.
+#
+# Deux schémas de colonnes CONNUS pour les archives funding (Binance a fait évoluer le
+# format des dumps bulk dans le temps) -- le parseur ci-dessous est tolérant aux deux et à
+# leur casse/underscores, mais retourne un DataFrame vide (donc traité comme une erreur de
+# parsing par l'appelant, jamais une exception) pour tout schéma non reconnu :
+#   - calc_time,funding_interval_hours,last_funding_rate   (schéma "historique")
+#   - symbol,fundingTime,fundingRate                       (schéma alternatif observé)
+
+_FUNDING_TIME_COLS_NORM = {"calctime", "fundingtime"}
+_FUNDING_RATE_COLS_NORM = {"lastfundingrate", "fundingrate"}
+_FUNDING_INTERVAL_COLS_NORM = {"fundingintervalhours"}
+
+
+def _normalize_col_name(name: str) -> str:
+    return name.strip().lower().replace("_", "").replace(" ", "")
+
+
+def _parse_binance_funding_csv_bytes(raw: bytes) -> pd.DataFrame:
+    """Parse le CSV contenu dans une archive mensuelle Binance funding rate.
+
+    Contrairement aux archives klines, les archives funding ont TOUJOURS un en-tête connu
+    (aucune variante "sans en-tête" observée) -- on utilise `csv.DictReader` et on résout les
+    noms de colonnes réels vers le schéma canonique `timestamp,funding_rate[,funding_
+    interval_hours]` via une correspondance tolérante à la casse/aux underscores (cf.
+    `_FUNDING_*_COLS_NORM` ci-dessus).
+
+    Toute ligne dont l'horodatage ou le taux ne parse pas en nombre est IGNORÉE
+    individuellement (jamais une exception qui invalide tout le mois) -- c'est la validation
+    minimale requise par la mission ("valide toujours ce qui est parsé").
+    """
+    empty_cols = ["timestamp", "funding_rate"]
+    text = raw.decode("utf-8", errors="replace")
+    if not text.strip():
+        return pd.DataFrame(columns=empty_cols)
+
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        return pd.DataFrame(columns=empty_cols)
+
+    norm_to_real: Dict[str, str] = {}
+    for real_name in reader.fieldnames:
+        norm_to_real.setdefault(_normalize_col_name(real_name), real_name)
+
+    time_col = next((norm_to_real[c] for c in _FUNDING_TIME_COLS_NORM if c in norm_to_real), None)
+    rate_col = next((norm_to_real[c] for c in _FUNDING_RATE_COLS_NORM if c in norm_to_real), None)
+    interval_col = next((norm_to_real[c] for c in _FUNDING_INTERVAL_COLS_NORM if c in norm_to_real), None)
+
+    if time_col is None or rate_col is None:
+        logger.warning(
+            "archive funding : schéma de colonnes non reconnu (%s) -- ni calc_time/"
+            "fundingTime ni last_funding_rate/fundingRate trouvés",
+            reader.fieldnames,
+        )
+        return pd.DataFrame(columns=empty_cols)
+
+    records = []
+    for row in reader:
+        try:
+            ts = _epoch_to_utc_ts(row[time_col])
+            rate = float(row[rate_col])
+        except (ValueError, TypeError, KeyError):
+            continue
+        record = {"timestamp": ts, "funding_rate": rate}
+        if interval_col is not None:
+            try:
+                record["funding_interval_hours"] = float(row[interval_col])
+            except (ValueError, TypeError, KeyError):
+                record["funding_interval_hours"] = float("nan")
+        records.append(record)
+
+    if not records:
+        cols = empty_cols + (["funding_interval_hours"] if interval_col is not None else [])
+        return pd.DataFrame(columns=cols)
+    return pd.DataFrame.from_records(records)
+
+
+def _extract_first_csv_from_zip(content: bytes, context: str) -> Optional[bytes]:
+    """Extrait le contenu du premier fichier d'une archive zip Binance Vision (funding/perp,
+    toutes deux mono-fichier comme les archives klines spot) -- factorisé ici pour ne PAS
+    dupliquer trois fois la même gestion défensive de zip corrompu/vide (funding + perp),
+    sans toucher à `download_binance_month` (spot) qui reste inchangée."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            names = zf.namelist()
+            if not names:
+                logger.warning("archive zip vide (%s)", context)
+                return None
+            return zf.read(names[0])
+    except zipfile.BadZipFile as exc:
+        logger.warning("archive zip corrompue (%s): %s", context, exc)
+        return None
+
+
+def download_binance_funding_month(
+    session: requests.Session, pair: str, year: int, month: int, max_attempts: int
+) -> Tuple[str, Optional[pd.DataFrame]]:
+    """Télécharge et parse le zip mensuel funding rate pour `pair`/`year-month`.
+
+    Retourne (status, df) avec status in {"OK", "NOT_FOUND", "ERROR"}. `df` est non-None
+    uniquement si status == "OK". NOT_FOUND est le cas ATTENDU pour les mois antérieurs au
+    listing du perp (cf. tolérance décrite en tête de section) -- c'est à l'appelant de
+    distinguer ce cas normal d'un vrai trou dans la série.
+    """
+    ym = _yyyymm(year, month)
+    url = f"{BINANCE_VISION_BASE}/data/futures/um/monthly/fundingRate/{pair}/{pair}-fundingRate-{ym}.zip"
+    result = fetch_with_retries(
+        session, url, max_attempts=max_attempts, context=f"binance-funding-bulk {pair} {ym}"
+    )
+    if result.status != "OK":
+        return result.status, None
+
+    csv_bytes = _extract_first_csv_from_zip(result.response.content, context=f"funding {pair} {ym}")
+    if csv_bytes is None:
+        return "ERROR", None
+
+    df = _parse_binance_funding_csv_bytes(csv_bytes)
+    if df.empty:
+        logger.warning("archive funding %s %s parsée mais vide (0 ligne exploitable)", pair, ym)
+        return "ERROR", None
+    return "OK", df
+
+
+def download_binance_perp_month(
+    session: requests.Session, pair: str, year: int, month: int, max_attempts: int
+) -> Tuple[str, Optional[pd.DataFrame]]:
+    """Télécharge et parse le zip mensuel klines 1h PERPÉTUELLES (futures USDT-M) pour
+    `pair`/`year-month` -- même format CSV que `download_binance_month` (spot), mais chemin
+    d'archive `futures/um/monthly/klines` au lieu de `spot/monthly/klines`. Retourne (status,
+    df), même contrat que `download_binance_month`."""
+    ym = _yyyymm(year, month)
+    url = f"{BINANCE_VISION_BASE}/data/futures/um/monthly/klines/{pair}/1h/{pair}-1h-{ym}.zip"
+    result = fetch_with_retries(
+        session, url, max_attempts=max_attempts, context=f"binance-perp-bulk {pair} {ym}"
+    )
+    if result.status != "OK":
+        return result.status, None
+
+    csv_bytes = _extract_first_csv_from_zip(result.response.content, context=f"perp {pair} {ym}")
+    if csv_bytes is None:
+        return "ERROR", None
+
+    df = _parse_binance_csv_bytes(csv_bytes)
+    if df.empty:
+        logger.warning("archive perp %s %s parsée mais vide (0 bougie exploitable)", pair, ym)
+        return "ERROR", None
+    return "OK", df
+
+
+def fetch_binance_funding_current_month_completion(
+    session: requests.Session, pair: str, month_start: datetime, max_attempts: int
+) -> pd.DataFrame:
+    """Complète le mois courant du funding rate (non couvert par les archives bulk, qui ne
+    publient que des mois entièrement clos) via l'API futures publique `GET
+    /fapi/v1/fundingRate`, paginée par tranches de 1000 lignes.
+
+    Contrairement aux klines, un funding rate est un événement ponctuel déjà réglé (pas de
+    notion de "bougie en formation") -- aucune exclusion de dernière ligne nécessaire ici.
+    L'API fapi ne fournit pas systématiquement `funding_interval_hours` (champ absent de la
+    réponse JSON `fundingRate`) -- la colonne, si présente pour ce symbole via les archives,
+    aura donc des valeurs manquantes pour les lignes issues de ce complément (cf.
+    `write_gz_csv_funding`).
+    """
+    now = datetime.now(timezone.utc)
+    all_records: List[dict] = []
+    cursor_ms = int(month_start.timestamp() * 1000)
+    end_ms = int(now.timestamp() * 1000)
+    max_pages = 20  # funding réglé ~toutes les 8h -> largement assez pour un mois en cours
+
+    for _ in range(max_pages):
+        if cursor_ms >= end_ms:
+            break
+        result = fetch_with_retries(
+            session,
+            f"{BINANCE_FAPI_BASE}/fapi/v1/fundingRate",
+            params={"symbol": pair, "startTime": cursor_ms, "limit": 1000},
+            max_attempts=max_attempts,
+            context=f"binance-funding-api-completion {pair}",
+        )
+        if result.status != "OK":
+            logger.warning(
+                "binance-funding-api-completion %s: arrêt de la pagination (%s), %d ligne(s) déjà obtenue(s)",
+                pair, result.status, len(all_records),
+            )
+            break
+
+        try:
+            rows = result.response.json()
+        except ValueError as exc:
+            logger.warning("binance-funding-api-completion %s: JSON invalide (%s)", pair, exc)
+            break
+        if not isinstance(rows, list) or not rows:
+            break
+
+        advanced = False
+        for row in rows:
+            try:
+                funding_time_raw = row["fundingTime"]
+                rate = float(row["fundingRate"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            all_records.append({"timestamp": _epoch_to_utc_ts(funding_time_raw), "funding_rate": rate})
+            cursor_ms = max(cursor_ms, int(funding_time_raw) + 1)
+            advanced = True
+
+        if len(rows) < 1000 or not advanced:
+            break
+
+    if not all_records:
+        return pd.DataFrame(columns=["timestamp", "funding_rate"])
+    return pd.DataFrame.from_records(all_records)
+
+
+def fetch_binance_perp_current_month_completion(
+    session: requests.Session, pair: str, month_start: datetime, max_attempts: int
+) -> pd.DataFrame:
+    """Complète le mois courant des klines perpétuelles via l'API futures publique `GET
+    /fapi/v1/klines` -- identique en tout point à `fetch_binance_current_month_completion`
+    (spot) sinon l'URL de base (fapi au lieu de api), dupliquée ici plutôt que paramétrée
+    pour ne pas risquer de modifier le comportement de la section crypto spot existante."""
+    now = datetime.now(timezone.utc)
+    all_records: List[dict] = []
+    cursor_ms = int(month_start.timestamp() * 1000)
+    end_ms = int(now.timestamp() * 1000)
+    max_pages = 10  # 10*1000h largement suffisant pour un seul mois en cours (~744h max)
+
+    for _ in range(max_pages):
+        if cursor_ms >= end_ms:
+            break
+        result = fetch_with_retries(
+            session,
+            f"{BINANCE_FAPI_BASE}/fapi/v1/klines",
+            params={"symbol": pair, "interval": "1h", "startTime": cursor_ms, "limit": 1000},
+            max_attempts=max_attempts,
+            context=f"binance-perp-api-completion {pair}",
+        )
+        if result.status != "OK":
+            logger.warning(
+                "binance-perp-api-completion %s: arrêt de la pagination (%s), %d bougie(s) déjà obtenue(s)",
+                pair, result.status, len(all_records),
+            )
+            break
+
+        try:
+            rows = result.response.json()
+        except ValueError as exc:
+            logger.warning("binance-perp-api-completion %s: JSON invalide (%s)", pair, exc)
+            break
+        if not isinstance(rows, list) or not rows:
+            break
+
+        advanced = False
+        for row in rows:
+            try:
+                open_time_raw, o, h, l, c, v, close_time_raw = row[0], row[1], row[2], row[3], row[4], row[5], row[6]
+            except (IndexError, TypeError):
+                continue
+            close_ts = _epoch_to_utc_ts(close_time_raw)
+            if close_ts >= pd.Timestamp(now):
+                continue  # bougie encore en formation, exclue systématiquement
+            all_records.append({
+                "timestamp": _epoch_to_utc_ts(open_time_raw),
+                "open": float(o), "high": float(h), "low": float(l), "close": float(c), "volume": float(v),
+            })
+            cursor_ms = max(cursor_ms, int(open_time_raw) + 1)
+            advanced = True
+
+        if len(rows) < 1000 or not advanced:
+            break
+
+    if not all_records:
+        return pd.DataFrame(columns=["timestamp", "open", "high", "low", "close", "volume"])
+    return pd.DataFrame.from_records(all_records)
+
+
+@dataclass
+class MonthlyCoverage:
+    """Classification des statuts mensuels d'un symbole perp/funding sur la fenêtre
+    d'archive, distinguant explicitement le cas "normal" (perp listé après le spot) du cas
+    "anomalie" (trou au milieu d'une série par ailleurs disponible) -- cf. spécification de
+    la mission, tolérance explicite requise entre ces deux cas, jamais confondus."""
+    months_ok: List[str] = field(default_factory=list)
+    months_missing: List[str] = field(default_factory=list)  # NOT_FOUND, toutes causes confondues
+    months_error: List[str] = field(default_factory=list)  # ERROR (échec réseau/serveur persistant)
+    leading_gap_months: List[str] = field(default_factory=list)  # NOT_FOUND avant la 1re archive OK : normal
+    mid_gap_months: List[str] = field(default_factory=list)  # NOT_FOUND après la 1re archive OK : anomalie
+    first_ok_month: Optional[str] = None
+    last_ok_month: Optional[str] = None
+
+
+def _classify_monthly_coverage(month_statuses: List[Tuple[str, str]]) -> MonthlyCoverage:
+    """`month_statuses` : liste chronologique de `(année-mois, status)` avec status in
+    {"OK", "NOT_FOUND", "ERROR"}.
+
+    Un mois NOT_FOUND AVANT le premier mois OK est classé comme un skip normal (le perp/
+    funding n'existait pas encore à cette date -- il a été listé plus tard que la paire spot
+    correspondante, cas attendu). Un mois NOT_FOUND À PARTIR du premier mois OK (y compris
+    juste après, ou entre deux mois OK plus tardifs) est classé comme une anomalie -- une
+    série qui a commencé puis s'interrompt puis reprend n'est pas un comportement normal
+    d'un listing progressif, et doit être journalisée sans exception.
+    """
+    months_ok = [ym for ym, st in month_statuses if st == "OK"]
+    months_missing = [ym for ym, st in month_statuses if st == "NOT_FOUND"]
+    months_error = [ym for ym, st in month_statuses if st == "ERROR"]
+
+    first_ok_idx = next((i for i, (_, st) in enumerate(month_statuses) if st == "OK"), None)
+    if first_ok_idx is None:
+        # Aucune archive OK sur toute la fenêtre : tous les NOT_FOUND sont "en tête" par
+        # définition (il n'y a pas de second segment après un premier mois OK inexistant).
+        return MonthlyCoverage(
+            months_ok=months_ok, months_missing=months_missing, months_error=months_error,
+            leading_gap_months=list(months_missing), mid_gap_months=[],
+            first_ok_month=None, last_ok_month=None,
+        )
+
+    leading = [ym for ym, st in month_statuses[:first_ok_idx] if st == "NOT_FOUND"]
+    mid = [ym for ym, st in month_statuses[first_ok_idx:] if st == "NOT_FOUND"]
+    return MonthlyCoverage(
+        months_ok=months_ok, months_missing=months_missing, months_error=months_error,
+        leading_gap_months=leading, mid_gap_months=mid,
+        first_ok_month=month_statuses[first_ok_idx][0], last_ok_month=months_ok[-1],
+    )
+
+
+def _validate_strictly_increasing_timestamps(ts_series: "pd.Series", context: str) -> None:
+    """Valide explicitement (jamais une hypothèse implicite) que les timestamps sont
+    strictement croissants après dédoublonnage+tri -- structurellement garanti par
+    `drop_duplicates(keep="last") + sort_values`, mais on le vérifie quand même et on
+    journalise en anomalie plutôt que de faire confiance silencieusement à l'implémentation."""
+    if len(ts_series) < 2:
+        return
+    diffs = ts_series.reset_index(drop=True).diff().dropna()
+    non_increasing = diffs[diffs <= pd.Timedelta(0)]
+    if not non_increasing.empty:
+        logger.error(
+            "%s : ANOMALIE — %d timestamp(s) non strictement croissant(s) après dédoublonnage/tri "
+            "(le dédoublonnage/tri est cassé, à investiguer)",
+            context, len(non_increasing),
+        )
+
+
+@dataclass
+class PerpSymbolResult:
+    symbol: str
+    pair: str
+    included: bool
+    reason: str
+    df: Optional[pd.DataFrame] = None
+    coverage: Optional[MonthlyCoverage] = None
+
+
+@dataclass
+class FundingSymbolResult:
+    symbol: str
+    pair: str
+    included: bool
+    reason: str
+    df: Optional[pd.DataFrame] = None
+    coverage: Optional[MonthlyCoverage] = None
+    flagged_extreme_rates: List[dict] = field(default_factory=list)
+
+
+def process_perp_symbol(
+    session: requests.Session, symbol: str, archive_months: List[Tuple[int, int]], max_attempts: int,
+) -> PerpSymbolResult:
+    pair = f"{symbol}USDT"
+    logger.info("perp %s (%s) : début (%d mois d'archive à couvrir)", symbol, pair, len(archive_months))
+
+    frames: List[pd.DataFrame] = []
+    month_statuses: List[Tuple[str, str]] = []
+    for (y, m) in archive_months:
+        ym = _yyyymm(y, m)
+        status, df = download_binance_perp_month(session, pair, y, m, max_attempts)
+        month_statuses.append((ym, status))
+        if status == "OK" and df is not None:
+            frames.append(df)
+
+    coverage = _classify_monthly_coverage(month_statuses)
+    if coverage.leading_gap_months:
+        logger.info(
+            "perp %s : %d mois avant la 1re archive disponible (%s) — normal (perp listé après le spot), skip",
+            symbol, len(coverage.leading_gap_months), coverage.first_ok_month,
+        )
+    if coverage.mid_gap_months:
+        logger.warning(
+            "perp %s : ANOMALIE — %d mois manquant(s) au milieu de la série (%s)",
+            symbol, len(coverage.mid_gap_months), ", ".join(coverage.mid_gap_months),
+        )
+
+    now = datetime.now(timezone.utc)
+    current_month_start = _month_start_utc(now.year, now.month)
+    completion_df = fetch_binance_perp_current_month_completion(session, pair, current_month_start, max_attempts)
+    if not completion_df.empty:
+        frames.append(completion_df)
+
+    if not frames:
+        reason = "aucune archive perp trouvée sur toute la fenêtre (perp probablement jamais listé sur Binance USDT-M) — exclu"
+        logger.warning("perp %s : EXCLU — %s", symbol, reason)
+        return PerpSymbolResult(symbol=symbol, pair=pair, included=False, reason=reason, coverage=coverage)
+
+    full_df = pd.concat(frames, ignore_index=True)
+    full_df = full_df.drop_duplicates(subset="timestamp", keep="last").sort_values("timestamp").reset_index(drop=True)
+    _validate_strictly_increasing_timestamps(full_df["timestamp"], context=f"perp {symbol}")
+
+    reason = "inclus"
+    if coverage.mid_gap_months:
+        reason = f"inclus avec anomalie journalisée : {len(coverage.mid_gap_months)} mois manquant(s) au milieu de la série"
+
+    logger.info(
+        "perp %s : INCLUS — %d bougies, %s -> %s",
+        symbol, len(full_df), full_df["timestamp"].iloc[0], full_df["timestamp"].iloc[-1],
+    )
+    return PerpSymbolResult(symbol=symbol, pair=pair, included=True, reason=reason, df=full_df, coverage=coverage)
+
+
+def process_funding_symbol(
+    session: requests.Session, symbol: str, archive_months: List[Tuple[int, int]], max_attempts: int,
+) -> FundingSymbolResult:
+    pair = f"{symbol}USDT"
+    logger.info("funding %s (%s) : début (%d mois d'archive à couvrir)", symbol, pair, len(archive_months))
+
+    frames: List[pd.DataFrame] = []
+    month_statuses: List[Tuple[str, str]] = []
+    for (y, m) in archive_months:
+        ym = _yyyymm(y, m)
+        status, df = download_binance_funding_month(session, pair, y, m, max_attempts)
+        month_statuses.append((ym, status))
+        if status == "OK" and df is not None:
+            frames.append(df)
+
+    coverage = _classify_monthly_coverage(month_statuses)
+    if coverage.leading_gap_months:
+        logger.info(
+            "funding %s : %d mois avant la 1re archive disponible (%s) — normal (perp listé après le spot), skip",
+            symbol, len(coverage.leading_gap_months), coverage.first_ok_month,
+        )
+    if coverage.mid_gap_months:
+        logger.warning(
+            "funding %s : ANOMALIE — %d mois manquant(s) au milieu de la série (%s)",
+            symbol, len(coverage.mid_gap_months), ", ".join(coverage.mid_gap_months),
+        )
+
+    now = datetime.now(timezone.utc)
+    current_month_start = _month_start_utc(now.year, now.month)
+    completion_df = fetch_binance_funding_current_month_completion(session, pair, current_month_start, max_attempts)
+    if not completion_df.empty:
+        frames.append(completion_df)
+
+    if not frames:
+        reason = "aucune archive funding trouvée sur toute la fenêtre (perp probablement jamais listé sur Binance USDT-M) — exclu"
+        logger.warning("funding %s : EXCLU — %s", symbol, reason)
+        return FundingSymbolResult(symbol=symbol, pair=pair, included=False, reason=reason, coverage=coverage)
+
+    full_df = pd.concat(frames, ignore_index=True)
+    full_df = full_df.drop_duplicates(subset="timestamp", keep="last").sort_values("timestamp").reset_index(drop=True)
+    _validate_strictly_increasing_timestamps(full_df["timestamp"], context=f"funding {symbol}")
+
+    # Flag (jamais une suppression) des funding rates extrêmes -- un événement réel de
+    # marché (ex. short squeeze violent), pas présumé être une erreur de donnée.
+    extreme_mask = full_df["funding_rate"].abs() > FUNDING_RATE_ABS_FLAG_THRESHOLD
+    flagged_extreme_rates = [
+        {"timestamp": pd.Timestamp(ts).isoformat(), "funding_rate": float(rate)}
+        for ts, rate in zip(full_df.loc[extreme_mask, "timestamp"], full_df.loc[extreme_mask, "funding_rate"])
+    ]
+    if flagged_extreme_rates:
+        logger.warning(
+            "funding %s : %d funding rate(s) avec |taux| > %.0f%% flaggé(s) (conservés, pas supprimés)",
+            symbol, len(flagged_extreme_rates), FUNDING_RATE_ABS_FLAG_THRESHOLD * 100,
+        )
+
+    reason = "inclus"
+    if coverage.mid_gap_months:
+        reason = f"inclus avec anomalie journalisée : {len(coverage.mid_gap_months)} mois manquant(s) au milieu de la série"
+
+    logger.info(
+        "funding %s : INCLUS — %d lignes, %s -> %s",
+        symbol, len(full_df), full_df["timestamp"].iloc[0], full_df["timestamp"].iloc[-1],
+    )
+    return FundingSymbolResult(
+        symbol=symbol, pair=pair, included=True, reason=reason, df=full_df, coverage=coverage,
+        flagged_extreme_rates=flagged_extreme_rates,
+    )
+
+
+# --------------------------------------------------------------------------------------
 # Actions / ETF : Yahoo Finance (yfinance) en primaire, stooq.com en repli par ticker
 # --------------------------------------------------------------------------------------
 #
@@ -824,6 +1335,24 @@ def write_gz_csv(df: pd.DataFrame, path: str) -> None:
         out.to_csv(f, index=False, columns=["timestamp", "open", "high", "low", "close", "volume"])
 
 
+def write_gz_csv_funding(df: pd.DataFrame, path: str) -> None:
+    """Écrit `data/funding/{SYMBOL}.csv.gz` : colonnes `timestamp,funding_rate` -- plus
+    `funding_interval_hours` UNIQUEMENT si cette colonne existe pour ce symbole et contient
+    au moins une valeur exploitable (sinon colonne entièrement omise, jamais une colonne
+    remplie de vide -- cf. mission : "funding_interval_hours si disponible sinon colonne
+    absente"). Quand la colonne est présente, les lignes qui n'en disposent pas (ex. complément
+    du mois courant via l'API fapi, qui ne fournit pas ce champ) restent vides pour cette
+    colonne plutôt que d'inventer une valeur."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    out = df.copy()
+    out["timestamp"] = out["timestamp"].apply(lambda ts: pd.Timestamp(ts).tz_convert("UTC").isoformat())
+    columns = ["timestamp", "funding_rate"]
+    if "funding_interval_hours" in out.columns and out["funding_interval_hours"].notna().any():
+        columns.append("funding_interval_hours")
+    with gzip.open(path, "wt", encoding="utf-8", newline="") as f:
+        out.to_csv(f, index=False, columns=columns)
+
+
 # --------------------------------------------------------------------------------------
 # Orchestration
 # --------------------------------------------------------------------------------------
@@ -873,6 +1402,116 @@ def run_crypto(session: requests.Session, staging_dir: str, max_attempts: int, w
         "archive_from": _yyyymm(*CRYPTO_ARCHIVE_START),
         "archive_to": _yyyymm(*end_month),
         "full_coverage_required_from": _yyyymm(*CRYPTO_FULL_COVERAGE_REQUIRED_FROM),
+        "included": included,
+        "excluded": excluded,
+    }
+
+
+def _coverage_entry(coverage: Optional[MonthlyCoverage]) -> dict:
+    """Sérialise une `MonthlyCoverage` pour le manifeste -- factorisé entre `run_perp` et
+    `run_funding` (même structure de sortie pour les deux sections)."""
+    if coverage is None:
+        return {
+            "months_ok": 0, "months_missing_leading_normal": [], "months_missing_mid_anomaly": [],
+            "months_error": [],
+        }
+    return {
+        "months_ok": len(coverage.months_ok),
+        "months_missing_leading_normal": coverage.leading_gap_months,
+        "months_missing_mid_anomaly": coverage.mid_gap_months,
+        "months_error": coverage.months_error,
+    }
+
+
+def run_perp(session: requests.Session, staging_dir: str, max_attempts: int, workers: int) -> dict:
+    """Klines perpétuelles USDT-M horaires -- même univers que `run_crypto` (spot), même
+    fenêtre d'archive, mais règle d'inclusion différente : tolérance explicite aux perps
+    listés après leur jambe spot (cf. `_classify_monthly_coverage`), exclusion uniquement si
+    AUCUNE archive n'existe sur toute la fenêtre (jamais la règle de complétude stricte du
+    spot, cf. idée backlog P0#1)."""
+    end_month = last_complete_month()
+    archive_months = month_range(CRYPTO_ARCHIVE_START, end_month)
+
+    included: Dict[str, dict] = {}
+    excluded: Dict[str, dict] = {}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {
+            pool.submit(process_perp_symbol, session, sym, archive_months, max_attempts): sym
+            for sym in CRYPTO_SYMBOLS
+        }
+        for fut in concurrent.futures.as_completed(futures):
+            sym = futures[fut]
+            try:
+                res = fut.result()
+            except Exception as exc:  # noqa: BLE001 — isolation stricte entre symboles
+                logger.error("perp %s : exception non gérée, symbole exclu par prudence (%s)", sym, exc)
+                excluded[sym] = {"pair": f"{sym}USDT", "reason": f"exception interne: {exc}"}
+                continue
+
+            entry = {"pair": res.pair, **_coverage_entry(res.coverage)}
+            if res.included and res.df is not None and not res.df.empty:
+                out_path = os.path.join(staging_dir, "data", "perp", f"{sym}.csv.gz")
+                write_gz_csv(res.df, out_path)
+                entry["rows"] = len(res.df)
+                entry["first_ts"] = pd.Timestamp(res.df["timestamp"].iloc[0]).isoformat()
+                entry["last_ts"] = pd.Timestamp(res.df["timestamp"].iloc[-1]).isoformat()
+                entry["reason"] = res.reason
+                included[sym] = entry
+            else:
+                entry["reason"] = res.reason
+                excluded[sym] = entry
+
+    return {
+        "archive_from": _yyyymm(*CRYPTO_ARCHIVE_START),
+        "archive_to": _yyyymm(*end_month),
+        "included": included,
+        "excluded": excluded,
+    }
+
+
+def run_funding(session: requests.Session, staging_dir: str, max_attempts: int, workers: int) -> dict:
+    """Historique funding rate -- mêmes règles de couverture/tolérance que `run_perp` (même
+    univers, même fenêtre, même distinction skip normal / anomalie), plus le flag des
+    funding rates extrêmes (`FUNDING_RATE_ABS_FLAG_THRESHOLD`) reporté au manifeste."""
+    end_month = last_complete_month()
+    archive_months = month_range(CRYPTO_ARCHIVE_START, end_month)
+
+    included: Dict[str, dict] = {}
+    excluded: Dict[str, dict] = {}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {
+            pool.submit(process_funding_symbol, session, sym, archive_months, max_attempts): sym
+            for sym in CRYPTO_SYMBOLS
+        }
+        for fut in concurrent.futures.as_completed(futures):
+            sym = futures[fut]
+            try:
+                res = fut.result()
+            except Exception as exc:  # noqa: BLE001 — isolation stricte entre symboles
+                logger.error("funding %s : exception non gérée, symbole exclu par prudence (%s)", sym, exc)
+                excluded[sym] = {"pair": f"{sym}USDT", "reason": f"exception interne: {exc}"}
+                continue
+
+            entry = {"pair": res.pair, **_coverage_entry(res.coverage)}
+            if res.included and res.df is not None and not res.df.empty:
+                out_path = os.path.join(staging_dir, "data", "funding", f"{sym}.csv.gz")
+                write_gz_csv_funding(res.df, out_path)
+                entry["rows"] = len(res.df)
+                entry["first_ts"] = pd.Timestamp(res.df["timestamp"].iloc[0]).isoformat()
+                entry["last_ts"] = pd.Timestamp(res.df["timestamp"].iloc[-1]).isoformat()
+                entry["reason"] = res.reason
+                entry["flagged_extreme_rates"] = res.flagged_extreme_rates
+                included[sym] = entry
+            else:
+                entry["reason"] = res.reason
+                excluded[sym] = entry
+
+    return {
+        "archive_from": _yyyymm(*CRYPTO_ARCHIVE_START),
+        "archive_to": _yyyymm(*end_month),
+        "flag_threshold_abs_rate": FUNDING_RATE_ABS_FLAG_THRESHOLD,
         "included": included,
         "excluded": excluded,
     }
@@ -970,7 +1609,9 @@ def _run_git(repo_dir: str, *args: str, check: bool = True) -> subprocess.Comple
     return result
 
 
-_DEFAULT_PUBLISH_ENTRIES = ("data", "MANIFEST.json", "DATA_REPORT.md")
+# `anomalies.json`/`DATA_ANOMALIES.md` (scan P0#11) sont publiés s'ils existent dans le
+# staging — la boucle de copie ignore déjà les entrées absentes (cas `--only` sans equities/etf).
+_DEFAULT_PUBLISH_ENTRIES = ("data", "MANIFEST.json", "DATA_REPORT.md", "anomalies.json", "DATA_ANOMALIES.md")
 
 
 def publish_to_orphan_branch(
@@ -1074,7 +1715,14 @@ def publish_to_orphan_branch(
 # --------------------------------------------------------------------------------------
 
 
-def build_manifest(crypto_report: dict, equities_report: dict, etf_report: dict, started_at: datetime, ended_at: datetime) -> dict:
+def build_manifest(
+    crypto_report: dict, equities_report: dict, etf_report: dict, started_at: datetime, ended_at: datetime,
+    funding_report: Optional[dict] = None, perp_report: Optional[dict] = None,
+) -> dict:
+    # `funding_report`/`perp_report` optionnels (défaut `None` -> traité comme "section
+    # sautée") : préserve la signature pour tout appel existant qui ne les passerait pas.
+    funding_report = funding_report if funding_report is not None else {"included": {}, "excluded": {}}
+    perp_report = perp_report if perp_report is not None else {"included": {}, "excluded": {}}
     return {
         "generated_at": ended_at.isoformat(),
         "generation_duration_seconds": round((ended_at - started_at).total_seconds(), 1),
@@ -1083,10 +1731,16 @@ def build_manifest(crypto_report: dict, equities_report: dict, etf_report: dict,
             "crypto_current_month_completion": f"{BINANCE_API_BASE}/api/v3/klines",
             "equities_etf_daily_primary": "yfinance (yf.download / yf.Ticker.history, period=max, interval=1d, auto_adjust=True)",
             "equities_etf_daily_fallback": f"stooq.com (`{STOOQ_BASE}?s={{ticker}}.us&i=d`, User-Agent navigateur, séquentiel, pause >= {STOOQ_FALLBACK_MIN_PAUSE_SECONDS}s/requête) — utilisé uniquement si yfinance échoue pour un ticker",
+            "funding_bulk_archive": f"{BINANCE_VISION_BASE}/data/futures/um/monthly/fundingRate/{{PAIR}}/{{PAIR}}-fundingRate-{{YYYY-MM}}.zip",
+            "funding_current_month_completion": f"{BINANCE_FAPI_BASE}/fapi/v1/fundingRate",
+            "perp_bulk_archive": f"{BINANCE_VISION_BASE}/data/futures/um/monthly/klines/{{PAIR}}/1h/{{PAIR}}-1h-{{YYYY-MM}}.zip",
+            "perp_current_month_completion": f"{BINANCE_FAPI_BASE}/fapi/v1/klines",
         },
         "crypto": crypto_report,
         "equities": equities_report,
         "etf": etf_report,
+        "funding": funding_report,
+        "perp": perp_report,
         "counts": {
             "crypto_included": len(crypto_report.get("included", {})),
             "crypto_excluded": len(crypto_report.get("excluded", {})),
@@ -1096,6 +1750,10 @@ def build_manifest(crypto_report: dict, equities_report: dict, etf_report: dict,
             "etf_ok": sum(1 for v in etf_report.values() if v.get("status") == "OK"),
             "etf_failed": sum(1 for v in etf_report.values() if v.get("status") != "OK"),
             "etf_by_source": _tally_by_source(etf_report),
+            "funding_included": len(funding_report.get("included", {})),
+            "funding_excluded": len(funding_report.get("excluded", {})),
+            "perp_included": len(perp_report.get("included", {})),
+            "perp_excluded": len(perp_report.get("excluded", {})),
         },
     }
 
@@ -1127,6 +1785,12 @@ def build_report_md(manifest: dict) -> str:
         f"- Actions (S&P 100) et ETF, quotidien, prix ajustés : primaire "
         f"{manifest['sources']['equities_etf_daily_primary']} ; repli par ticker "
         f"{manifest['sources']['equities_etf_daily_fallback']}.",
+        f"- Funding rate perpétuels (futures USDT-M) : archives bulk "
+        f"(`{manifest['sources']['funding_bulk_archive']}`), complétées via l'API publique "
+        f"(`{manifest['sources']['funding_current_month_completion']}`).",
+        f"- Klines perpétuelles 1h (futures USDT-M) : archives bulk "
+        f"(`{manifest['sources']['perp_bulk_archive']}`), complétées via l'API publique "
+        f"(`{manifest['sources']['perp_current_month_completion']}`).",
         "",
         "## Crypto",
         "",
@@ -1181,12 +1845,109 @@ def build_report_md(manifest: dict) -> str:
             lines.append(f"- **{tick}** (source tentée : {info.get('source')}) : {info.get('status')} — {info.get('error')}")
         lines.append("")
 
+    if manifest["funding"]["included"] or manifest["funding"]["excluded"]:
+        lines.append("## Funding rate (perpétuels USDT-M)")
+        lines.append("")
+        lines.append(
+            f"- Fenêtre d'archive : {manifest['funding']['archive_from']} → {manifest['funding']['archive_to']} "
+            f"(+ complément mois courant via API)."
+        )
+        lines.append(
+            f"- Seuil de flag |funding_rate| > {manifest['funding'].get('flag_threshold_abs_rate', 0.03) * 100:.0f}% "
+            f"(conservé dans les données, jamais supprimé — journalisé ci-dessous)."
+        )
+        lines.append(f"- **{counts['funding_included']} paire(s) incluse(s)**, **{counts['funding_excluded']} exclue(s)**.")
+        lines.append("")
+
+        if manifest["funding"]["excluded"]:
+            lines.append("### Exclusions funding")
+            lines.append("")
+            for sym, info in sorted(manifest["funding"]["excluded"].items()):
+                lines.append(f"- **{sym}** (`{info.get('pair', '?')}`) : {info.get('reason', 'raison non renseignée')}")
+            lines.append("")
+
+        anomalies_funding = {
+            sym: info for sym, info in manifest["funding"]["included"].items()
+            if info.get("months_missing_mid_anomaly") or info.get("flagged_extreme_rates")
+        }
+        if anomalies_funding:
+            lines.append("### Anomalies funding (journalisées, jamais silencieuses)")
+            lines.append("")
+            for sym, info in sorted(anomalies_funding.items()):
+                mid_gaps = info.get("months_missing_mid_anomaly") or []
+                extremes = info.get("flagged_extreme_rates") or []
+                if mid_gaps:
+                    lines.append(f"- **{sym}** : trou(s) au milieu de la série — {', '.join(mid_gaps)}")
+                if extremes:
+                    lines.append(
+                        f"- **{sym}** : {len(extremes)} funding rate(s) extrême(s) flaggé(s) "
+                        f"(ex. {extremes[0]['timestamp']} = {extremes[0]['funding_rate']:.4f})"
+                    )
+            lines.append("")
+
+        if manifest["funding"]["included"]:
+            lines.append("### Paires funding incluses")
+            lines.append("")
+            lines.append("| Symbole | Paire | Lignes | Début | Fin |")
+            lines.append("|---|---|---|---|---|")
+            for sym, info in sorted(manifest["funding"]["included"].items()):
+                lines.append(
+                    f"| {sym} | {info.get('pair')} | {info.get('rows')} | {info.get('first_ts')} | {info.get('last_ts')} |"
+                )
+            lines.append("")
+
+    if manifest["perp"]["included"] or manifest["perp"]["excluded"]:
+        lines.append("## Klines perpétuelles (futures USDT-M, horaire)")
+        lines.append("")
+        lines.append(
+            f"- Fenêtre d'archive : {manifest['perp']['archive_from']} → {manifest['perp']['archive_to']} "
+            f"(+ complément mois courant via API)."
+        )
+        lines.append(f"- **{counts['perp_included']} paire(s) incluse(s)**, **{counts['perp_excluded']} exclue(s)**.")
+        lines.append("")
+
+        if manifest["perp"]["excluded"]:
+            lines.append("### Exclusions perp")
+            lines.append("")
+            for sym, info in sorted(manifest["perp"]["excluded"].items()):
+                lines.append(f"- **{sym}** (`{info.get('pair', '?')}`) : {info.get('reason', 'raison non renseignée')}")
+            lines.append("")
+
+        anomalies_perp = {
+            sym: info for sym, info in manifest["perp"]["included"].items()
+            if info.get("months_missing_mid_anomaly")
+        }
+        if anomalies_perp:
+            lines.append("### Anomalies perp (trous au milieu de la série, journalisés, jamais silencieux)")
+            lines.append("")
+            for sym, info in sorted(anomalies_perp.items()):
+                lines.append(f"- **{sym}** : {', '.join(info['months_missing_mid_anomaly'])}")
+            lines.append("")
+
+        if manifest["perp"]["included"]:
+            lines.append("### Paires perp incluses")
+            lines.append("")
+            lines.append("| Symbole | Paire | Lignes | Début | Fin |")
+            lines.append("|---|---|---|---|---|")
+            for sym, info in sorted(manifest["perp"]["included"].items()):
+                lines.append(
+                    f"| {sym} | {info.get('pair')} | {info.get('rows')} | {info.get('first_ts')} | {info.get('last_ts')} |"
+                )
+            lines.append("")
+
     lines.append("## Format des fichiers")
     lines.append("")
     lines.append(
-        "`data/{crypto,equities,etf}/{SYMBOLE}.csv.gz` — colonnes "
+        "`data/{crypto,equities,etf,perp}/{SYMBOLE}.csv.gz` — colonnes "
         "`timestamp,open,high,low,close,volume`, `timestamp` en ISO8601 UTC, dédoublonné et "
-        "trié par ordre croissant. Crypto = bougies horaires ; actions/ETF = bougies journalières."
+        "trié par ordre croissant. Crypto/perp = bougies horaires ; actions/ETF = bougies "
+        "journalières."
+    )
+    lines.append(
+        "`data/funding/{SYMBOLE}.csv.gz` — colonnes `timestamp,funding_rate` (+ "
+        "`funding_interval_hours` si disponible pour ce symbole, colonne absente sinon), "
+        "`timestamp` en ISO8601 UTC, dédoublonné et trié par ordre croissant. Les funding "
+        "rates extrêmes (|taux| > seuil) sont conservés et flaggés, jamais supprimés."
     )
     lines.append("")
 
@@ -1207,8 +1968,8 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--skip-git", action="store_true", help="ne touche pas du tout au dépôt git (écrit seulement dans --staging-dir)")
     parser.add_argument("--staging-dir", default=None, help="répertoire de staging (défaut : dossier temporaire)")
     parser.add_argument(
-        "--only", default="crypto,equities,etf",
-        help="sous-ensemble à exécuter, séparé par des virgules (défaut: crypto,equities,etf)",
+        "--only", default="crypto,equities,etf,funding,perp",
+        help="sous-ensemble à exécuter, séparé par des virgules (défaut: crypto,equities,etf,funding,perp)",
     )
     parser.add_argument("--workers", type=int, default=8, help="parallélisme des téléchargements (défaut: 8)")
     parser.add_argument("--max-attempts", type=int, default=MAX_ATTEMPTS_DEFAULT, help="tentatives max par requête HTTP")
@@ -1229,6 +1990,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     crypto_report = {"archive_from": None, "archive_to": None, "full_coverage_required_from": None, "included": {}, "excluded": {}}
     equities_report: dict = {}
     etf_report: dict = {}
+    funding_report = {"archive_from": None, "archive_to": None, "included": {}, "excluded": {}}
+    perp_report = {"archive_from": None, "archive_to": None, "included": {}, "excluded": {}}
 
     if "crypto" in only:
         logger.info("=== Crypto : %d symbole(s) curatés, %d worker(s) ===", len(CRYPTO_SYMBOLS), args.workers)
@@ -1252,9 +2015,67 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         logger.info("=== ETF : sauté (--only=%s) ===", args.only)
 
+    if "funding" in only:
+        logger.info("=== Funding rate perpétuels : %d symbole(s) curatés, %d worker(s) ===", len(CRYPTO_SYMBOLS), args.workers)
+        funding_report = run_funding(session, staging_dir, args.max_attempts, args.workers)
+    else:
+        logger.info("=== Funding : sauté (--only=%s) ===", args.only)
+
+    if "perp" in only:
+        logger.info("=== Klines perpétuelles : %d symbole(s) curatés, %d worker(s) ===", len(CRYPTO_SYMBOLS), args.workers)
+        perp_report = run_perp(session, staging_dir, args.max_attempts, args.workers)
+    else:
+        logger.info("=== Perp : sauté (--only=%s) ===", args.only)
+
+    # --- Détection d'anomalies de corporate actions (backlog P0#11) -------------------
+    # Journalisation automatique, à CHAQUE régénération, des anomalies de données
+    # actions/ETF (sauts de rendement > 40% type spin-off DHR/Fortive mal ajusté,
+    # incohérences OHLC, trous de calendrier) — cf. `tools/check_data_anomalies.py`.
+    # Principe : JOURNALISER pour revue humaine, jamais corriger silencieusement, jamais
+    # bloquer la publication (les faux positifs sur vrais krachs sont attendus). Une
+    # défaillance du scanner lui-même ne doit jamais faire échouer le run de données —
+    # elle est journalisée en erreur et signalée dans le rapport.
+    anomalies_summary_md = ""
+    if ("equities" in only) or ("etf" in only):
+        scanned_subdirs = tuple(s for s in ("equities", "etf") if s in only)
+        try:
+            try:
+                from tools.check_data_anomalies import format_report_md, scan_data_dir
+            except ImportError:  # exécution en mode script (`python tools/fetch_data.py`)
+                from check_data_anomalies import format_report_md, scan_data_dir  # type: ignore
+
+            # Les CSV sont écrits par `run_daily_universe` sous `staging_dir/data/<subdir>/`
+            # (même arborescence que la branche publiée) — le scan pointe donc `data/`.
+            anomalies_result = scan_data_dir(os.path.join(staging_dir, "data"), subdirs=scanned_subdirs)
+            with open(os.path.join(staging_dir, "anomalies.json"), "w", encoding="utf-8") as f:
+                json.dump(anomalies_result, f, indent=2, sort_keys=True, ensure_ascii=False, default=str)
+                f.write("\n")
+            with open(os.path.join(staging_dir, "DATA_ANOMALIES.md"), "w", encoding="utf-8") as f:
+                f.write(format_report_md(anomalies_result))
+            n_anom = len(anomalies_result["anomalies"])
+            anomalies_summary_md = (
+                "\n## Anomalies de données (actions/ETF)\n\n"
+                f"Scan automatique (`tools/check_data_anomalies.py`, backlog P0#11) : "
+                f"**{n_anom} anomalie(s)** sur {anomalies_result['n_files_scanned']} fichier(s) "
+                f"({', '.join(scanned_subdirs)}). Détail : `DATA_ANOMALIES.md` / `anomalies.json`. "
+                "Journal de revue humaine — aucune donnée n'est corrigée ni exclue par ce scan.\n"
+            )
+            logger.info("Scan anomalies corporate actions : %d anomalie(s) sur %d fichier(s)",
+                        n_anom, anomalies_result["n_files_scanned"])
+        except Exception as exc:  # noqa: BLE001 — le scan ne doit jamais bloquer la publication.
+            logger.error("scan d'anomalies corporate actions : échec non bloquant (%s)", exc)
+            anomalies_summary_md = (
+                "\n## Anomalies de données (actions/ETF)\n\n"
+                f"**ÉCHEC du scan automatique** (`tools/check_data_anomalies.py`) : {exc} — "
+                "publication non bloquée, mais ce run n'a PAS de journal d'anomalies (à investiguer).\n"
+            )
+
     ended_at = datetime.now(timezone.utc)
-    manifest = build_manifest(crypto_report, equities_report, etf_report, started_at, ended_at)
-    report_md = build_report_md(manifest)
+    manifest = build_manifest(
+        crypto_report, equities_report, etf_report, started_at, ended_at,
+        funding_report=funding_report, perp_report=perp_report,
+    )
+    report_md = build_report_md(manifest) + anomalies_summary_md
 
     with open(os.path.join(staging_dir, "MANIFEST.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, sort_keys=True, ensure_ascii=False)
@@ -1263,10 +2084,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         f.write(report_md)
 
     logger.info(
-        "Résumé : crypto inclus=%d exclus=%d | actions ok=%d échec=%d | etf ok=%d échec=%d",
+        "Résumé : crypto inclus=%d exclus=%d | actions ok=%d échec=%d | etf ok=%d échec=%d | "
+        "funding inclus=%d exclus=%d | perp inclus=%d exclus=%d",
         manifest["counts"]["crypto_included"], manifest["counts"]["crypto_excluded"],
         manifest["counts"]["equities_ok"], manifest["counts"]["equities_failed"],
         manifest["counts"]["etf_ok"], manifest["counts"]["etf_failed"],
+        manifest["counts"]["funding_included"], manifest["counts"]["funding_excluded"],
+        manifest["counts"]["perp_included"], manifest["counts"]["perp_excluded"],
     )
 
     if args.skip_git:
