@@ -3,13 +3,9 @@
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
-    "daily_loss_freeze_until": "2026-08-26T13:19:19.731830+00:00",
+    "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1152.7801443583533,
-        "ts": "2026-08-25T13:19:19.731830+00:00"
-      },
       {
         "equity": 1181.639142440641,
         "ts": "2026-08-25T14:17:33.843813+00:00"
@@ -97,6 +93,10 @@
       {
         "equity": 1152.5359648583533,
         "ts": "2026-08-26T12:54:19.071258+00:00"
+      },
+      {
+        "equity": 1183.0668835618478,
+        "ts": "2026-08-26T14:07:29.464668+00:00"
       }
     ],
     "flatten_mode": false,
@@ -106,14 +106,14 @@
   "equity_peak_usd": 1188.2899610646675,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1662,
+    "last_rate": 1.1669,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-26T12:54:45.204928+00:00"
+    "last_rate_ts": "2026-08-26T14:07:49.656267+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-26T12:54:19.071258+00:00",
-  "last_run_id": "2026-08-26T12",
+  "last_run_completed_at": "2026-08-26T14:07:29.464668+00:00",
+  "last_run_id": "2026-08-26T14",
   "positions": {
     "BTC": {
       "prix_moyen": 72253.058475,
@@ -138,7 +138,7 @@
   },
   "realized_pnl_cumulative_usd": 8.606229672730622,
   "schema_version": 1,
-  "state_hash_prev": "49755418a11e25649e51641a1b196d65ba3fdebff52baeae6e2c87ae1fe97ab6",
+  "state_hash_prev": "c05673880fdaf7949665440f1b2ea58a0373460d51267e921ae255bb6fa2fefe",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
