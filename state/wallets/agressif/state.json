@@ -1,15 +1,11 @@
 {
-  "cash_usd": 511.0577131226391,
+  "cash_usd": 549.5426522211891,
   "circuit_breakers": {
-    "consecutive_losses": 1,
+    "consecutive_losses": 2,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1134.8889158091176,
-        "ts": "2026-08-24T23:32:27.193403+00:00"
-      },
       {
         "equity": 1138.3740102091178,
         "ts": "2026-08-25T01:18:57.071041+00:00"
@@ -101,6 +97,10 @@
       {
         "equity": 1130.5681529091178,
         "ts": "2026-08-25T23:14:08.861454+00:00"
+      },
+      {
+        "equity": 1127.8505026091177,
+        "ts": "2026-08-26T00:07:36.973943+00:00"
       }
     ],
     "flatten_mode": false,
@@ -113,11 +113,11 @@
     "last_rate": 1.1662,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-25T23:14:26.186185+00:00"
+    "last_rate_ts": "2026-08-26T00:08:01.750759+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-25T23:14:08.861454+00:00",
-  "last_run_id": "2026-08-25T23",
+  "last_run_completed_at": "2026-08-26T00:07:36.973943+00:00",
+  "last_run_id": "2026-08-26T00",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -150,10 +150,6 @@
     "FDX": {
       "prix_moyen": 313.77352981153103,
       "qty": 0.1089
-    },
-    "ICP": {
-      "prix_moyen": 2.3900706,
-      "qty": 16.3
     },
     "INTC": {
       "prix_moyen": 91.31124402692413,
@@ -188,14 +184,14 @@
       "qty": 32.6
     }
   },
-  "realized_pnl_cumulative_usd": -23.889579549407294,
+  "realized_pnl_cumulative_usd": -24.362791230857294,
   "schema_version": 1,
-  "state_hash_prev": "196f138e3a6c3affd1a0f0e4d87372bafe192894aa24018ccafc6729184cea04",
+  "state_hash_prev": "cf25c97f3cccafe7b0d10466d8ccee54374ec809da756c98efe922a7a79a10a7",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "BNB": 14
+        "BNB": 15
       }
     },
     "xs_momentum_sp100": {
@@ -293,6 +289,11 @@
       "realized_pnl_usd": -4.2659630651999985,
       "symbol": "ICP",
       "ts": "2026-08-23T01:23:13.742948+00:00"
+    },
+    {
+      "realized_pnl_usd": -0.4732116814500013,
+      "symbol": "ICP",
+      "ts": "2026-08-26T00:07:36.973943+00:00"
     }
   ],
   "wallet_id": "agressif"
