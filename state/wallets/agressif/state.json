@@ -1,27 +1,11 @@
 {
-  "cash_usd": 549.5426522211891,
+  "cash_usd": 503.5212154659891,
   "circuit_breakers": {
     "consecutive_losses": 2,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1130.654778909118,
-        "ts": "2026-08-25T22:11:52.668431+00:00"
-      },
-      {
-        "equity": 1130.5681529091178,
-        "ts": "2026-08-25T23:14:08.861454+00:00"
-      },
-      {
-        "equity": 1127.8505026091177,
-        "ts": "2026-08-26T00:07:36.973943+00:00"
-      },
-      {
-        "equity": 1129.526639607668,
-        "ts": "2026-08-26T01:56:57.551263+00:00"
-      },
       {
         "equity": 1130.077655207668,
         "ts": "2026-08-26T03:08:41.197663+00:00"
@@ -77,6 +61,10 @@
       {
         "equity": 1128.5168086076678,
         "ts": "2026-08-26T21:51:27.204574+00:00"
+      },
+      {
+        "equity": 1131.1389234076678,
+        "ts": "2026-08-27T02:59:36.585328+00:00"
       }
     ],
     "flatten_mode": false,
@@ -89,11 +77,11 @@
     "last_rate": 1.1669,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-26T21:51:52.889520+00:00"
+    "last_rate_ts": "2026-08-27T03:00:01.558704+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-26T21:51:27.204574+00:00",
-  "last_run_id": "2026-08-26T21",
+  "last_run_completed_at": "2026-08-27T02:59:36.585328+00:00",
+  "last_run_id": "2026-08-27T02",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -126,6 +114,10 @@
     "FDX": {
       "prix_moyen": 313.77352981153103,
       "qty": 0.1089
+    },
+    "ICP": {
+      "prix_moyen": 2.3909724,
+      "qty": 19.2
     },
     "INTC": {
       "prix_moyen": 91.31124402692413,
@@ -162,12 +154,12 @@
   },
   "realized_pnl_cumulative_usd": -24.362791230857294,
   "schema_version": 1,
-  "state_hash_prev": "537d19fe254127fd115f925c777dbb8f581c0eb03ffb43599a20e4a66058f991",
+  "state_hash_prev": "60d711d97123ce2f3f6e2cc810a931cecd1ec6f226dd71f31f9eb85103327aa4",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "BNB": 6
+        "BNB": 7
       }
     },
     "xs_momentum_sp100": {
