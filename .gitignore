@@ -7,3 +7,6 @@ __pycache__/
 # .github/workflows/daily-data-cache.yml, checkoutée localement par .github/workflows/bot.yml
 # à cet emplacement exact — cf. bot/feeds/daily.py:_cache_dir()). Jamais commité sur main.
 /data-cache/
+
+# Données de marché extraites localement pour les backtests (branche market-data)
+/_data/
