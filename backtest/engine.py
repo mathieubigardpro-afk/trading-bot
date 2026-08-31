@@ -680,12 +680,21 @@ def simulate_segment(
                 # plus). Sans ce plafond, une équity négative inversait le signe économique des
                 # rendements suivants dans `summarize_segment` (démontré : -9087 de capital sur
                 # un choc synthétique). `bankrupt=True` journalise que le plafond a joué.
-                cash_before_liq = cash
-                cash_after_liq = max(0.0, cash + loss_at_worst - liq_fee)
-                bankrupt = (cash + loss_at_worst - liq_fee) < 0.0
-                loss_applied = cash_after_liq - cash_before_liq + liq_fee  # <= 0, borné
-                cash = cash_after_liq
-                pnl = perp_pnl_accum.get(sym, 0.0) + loss_applied - liq_fee
+                # Contre-audit 2026-08-31 (MAJEUR résiduel) : le funding PAYABLE qui a contribué à
+                # déclencher la liquidation est lui aussi DÉBITÉ (l'exchange règle le funding puis
+                # réévalue la marge -- le bot n'échappe jamais au paiement qui a motivé sa propre
+                # liquidation). Débit total = perte au pire prix + funding payable + frais, borné
+                # au cash disponible ; le débit appliqué est ventilé frais d'abord, puis funding,
+                # puis variation de prix (libellés du breakdown jamais trompeurs : aucune
+                # composante ne peut afficher un « gain » sur une liquidation).
+                total_debit = loss_at_worst + funding_payable_at_worst - liq_fee  # <= 0
+                applied_debit = max(total_debit, -cash)  # borné au cash (prix de faillite)
+                bankrupt = total_debit < -cash
+                fee_applied = min(liq_fee, -applied_debit)
+                funding_applied = -min(-funding_payable_at_worst, -applied_debit - fee_applied)
+                loss_applied = applied_debit + fee_applied - funding_applied  # <= 0
+                cash = cash + applied_debit
+                pnl = perp_pnl_accum.get(sym, 0.0) + applied_debit
                 realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True, "leg": "perp"})
                 trades_closed.append(
                     {
@@ -705,8 +714,12 @@ def simulate_segment(
                         "worst_price": worst,
                         "ref_price": ref,
                         "loss": loss_at_worst,
+                        "funding_payable": funding_payable_at_worst,
                         "fee": liq_fee,
+                        "fee_applied": fee_applied,
+                        "funding_applied": funding_applied,
                         "loss_applied": loss_applied,
+                        "applied_debit": applied_debit,
                         "bankrupt": bankrupt,
                     }
                 )
@@ -714,7 +727,8 @@ def simulate_segment(
                 perp_open_date.pop(sym, None)
                 shares[sym] = 0.0
                 pnl_breakdown["perp_variation"] += loss_applied
-                pnl_breakdown["liquidation_fees"] += liq_fee
+                pnl_breakdown["funding_received"] += funding_applied
+                pnl_breakdown["liquidation_fees"] += fee_applied
                 continue  # spec §3 : liquidation (4) avant mise au marché (5) et funding (6) --
                 # la ligne est déjà fermée, aucune variation margin ni funding supplémentaire.
 

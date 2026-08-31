@@ -278,6 +278,12 @@ def test_funding_payable_enters_liquidation_test():
     )
     assert seg.n_liquidations() >= 1
     assert seg.liquidations[0]["symbol"] == "X-PERP"
+    # Contre-audit : le funding déclencheur est réellement DÉBITÉ (borné au cash) -- ici
+    # 0.9 * 1.9 = 1.71 > cash 1.0 -> faillite, cash 0, équity 0 (jamais 0.98 « en échappant au
+    # paiement »).
+    assert seg.liquidations[0]["bankrupt"] is True
+    assert seg.liquidations[0]["funding_applied"] < 0
+    assert seg.equity.iloc[-1] == 0.0
     # Un funding FAVORABLE de même ampleur n'entre jamais dans le test (pas de collatéral fictif)
     funding.iloc[2] = +0.9
     seg2 = engine.simulate_segment(

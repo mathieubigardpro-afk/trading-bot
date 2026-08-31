@@ -131,6 +131,10 @@ sont donc pas des retouches post-résultat :
   journalisé). Une équity ≤ 0 (**ruine**) fige le compte à 0 pour le reste du segment
   (rendements suivants nuls, ruine journalisée dans `liquidations` avec `side="ruin"`) — une
   équity négative inversait le signe économique des rendements dans `summarize_segment`.
+- **§3.4 (contre-audit, MAJEUR résiduel)** : le funding payable qui contribue à déclencher la
+  liquidation est lui aussi **débité** (débit total = perte au pire prix + funding payable +
+  frais, borné au cash ; ventilé frais → funding → variation de prix, aucune composante du
+  breakdown ne peut afficher un gain sur une liquidation).
 - Orphelins de funding (§1) : l'implémentation exclut tout règlement sans bougie, quel que
   soit son signe (le signe de la position est inconnu au chargement) ; mesuré sur les 6
   majors : exactement 1 orphelin par symbole (bord de série, `rate > 0`, donc légèrement
