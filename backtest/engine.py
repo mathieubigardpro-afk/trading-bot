@@ -327,7 +327,7 @@ def simulate_segment(
                 "trois matrices alignées sur le même calendrier que opens/closes, cf. "
                 "backtest/perp.py:build_aligned_perp_matrices."
             )
-        for _label, _df in (("funding", funding), ("highs", highs), ("lows", lows)):
+        for _label, _df in (("opens", opens), ("closes", closes), ("funding", funding), ("highs", highs), ("lows", lows)):
             _missing_cols = [s for s in perp_set if s not in _df.columns]
             if _missing_cols:
                 raise ValueError(f"{_label} ne contient pas les colonnes perp {_missing_cols}.")
@@ -352,6 +352,7 @@ def simulate_segment(
     # une paire parfaitement couverte (sinon `spot_pnl` sous-compterait silencieusement ce gap,
     # cf. `test_hedged_pair_delta_neutral_...`).
     prev_spot_equity = float(initial_capital)
+    ruined = False  # ruine (équity <= 0) -- cf. garde post-audit 2026-08-31 dans la boucle
 
     n = end_idx - start_idx + 1
     equity = np.empty(n)
@@ -373,6 +374,37 @@ def simulate_segment(
         date = calendar[i]
         open_price = opens.iloc[i].fillna(0.0)
         close_price = closes.iloc[i].fillna(0.0)
+        if perp_set:
+            # Correctif audit adversarial 2026-08-31 (CRITIQUE) : le `fillna(0.0)` historique est
+            # inoffensif en long-only (prix -> 0 = pénalisant) mais devient un GAIN FICTIF pour un
+            # short (démontré sur le trou réel de 69 h de SOL-PERP en février 2022 : +28,9 % de
+            # capital en une bougie, ligne « close » à 0, liquidation impossible car NaN < x est
+            # False). Règle : un prix perp manquant (open/close/high/low) à une bougie où le
+            # symbole est EN POSITION ou a un POIDS CIBLE non nul => refus bruyant. Un symbole
+            # flat sans poids cible peut traverser un trou de données sans conséquence (il ne
+            # trade pas cette bougie -- ses NaN sont ramenés à 0 comme avant, sans effet).
+            _perp_cols_list = list(perp_set)
+            _raw_open_perp = opens.iloc[i][_perp_cols_list]
+            _raw_close_perp = closes.iloc[i][_perp_cols_list]
+            _nan_perp = (
+                _raw_open_perp.isna()
+                | _raw_close_perp.isna()
+                | highs.iloc[i][_perp_cols_list].isna()
+                | lows.iloc[i][_perp_cols_list].isna()
+                | funding.iloc[i][_perp_cols_list].isna()
+            )
+            if bool(_nan_perp.any()):
+                _raw_w_perp = weights_decided.iloc[i - 1][_perp_cols_list]
+                _engaged = (shares[_perp_cols_list].abs() > 1e-9) | (_raw_w_perp.abs() > 1e-9)
+                _bad = _nan_perp & _engaged
+                if bool(_bad.any()):
+                    raise ValueError(
+                        f"Prix/funding perp manquant (NaN) à {date} pour "
+                        f"{_bad[_bad].index.tolist()} alors que le symbole est en position ou a un "
+                        "poids cible non nul -- jamais de trade, de mise au marché ni de liquidation "
+                        "sur donnée manquante (ARCHITECTURE.md §0.2, audit 2026-08-31). Restreindre "
+                        "le calendrier/l'univers ou mettre la candidate flat AVANT le trou."
+                    )
 
         raw_w = weights_decided.iloc[i - 1]
         if apply_vol_targeting:
@@ -630,14 +662,30 @@ def simulate_segment(
             worst = float(high_row[sym]) if sh < 0 else float(low_row[sym])
             loss_at_worst = sh * (worst - ref)
             maint_threshold = perp_maintenance_margin_frac * abs(sh) * worst
-            if (cash + loss_at_worst) < maint_threshold:
+            # Correctif audit adversarial 2026-08-31 (MAJEUR, spec §3.4 amendée) : le funding
+            # réglé à la clôture de CETTE bougie entre dans le test de marge s'il est PAYABLE
+            # par le bot (montant négatif) -- jamais s'il est favorable (un crédit à venir ne
+            # sert pas de collatéral). Évalué au pire prix intra-bougie, cohérent avec `worst`.
+            funding_rate_i = float(funding_row[sym])
+            funding_payable_at_worst = min(0.0, -sh * worst * funding_rate_i)
+            if (cash + loss_at_worst + funding_payable_at_worst) < maint_threshold:
                 # Liquidation (spec §3.4) : jambe perp fermée AU PIRE PRIX intra-bougie, frais
                 # punitifs en plus de perp_cost_bps, le SPOT n'est PAS touché (la stratégie
                 # re-décide au tour suivant). Le cash de marge est le SEUL collatéral testé --
                 # la valeur du spot n'entre jamais dans ce test (spec §3.4, dernier point).
                 liq_fee = abs(sh * worst) * (perp_cost_rate + float(perp_liquidation_fee_bps) / 10000.0)
-                cash += loss_at_worst - liq_fee
-                pnl = perp_pnl_accum.get(sym, 0.0) + loss_at_worst - liq_fee
+                # Correctif audit adversarial 2026-08-31 (MAJEUR) : la perte imputée est
+                # PLAFONNÉE au cash de marge disponible (prix de faillite : au-delà, c'est le
+                # fonds d'assurance de l'exchange qui absorbe -- le bot perd TOUT son cash, jamais
+                # plus). Sans ce plafond, une équity négative inversait le signe économique des
+                # rendements suivants dans `summarize_segment` (démontré : -9087 de capital sur
+                # un choc synthétique). `bankrupt=True` journalise que le plafond a joué.
+                cash_before_liq = cash
+                cash_after_liq = max(0.0, cash + loss_at_worst - liq_fee)
+                bankrupt = (cash + loss_at_worst - liq_fee) < 0.0
+                loss_applied = cash_after_liq - cash_before_liq + liq_fee  # <= 0, borné
+                cash = cash_after_liq
+                pnl = perp_pnl_accum.get(sym, 0.0) + loss_applied - liq_fee
                 realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True, "leg": "perp"})
                 trades_closed.append(
                     {
@@ -658,12 +706,14 @@ def simulate_segment(
                         "ref_price": ref,
                         "loss": loss_at_worst,
                         "fee": liq_fee,
+                        "loss_applied": loss_applied,
+                        "bankrupt": bankrupt,
                     }
                 )
                 perp_pnl_accum[sym] = 0.0
                 perp_open_date.pop(sym, None)
                 shares[sym] = 0.0
-                pnl_breakdown["perp_variation"] += loss_at_worst
+                pnl_breakdown["perp_variation"] += loss_applied
                 pnl_breakdown["liquidation_fees"] += liq_fee
                 continue  # spec §3 : liquidation (4) avant mise au marché (5) et funding (6) --
                 # la ligne est déjà fermée, aucune variation margin ni funding supplémentaire.
@@ -675,7 +725,6 @@ def simulate_segment(
             pnl_breakdown["perp_variation"] += var_margin
             perp_ref[sym] = close_i
 
-            funding_rate_i = float(funding_row[sym])
             funding_cash = -sh * close_i * funding_rate_i
             cash += funding_cash
             perp_pnl_accum[sym] = perp_pnl_accum.get(sym, 0.0) + funding_cash
@@ -689,6 +738,22 @@ def simulate_segment(
         # `spot_cols == universe` quand `perp_set` est vide -> reproduit EXACTEMENT la formule
         # historique `shares * close_price` sur tout l'univers.
         equity[j] = cash + float((shares[spot_cols] * close_price[spot_cols]).sum())
+        if perp_set and equity[j] <= 0.0:
+            # Correctif audit adversarial 2026-08-31 (MAJEUR) : RUINE. Une équity <= 0 rend la
+            # série de rendements sémantiquement invalide (signe inversé). Le compte est figé à
+            # 0 pour le reste du segment (plus aucun trade possible : `target_dollars` = 0),
+            # les rendements suivants valent 0 -- la ruine reste visible dans Sharpe/MaxDD/CAGR
+            # (-100 %) sans jamais produire de chiffre absurde. Journalisée dans `liquidations`.
+            if not ruined:
+                ruined = True
+                liquidations.append({"date": date, "symbol": "*", "side": "ruin", "shares_before": 0.0,
+                                     "worst_price": float("nan"), "ref_price": float("nan"),
+                                     "loss": float(equity[j]), "fee": 0.0, "loss_applied": float(equity[j]),
+                                     "bankrupt": True})
+            cash = 0.0
+            shares[:] = 0.0
+            perp_ref.clear()
+            equity[j] = 0.0
         # Exposition brute (spec §3.7) : `(Σ spot_dollars + Σ|notionnel perp|) / equity` -- les
         # poids spot étant TOUJOURS >= 0 (long-only strict, vérifié en amont), `shares.abs()`
         # sur les colonnes spot égale déjà `shares` ; sur les colonnes perp, `shares.abs()`
@@ -718,6 +783,9 @@ def simulate_segment(
     equity_series = pd.Series(equity, index=dates)
     returns = equity_series.pct_change()
     returns.iloc[0] = equity[0] / float(initial_capital) - 1.0
+    if perp_set and ruined:
+        # Après la ruine, équity 0 -> 0 : pct_change donne NaN (0/0) -> rendement nul explicite.
+        returns = returns.fillna(0.0)
     exposure_series = pd.Series(exposure, index=dates)
 
     return SegmentResult(

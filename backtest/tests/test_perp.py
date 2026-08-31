@@ -182,10 +182,11 @@ def test_hedged_pair_delta_neutral_equity_moves_only_with_costs():
 def test_liquidation_triggered_by_high_spike_for_short_matches_hand_calc():
     """Spike du HIGH intra-bougie au-delà du seuil de maintenance -- la jambe short est
     liquidée AU PIRE PRIX (`worst=high`), frais de liquidation inclus. Équity après = valeur
-    calculée à la main (spec §3.4)."""
+    calculée à la main (spec §3.4). Ici la perte reste INFÉRIEURE au cash disponible : le
+    plafond de faillite (correctif audit 2026-08-31) ne joue pas, `bankrupt` est False."""
     n = 4
     cal, opens, closes, highs, lows, funding = _flat_perp_fixture(n)
-    highs.iloc[2] = 200.0  # spike uniquement à la bougie testée
+    highs.iloc[2] = 130.0  # spike uniquement à la bougie testée
 
     w = pd.DataFrame({"X-PERP": -1.9}, index=cal)  # notionnel proche de la limite de marge
     seg = engine.simulate_segment(
@@ -194,18 +195,118 @@ def test_liquidation_triggered_by_high_spike_for_short_matches_hand_calc():
         perp_initial_margin_frac=0.5, perp_maintenance_margin_frac=0.025, perp_liquidation_fee_bps=100.0,
     )
     shares = -1.9 * 1.0 / 100.0  # -0.019
-    loss = shares * (200.0 - 100.0)
-    fee = abs(shares * 200.0) * (0.0 + 100.0 / 1e4)
-    expected_equity_after = 1.0 + loss - fee
+    loss = shares * (130.0 - 100.0)  # -0.57 : cash 1.0 + loss = 0.43 < maintenance 0.025*0.019*130 ? non...
+    # Seuil de maintenance : 0.025 * |shares| * worst = 0.06175 ; cash + loss = 0.43 >= 0.06175
+    # -> PAS de liquidation par la perte seule. On force donc un levier plus proche de la
+    # limite : voir ci-dessous (poids -1.99, high 145).
+    assert seg.liquidations == []
 
+    highs.iloc[2] = 145.0
+    w = pd.DataFrame({"X-PERP": -1.99}, index=cal)
+    seg = engine.simulate_segment(
+        cal, w, opens, closes, 1, 2, cost_bps=0.0, no_trade_band=0.0, apply_vol_targeting=False,
+        perp_symbols={"X-PERP"}, funding=funding, highs=highs, lows=lows,
+        perp_initial_margin_frac=0.5, perp_maintenance_margin_frac=0.025, perp_liquidation_fee_bps=100.0,
+    )
+    shares = -1.99 / 100.0  # -0.0199
+    loss = shares * (145.0 - 100.0)  # -0.8955 ; cash + loss = 0.1045 < 0.025*0.0199*145 = 0.0721 ? non
+    # 0.1045 >= 0.0721 -> toujours pas. Pousser le high à 150 : loss = -0.995, cash+loss = 0.005
+    # < 0.0746 -> liquidation, et 0.005 - fee (0.0199*150*0.01 = 0.02985) < 0 -> FAILLITE.
+    highs.iloc[2] = 148.0
+    seg = engine.simulate_segment(
+        cal, w, opens, closes, 1, 2, cost_bps=0.0, no_trade_band=0.0, apply_vol_targeting=False,
+        perp_symbols={"X-PERP"}, funding=funding, highs=highs, lows=lows,
+        perp_initial_margin_frac=0.5, perp_maintenance_margin_frac=0.025, perp_liquidation_fee_bps=100.0,
+    )
+    loss = shares * (148.0 - 100.0)  # -0.9552 ; cash + loss = 0.0448 < 0.025*0.0199*148 = 0.07363
+    fee = abs(shares * 148.0) * (0.0 + 100.0 / 1e4)  # 0.029452
+    expected_equity_after = 1.0 + loss - fee  # 0.015348 > 0 : pas de faillite, plafond inactif
+    assert expected_equity_after > 0
     assert len(seg.liquidations) == 1
     liq = seg.liquidations[0]
     assert liq["symbol"] == "X-PERP"
     assert liq["side"] == "short"
-    assert liq["worst_price"] == pytest.approx(200.0)
+    assert liq["worst_price"] == pytest.approx(148.0)
+    assert liq["bankrupt"] is False
     assert seg.equity.iloc[-1] == pytest.approx(expected_equity_after, abs=1e-12)
     assert seg.n_liquidations() == 1
     assert seg.n_trades_closed() == 1  # la ligne perp liquidée compte comme un trade clos
+
+
+def test_liquidation_loss_capped_at_cash_bankruptcy_and_ruin():
+    """Correctif audit 2026-08-31 (MAJEUR) : une perte de liquidation supérieure au cash de
+    marge est PLAFONNÉE au cash (prix de faillite) -- jamais d'équity négative qui inverserait
+    le signe des rendements. Ici : short à la limite de marge, spike ×2 -> cash 1.0 - 1.9 - frais
+    < 0 -> cash 0, `bankrupt=True`, puis ruine (équity 0, figée, rendements suivants nuls)."""
+    n = 5
+    cal, opens, closes, highs, lows, funding = _flat_perp_fixture(n)
+    highs.iloc[2] = 200.0
+    w = pd.DataFrame({"X-PERP": -1.9}, index=cal)
+    seg = engine.simulate_segment(
+        cal, w, opens, closes, 1, 4, cost_bps=0.0, no_trade_band=0.0, apply_vol_targeting=False,
+        perp_symbols={"X-PERP"}, funding=funding, highs=highs, lows=lows,
+        perp_initial_margin_frac=0.5, perp_maintenance_margin_frac=0.025, perp_liquidation_fee_bps=100.0,
+    )
+    liq = [e for e in seg.liquidations if e["symbol"] == "X-PERP"]
+    assert len(liq) == 1 and liq[0]["bankrupt"] is True
+    assert liq[0]["loss_applied"] >= -1.0  # jamais plus que le cash disponible
+    ruin = [e for e in seg.liquidations if e["side"] == "ruin"]
+    assert len(ruin) == 1
+    assert (seg.equity >= 0.0).all()
+    assert seg.equity.iloc[-1] == 0.0
+    assert seg.returns.iloc[1] == pytest.approx(-1.0)
+    assert (seg.returns.iloc[2:] == 0.0).all()
+    # Identité comptable conservée avec la perte plafonnée
+    bd = seg.pnl_breakdown
+    total = bd["spot_pnl"] + bd["perp_variation"] + bd["funding_received"] - bd["costs_spot"] - bd["costs_perp"] - bd["liquidation_fees"]
+    assert total == pytest.approx(seg.equity.iloc[-1] - 1.0, abs=1e-12)
+
+
+def test_funding_payable_enters_liquidation_test():
+    """Correctif audit 2026-08-31 (MAJEUR, spec §3.4 amendée) : un funding PAYABLE réglé à la
+    même bougie entre dans le test de marge ; prix parfaitement plats (aucune perte de prix
+    possible), funding -0.9 sur un short w=-1.9 -> cash 1.0 - 0.9*1.9 = -0.71 < seuil ->
+    liquidation (au lieu d'un cash négatif silencieux)."""
+    n = 4
+    cal, opens, closes, highs, lows, funding = _flat_perp_fixture(n)
+    funding.iloc[2] = -0.9
+    w = pd.DataFrame({"X-PERP": -1.9}, index=cal)
+    seg = engine.simulate_segment(
+        cal, w, opens, closes, 1, 2, cost_bps=0.0, no_trade_band=0.0, apply_vol_targeting=False,
+        perp_symbols={"X-PERP"}, funding=funding, highs=highs, lows=lows,
+        perp_initial_margin_frac=0.5, perp_maintenance_margin_frac=0.025, perp_liquidation_fee_bps=100.0,
+    )
+    assert seg.n_liquidations() >= 1
+    assert seg.liquidations[0]["symbol"] == "X-PERP"
+    # Un funding FAVORABLE de même ampleur n'entre jamais dans le test (pas de collatéral fictif)
+    funding.iloc[2] = +0.9
+    seg2 = engine.simulate_segment(
+        cal, w, opens, closes, 1, 2, cost_bps=0.0, no_trade_band=0.0, apply_vol_targeting=False,
+        perp_symbols={"X-PERP"}, funding=funding, highs=highs, lows=lows,
+        perp_initial_margin_frac=0.5, perp_maintenance_margin_frac=0.025, perp_liquidation_fee_bps=100.0,
+    )
+    assert seg2.liquidations == []
+
+
+def test_nan_perp_price_refused_when_engaged_but_tolerated_when_flat():
+    """Correctif audit 2026-08-31 (CRITIQUE) : un prix perp NaN à une bougie où le symbole est
+    en position ou a un poids cible non nul lève ValueError (jamais un gain fictif de short à
+    prix 0) ; un symbole flat sans poids cible traverse le trou sans erreur."""
+    n = 6
+    cal, opens, closes, highs, lows, funding = _flat_perp_fixture(n)
+    opens.iloc[3, opens.columns.get_loc("X-PERP")] = float("nan")
+    w = pd.DataFrame({"X-PERP": -0.5}, index=cal)
+    with pytest.raises(ValueError, match="manquant"):
+        engine.simulate_segment(
+            cal, w, opens, closes, 1, 5, cost_bps=0.0, no_trade_band=0.0, apply_vol_targeting=False,
+            perp_symbols={"X-PERP"}, funding=funding, highs=highs, lows=lows,
+        )
+    w0 = pd.DataFrame({"X-PERP": 0.0}, index=cal)
+    seg = engine.simulate_segment(
+        cal, w0, opens, closes, 1, 5, cost_bps=0.0, no_trade_band=0.0, apply_vol_targeting=False,
+        perp_symbols={"X-PERP"}, funding=funding, highs=highs, lows=lows,
+    )
+    assert (seg.equity == 1.0).all()
 
 
 def test_liquidation_not_triggered_below_threshold():

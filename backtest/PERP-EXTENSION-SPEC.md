@@ -105,3 +105,35 @@ colonne spot lève `ValueError` (pas de short spot simulé).
 - Pas de production : `bot/sim/` reste long-only. Une candidate perp qui passerait la Porte 1
   ne peut PAS être incubée tant que `bot/sim/` n'a pas été étendu et audité à son tour
   (cf. SPEC du backtest funding carry, sémantique des issues).
+
+## 6. Amendements post-audit adversarial (2026-08-31, AVANT toute utilisation par une candidate)
+
+L'audit adversarial indépendant de l'implémentation (copie isolée, verdict initial
+`isSound: false`, 1 CRITIQUE + 3 MAJEURS démontrés par exécution) a conduit aux amendements
+suivants, tous adoptés AVANT qu'un seul backtest de candidate n'utilise l'extension — ils ne
+sont donc pas des retouches post-résultat :
+
+- **§3 (nouveau point 0, CRITIQUE)** : un prix perp (open/close/high/low) ou un funding **NaN**
+  à une bougie où le symbole est EN POSITION ou a un POIDS CIBLE non nul ⇒ `ValueError`
+  (jamais de `fillna(0.0)` sur une colonne perp engagée : démontré sur le trou réel de 69 h de
+  SOL-PERP en février 2022 — un short y encaissait +28,9 % de gain fictif à prix 0, et la
+  liquidation devenait impossible car `NaN < x` est faux). Un symbole flat sans poids cible
+  traverse un trou sans effet. Conséquence pour les candidates : le calendrier/l'univers doit
+  éviter les trous connus (SOL-PERP : 72 h dès 2022-02-26 et 48 h dès 2022-04-01 ; aucun trou
+  sur BTC/ETH/DOGE/LINK/AVAX-PERP sur 2022-01→2026-07).
+- **§2** : `opens`/`closes` doivent contenir les colonnes perp (vérification bruyante, même
+  niveau que `funding`/`highs`/`lows`).
+- **§3.4 (MAJEUR)** : le funding réglé à la clôture de la bougie entre dans le test de marge
+  s'il est **payable** par le bot (`min(0, −shares × worst × rate)`) — jamais s'il est
+  favorable (un crédit à venir n'est pas un collatéral).
+- **§3.4 (MAJEUR)** : la perte de liquidation est **plafonnée au cash de marge disponible**
+  (prix de faillite — au-delà, le bot a perdu tout son cash, jamais plus ; `bankrupt=True`
+  journalisé). Une équity ≤ 0 (**ruine**) fige le compte à 0 pour le reste du segment
+  (rendements suivants nuls, ruine journalisée dans `liquidations` avec `side="ruin"`) — une
+  équity négative inversait le signe économique des rendements dans `summarize_segment`.
+- Orphelins de funding (§1) : l'implémentation exclut tout règlement sans bougie, quel que
+  soit son signe (le signe de la position est inconnu au chargement) ; mesuré sur les 6
+  majors : exactement 1 orphelin par symbole (bord de série, `rate > 0`, donc légèrement
+  DÉFAVORABLE à un short) — écart à la lettre de la spec, impact nul, documenté.
+- Performance mesurée par l'audit : ~66 s pour 10 000 bougies × 12 colonnes (6 spot + 6
+  perp) ; un walk-forward 14 fenêtres × grille 4 sur 2022→2026 reste exécutable (~45 min).
