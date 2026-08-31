@@ -1,0 +1,33 @@
+[data] chargement spot (6 majors horaires) depuis /home/claude/repo/_data/crypto ...
+[data] calendrier restreint (SPEC.md) : 2022-04-03 00:00:00 -> 2026-07-31 23:00:00, 37943 heures (univers spot complet : 2022-01-01 00:00:00 -> 2026-07-31 23:00:00, 40151 heures)
+[data] trous réels spot (NaN avant ffill, par symbole, calendrier restreint) : {'BTC': 0, 'ETH': 0, 'SOL': 0, 'DOGE': 0, 'LINK': 0, 'AVAX': 0}
+[data] NaN restants après alignement spot (closes) : 0
+[data] chargement perp+funding (6 majors) depuis /home/claude/repo/_data ...
+[data] NaN restants après alignement perp (closes) : 0
+[data] orphelins de funding (calendrier restreint, cf. backtest/perp.py) : {'BTC-PERP': 277, 'ETH-PERP': 277, 'SOL-PERP': 277, 'DOGE-PERP': 277, 'LINK-PERP': 277, 'AVAX-PERP': 277, 'total': 1662}
+[walk-forward] 14 fenêtres générées (9m IS / 3m OOS / pas 3m) -- attendu par SPEC.md : 14
+[run] walk-forward candidate funding_carry (25 bps/côté nominal, spot+perp) ...
+[walk-forward] fenêtre 0/13 (2023-01-03 -> 2023-04-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=-0.1701 n_trades_perp_oos=0 n_liq=0 (200.4s, total 200.4s)
+[walk-forward] fenêtre 1/13 (2023-04-03 -> 2023-07-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=0.0294 n_trades_perp_oos=2 n_liq=0 (199.0s, total 399.5s)
+[walk-forward] fenêtre 2/13 (2023-07-03 -> 2023-10-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=0.1324 n_trades_perp_oos=2 n_liq=0 (200.2s, total 599.7s)
+[walk-forward] fenêtre 3/13 (2023-10-03 -> 2024-01-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=0.1497 n_trades_perp_oos=0 n_liq=0 (199.0s, total 798.6s)
+[walk-forward] fenêtre 4/13 (2024-01-03 -> 2024-04-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=0.2217 n_trades_perp_oos=0 n_liq=0 (201.5s, total 1000.2s)
+[walk-forward] fenêtre 5/13 (2024-04-03 -> 2024-07-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=0.4445 n_trades_perp_oos=1 n_liq=0 (203.2s, total 1203.4s)
+[walk-forward] fenêtre 6/13 (2024-07-03 -> 2024-10-02) : chosen={'window_days': 7, 'theta_in': 0.05} is_sharpe=0.8231 n_trades_perp_oos=3 n_liq=0 (201.9s, total 1405.3s)
+[walk-forward] fenêtre 7/13 (2024-10-03 -> 2025-01-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=0.2288 n_trades_perp_oos=0 n_liq=0 (203.6s, total 1608.9s)
+[walk-forward] fenêtre 8/13 (2025-01-03 -> 2025-04-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=0.2349 n_trades_perp_oos=2 n_liq=0 (203.3s, total 1812.2s)
+[walk-forward] fenêtre 9/13 (2025-04-03 -> 2025-07-02) : chosen={'window_days': 30, 'theta_in': 0.05} is_sharpe=-0.0178 n_trades_perp_oos=1 n_liq=0 (209.8s, total 2022.0s)
+[walk-forward] fenêtre 10/13 (2025-07-03 -> 2025-10-02) : chosen={'window_days': 30, 'theta_in': 0.05} is_sharpe=0.2614 n_trades_perp_oos=0 n_liq=0 (201.0s, total 2223.0s)
+[walk-forward] fenêtre 11/13 (2025-10-03 -> 2026-01-02) : chosen={'window_days': 30, 'theta_in': 0.1} is_sharpe=-0.0288 n_trades_perp_oos=0 n_liq=0 (205.1s, total 2428.1s)
+[walk-forward] fenêtre 12/13 (2026-01-03 -> 2026-04-02) : chosen={'window_days': 30, 'theta_in': 0.05} is_sharpe=0.1287 n_trades_perp_oos=3 n_liq=0 (203.4s, total 2631.5s)
+[walk-forward] fenêtre 13/13 (2026-04-03 -> 2026-07-02) : chosen={'window_days': 30, 'theta_in': 0.05} is_sharpe=0.0054 n_trades_perp_oos=0 n_liq=0 (199.9s, total 2831.4s)
+[walk-forward] terminé en 2831.5s
+[run] benchmark buy & hold équipondéré SPOT (sans coûts ni overlay) ...
+[stress] re-simulation OOS à 75 et 125 bps/côté (deux jambes, mêmes params choisis) ...
+[analyses] sensibilité au levier (marge initiale 1.0 = levier 1, informatif) ...
+[analyses] marge=1.0 à w=0.10 faisable (aucune violation observée sur l'historique).
+[analyses] heures actives / épisodes d'activation distincts par symbole ...
+[analyses] corrélation vs buy & hold équipondéré spot ...
+[analyses] sous-périodes 2022-2023 vs 2024-2026 ...
+[out] /home/claude/repo/backtest/results/funding_carry_6majors/results.json
+[done] durée totale : 3590.5s

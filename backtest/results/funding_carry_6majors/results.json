@@ -1,0 +1,1626 @@
+{
+  "meta": {
+    "candidate_id": "funding_carry_6majors",
+    "backlog_ref": "backtest/results/funding_carry_6majors/SPEC.md (P0#1, pré-enregistrée 2026-08-31)",
+    "engine": "backtest/engine.py + backtest/perp.py (PERP-EXTENSION-SPEC.md, docs/PROMOTION-RULES.md §1.1)",
+    "data_dir": "/home/claude/repo/_data",
+    "univers": [
+      "BTC",
+      "ETH",
+      "SOL",
+      "DOGE",
+      "LINK",
+      "AVAX"
+    ],
+    "calendar_start": "2022-04-03 00:00:00",
+    "calendar_end": "2026-07-31 23:00:00",
+    "n_calendar_hours": 37943,
+    "calendar_restriction_reason": "SPEC.md : évite les trous bruts de SOL-PERP (72h dès 2022-02-26, 48h dès 2022-04-01) -- le moteur audité refuse tout prix perp manquant sur une position engagée (PERP-EXTENSION-SPEC.md §6).",
+    "real_data_gaps_spot_by_symbol": {
+      "BTC": 0,
+      "ETH": 0,
+      "SOL": 0,
+      "DOGE": 0,
+      "LINK": 0,
+      "AVAX": 0
+    },
+    "n_nan_after_align_spot": 0,
+    "n_nan_after_align_perp": 0,
+    "funding_orphans_report": {
+      "BTC-PERP": 277,
+      "ETH-PERP": 277,
+      "SOL-PERP": 277,
+      "DOGE-PERP": 277,
+      "LINK-PERP": 277,
+      "AVAX-PERP": 277,
+      "total": 1662
+    },
+    "n_windows": 14,
+    "n_windows_matches_spec": true,
+    "walkforward": "9m IS / 3m OOS / pas 3m",
+    "param_grid": [
+      {
+        "window_days": 7,
+        "theta_in": 0.05
+      },
+      {
+        "window_days": 7,
+        "theta_in": 0.1
+      },
+      {
+        "window_days": 30,
+        "theta_in": 0.05
+      },
+      {
+        "window_days": 30,
+        "theta_in": 0.1
+      }
+    ],
+    "weight_per_symbol": 0.1,
+    "cost_bps_nominal_per_side_both_legs": 25.0,
+    "perp_margin_defaults": {
+      "perp_initial_margin_frac": 0.5,
+      "perp_maintenance_margin_frac": 0.025,
+      "perp_liquidation_fee_bps": 100.0
+    },
+    "sim_kwargs_hourly": {
+      "vol_ewma_halflife_days": 60.0,
+      "vol_periods_per_year": 8760.0,
+      "perp_cost_bps": 25.0,
+      "perp_initial_margin_frac": 0.5,
+      "perp_maintenance_margin_frac": 0.025,
+      "perp_liquidation_fee_bps": 100.0
+    },
+    "perp_symbols": [
+      "AVAX-PERP",
+      "BTC-PERP",
+      "DOGE-PERP",
+      "ETH-PERP",
+      "LINK-PERP",
+      "SOL-PERP"
+    ],
+    "periods_per_year_metrics": 8760.0,
+    "k_total": 68,
+    "k_total_detail": {
+      "registry_rows": 12,
+      "n_windows": 14,
+      "n_grid_combos": 4,
+      "formula": "K_total = registry_rows + n_windows * n_grid_combos (PROMOTION-RULES.md §1.3, SPEC.md)",
+      "expected_n_windows_spec": 14
+    },
+    "runtime_seconds": 3590.5
+  },
+  "candidate_funding_carry": {
+    "cost_bps_per_side_both_legs": 25.0,
+    "per_window": [
+      {
+        "sharpe": 0.5888064957857496,
+        "sortino": 0.9153837112775343,
+        "profit_factor": 0.5336010500418508,
+        "max_drawdown": 0.004070609721054996,
+        "cagr": 0.006505539187939835,
+        "average_exposure": 0.32991438184337835,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2159,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.01582278950676263,
+          "perp_variation": -0.015592460979063819,
+          "funding_received": 0.0037193492652742048,
+          "costs_spot": 0.0011752235318376325,
+          "costs_perp": 0.001175006455776042,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 0,
+        "is_start": "2022-04-03 00:00:00",
+        "is_end": "2023-01-02 23:00:00",
+        "oos_start": "2023-01-03 00:00:00",
+        "oos_end": "2023-04-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": -0.1701383718692407,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.6180980969236132
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.34893174550428424
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.2240990953732114
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.1701383718692407
+          }
+        ]
+      },
+      {
+        "sharpe": 0.5330784785137521,
+        "sortino": 0.656035656504337,
+        "profit_factor": 0.6914645684110975,
+        "max_drawdown": 0.001315278245679008,
+        "cagr": 0.00280973234239279,
+        "average_exposure": 0.40143431708970406,
+        "n_trades_closed": 4,
+        "n_trades_closed_perp": 2,
+        "n_trades_closed_spot": 2,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.028419660822071563,
+          "perp_variation": 0.028374375985608196,
+          "funding_received": 0.0035781669174772763,
+          "costs_spot": 0.0014165690595912886,
+          "costs_perp": 0.0014165419657389117,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 1,
+        "is_start": "2022-07-03 00:00:00",
+        "is_end": "2023-04-02 23:00:00",
+        "oos_start": "2023-04-03 00:00:00",
+        "oos_end": "2023-07-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": 0.02938546447514115,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.3271794576289128
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.26636394880469483
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.02885716318297454
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.02938546447514115
+          }
+        ]
+      },
+      {
+        "sharpe": -0.5136524842830609,
+        "sortino": -0.5913808240888355,
+        "profit_factor": 0.9497842018432754,
+        "max_drawdown": 0.001118940452991879,
+        "cagr": -0.0015575131557447053,
+        "average_exposure": 0.14785312258127112,
+        "n_trades_closed": 4,
+        "n_trades_closed_perp": 2,
+        "n_trades_closed_spot": 2,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.006918109904717216,
+          "perp_variation": 0.0070280916945383584,
+          "funding_received": 0.0013054948417953254,
+          "costs_spot": 0.0009042795582323355,
+          "costs_perp": 0.0009040046037577857,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 2,
+        "is_start": "2022-10-03 00:00:00",
+        "is_end": "2023-07-02 23:00:00",
+        "oos_start": "2023-07-03 00:00:00",
+        "oos_end": "2023-10-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": 0.1323908927505345,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.22537721854564793
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.11850084771896595
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.12833971243747525
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.1323908927505345
+          }
+        ]
+      },
+      {
+        "sharpe": 1.9346284309575403,
+        "sortino": 2.4503873660936826,
+        "profit_factor": 0.9752942304009297,
+        "max_drawdown": 0.00103518051798146,
+        "cagr": 0.004884871810888036,
+        "average_exposure": 0.11778147509457261,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.03918222935510075,
+          "perp_variation": -0.039116273337837425,
+          "funding_received": 0.002854063204115156,
+          "costs_spot": 0.0008455722488304902,
+          "costs_perp": 0.0008454344990388279,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 3,
+        "is_start": "2023-01-03 00:00:00",
+        "is_end": "2023-10-02 23:00:00",
+        "oos_start": "2023-10-03 00:00:00",
+        "oos_end": "2024-01-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": 0.14969756820063837,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.09400177344649119
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.2015455829814374
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.11708348482058377
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.14969756820063837
+          }
+        ]
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 4,
+        "is_start": "2023-04-03 00:00:00",
+        "is_end": "2024-01-02 23:00:00",
+        "oos_start": "2024-01-03 00:00:00",
+        "oos_end": "2024-04-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": 0.2217379389382868,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.17934286507596586
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.1744791379240314
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.1254500211185028
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.2217379389382868
+          }
+        ]
+      },
+      {
+        "sharpe": 1.7762497798286503,
+        "sortino": 2.0332852979373883,
+        "profit_factor": 0.8773209153806321,
+        "max_drawdown": 0.001425204587511053,
+        "cagr": 0.005849657469153335,
+        "average_exposure": 0.26432071858723943,
+        "n_trades_closed": 2,
+        "n_trades_closed_perp": 1,
+        "n_trades_closed_spot": 1,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.013004993060012559,
+          "perp_variation": 0.013047852211740141,
+          "funding_received": 0.00342015537025797,
+          "costs_spot": 0.0010039030454878127,
+          "costs_perp": 0.0010038949531460646,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 5,
+        "is_start": "2023-07-03 00:00:00",
+        "is_end": "2024-04-02 23:00:00",
+        "oos_start": "2024-04-03 00:00:00",
+        "oos_end": "2024-07-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": 0.44445434508307574,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.3541847101142553
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.32774893014708406
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.4254005991933724
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.44445434508307574
+          }
+        ]
+      },
+      {
+        "sharpe": -2.6363559606422386,
+        "sortino": -3.100768686472193,
+        "profit_factor": 0.9339423273843007,
+        "max_drawdown": 0.0038421439044016292,
+        "cagr": -0.012713543968874585,
+        "average_exposure": 0.3109867105972324,
+        "n_trades_closed": 6,
+        "n_trades_closed_perp": 3,
+        "n_trades_closed_spot": 3,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.06089398156181387,
+          "perp_variation": 0.060953271002095334,
+          "funding_received": 0.0017089450227278037,
+          "costs_spot": 0.0024939052376034203,
+          "costs_perp": 0.0024941886899390395,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 6,
+        "is_start": "2023-10-03 00:00:00",
+        "is_end": "2024-07-02 23:00:00",
+        "oos_start": "2024-07-03 00:00:00",
+        "oos_end": "2024-10-02 23:00:00",
+        "chosen_params": {
+          "window_days": 7,
+          "theta_in": 0.05
+        },
+        "is_sharpe_chosen": 0.823141739035526,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.823141739035526
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.2745593808620148
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.7244691482712792
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.7063638592651511
+          }
+        ]
+      },
+      {
+        "sharpe": 0.6426223748908977,
+        "sortino": 0.7598836858689172,
+        "profit_factor": 0.9789862706313912,
+        "max_drawdown": 0.0016048445680439949,
+        "cagr": 0.002048511004646647,
+        "average_exposure": 0.12925175784060194,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.08192994019028833,
+          "perp_variation": -0.08206873979220837,
+          "funding_received": 0.0027070180110720316,
+          "costs_spot": 0.0010259022631535055,
+          "costs_perp": 0.0010263742132652404,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 7,
+        "is_start": "2024-01-03 00:00:00",
+        "is_end": "2024-10-02 23:00:00",
+        "oos_start": "2024-10-03 00:00:00",
+        "oos_end": "2025-01-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": 0.22879580646687367,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.02859886457541106
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.3803526517650546
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.06590254372145524
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.22879580646687367
+          }
+        ]
+      },
+      {
+        "sharpe": -1.3838871894339082,
+        "sortino": -1.5989939809824247,
+        "profit_factor": 0.9349502874424664,
+        "max_drawdown": 0.0014604178376008692,
+        "cagr": -0.004925207707263124,
+        "average_exposure": 0.2507699446340033,
+        "n_trades_closed": 4,
+        "n_trades_closed_perp": 2,
+        "n_trades_closed_spot": 2,
+        "n_periods": 2160,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.06046817700218851,
+          "perp_variation": 0.06048683960410849,
+          "funding_received": 0.0012718255723504768,
+          "costs_spot": 0.0012535905970523604,
+          "costs_perp": 0.0012535921085970398,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 8,
+        "is_start": "2024-04-03 00:00:00",
+        "is_end": "2025-01-02 23:00:00",
+        "oos_start": "2025-01-03 00:00:00",
+        "oos_end": "2025-04-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": 0.23491878827926244,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.17739235761830555
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.09874467731793565
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.08530225035733364
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": 0.23491878827926244
+          }
+        ]
+      },
+      {
+        "sharpe": -0.6103816597872459,
+        "sortino": -0.7871141918070254,
+        "profit_factor": 0.9846469197337662,
+        "max_drawdown": 0.0010284377137113054,
+        "cagr": -0.002443336907896443,
+        "average_exposure": 0.2510260905292915,
+        "n_trades_closed": 2,
+        "n_trades_closed_perp": 1,
+        "n_trades_closed_spot": 1,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.0019057251414565696,
+          "perp_variation": 0.002053543313429542,
+          "funding_received": 0.001494800533845541,
+          "costs_spot": 0.0011263829538353033,
+          "costs_perp": 0.00112595591245911,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 9,
+        "is_start": "2024-07-03 00:00:00",
+        "is_end": "2025-04-02 23:00:00",
+        "oos_start": "2025-04-03 00:00:00",
+        "oos_end": "2025-07-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.05
+        },
+        "is_sharpe_chosen": -0.01779402338865764,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.04390810857866539
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.14518281912608005
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.01779402338865764
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.19323397850091067
+          }
+        ]
+      },
+      {
+        "sharpe": 1.046512663726923,
+        "sortino": 1.180741453281383,
+        "profit_factor": 0.9788968961412526,
+        "max_drawdown": 0.0017477896660554881,
+        "cagr": 0.0038484577362123407,
+        "average_exposure": 0.4095602986233434,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.1094943010890242,
+          "perp_variation": -0.10949214144560995,
+          "funding_received": 0.00383515143041336,
+          "costs_spot": 0.0014342947370534918,
+          "costs_perp": 0.001434387063899358,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 10,
+        "is_start": "2024-10-03 00:00:00",
+        "is_end": "2025-07-02 23:00:00",
+        "oos_start": "2025-07-03 00:00:00",
+        "oos_end": "2025-10-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.05
+        },
+        "is_sharpe_chosen": 0.2613653248507923,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.30990922512111896
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.035894974758618955
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.2613653248507923
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.09081252817326153
+          }
+        ]
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 11,
+        "is_start": "2025-01-03 00:00:00",
+        "is_end": "2025-10-02 23:00:00",
+        "oos_start": "2025-10-03 00:00:00",
+        "oos_end": "2026-01-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.1
+        },
+        "is_sharpe_chosen": -0.02882347509621263,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.4147742154369061
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.22608524265103194
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.043789678192337894
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.02882347509621263
+          }
+        ]
+      },
+      {
+        "sharpe": -1.260561058269466,
+        "sortino": -1.54556711099595,
+        "profit_factor": 0.9818650494707324,
+        "max_drawdown": 0.0017441385650953656,
+        "cagr": -0.00703776657178079,
+        "average_exposure": 0.31074726828063337,
+        "n_trades_closed": 6,
+        "n_trades_closed_perp": 3,
+        "n_trades_closed_spot": 3,
+        "n_periods": 2160,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.10126794770787899,
+          "perp_variation": 0.10137840221304169,
+          "funding_received": 0.0011386260241083473,
+          "costs_spot": 0.0014946522711491966,
+          "costs_perp": 0.001494387733599801,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 12,
+        "is_start": "2025-04-03 00:00:00",
+        "is_end": "2026-01-02 23:00:00",
+        "oos_start": "2026-01-03 00:00:00",
+        "oos_end": "2026-04-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.05
+        },
+        "is_sharpe_chosen": 0.12873343511773122,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.6496235698012078
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.3807252984057629
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.12873343511773122
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": -0.19318081617051708,
+        "sortino": -0.2557694211265595,
+        "profit_factor": NaN,
+        "max_drawdown": 0.0005758217056700543,
+        "cagr": -0.00044918506870361696,
+        "average_exposure": 0.09274833304415807,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.0267769376181477,
+          "perp_variation": 0.02676815431164899,
+          "funding_received": 0.00039677581429652044,
+          "costs_spot": 0.00025,
+          "costs_perp": 0.00025,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 13,
+        "is_start": "2025-07-03 00:00:00",
+        "is_end": "2026-04-02 23:00:00",
+        "oos_start": "2026-04-03 00:00:00",
+        "oos_end": "2026-07-02 23:00:00",
+        "chosen_params": {
+          "window_days": 30,
+          "theta_in": 0.05
+        },
+        "is_sharpe_chosen": 0.005390678225693915,
+        "is_candidates": [
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.05
+            },
+            "is_sharpe": -0.6266751719414044
+          },
+          {
+            "params": {
+              "window_days": 7,
+              "theta_in": 0.1
+            },
+            "is_sharpe": -0.30548474056031744
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.05
+            },
+            "is_sharpe": 0.005390678225693915
+          },
+          {
+            "params": {
+              "window_days": 30,
+              "theta_in": 0.1
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      }
+    ],
+    "concatenated": {
+      "sharpe": -0.05029647594581667,
+      "sortino": -0.06634096535506755,
+      "profit_factor": 0.9636432248998751,
+      "max_drawdown": 0.006839833385606342,
+      "cagr": -0.00023855467930744556,
+      "average_exposure": 0.21512224813644634,
+      "n_trades_closed": 28,
+      "n_trades_closed_perp": 14,
+      "n_trades_closed_spot": 14,
+      "n_periods": 30647,
+      "n_liquidations_perp": 0,
+      "n_bankrupt": 0,
+      "n_ruin": 0,
+      "pnl_breakdown": {
+        "spot_pnl": -0.05322627267711107,
+        "perp_variation": 0.053820914781491175,
+        "funding_received": 0.027430372007734013,
+        "costs_spot": 0.014424275503826838,
+        "costs_perp": 0.014423768199217223,
+        "liquidation_fees": 0.0
+      }
+    }
+  },
+  "benchmark_equal_weight_buy_hold_spot": {
+    "cost_bps": 0.0,
+    "overlay": "désactivé (apply_vol_targeting=False, no_trade_band=0.0), spot uniquement, sans perp",
+    "per_window": [
+      {
+        "sharpe": 2.7794798208330933,
+        "sortino": 3.873407496964649,
+        "profit_factor": 10.476716292557482,
+        "max_drawdown": 0.28368437943488056,
+        "cagr": 4.131308116005146,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2159,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.4963860782323144,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 0,
+        "oos_start": "2023-01-03 00:00:00",
+        "oos_end": "2023-04-02 23:00:00"
+      },
+      {
+        "sharpe": -0.11957672604720498,
+        "sortino": -0.15192164328374588,
+        "profit_factor": 0.48782072245519803,
+        "max_drawdown": 0.35453985048709735,
+        "cagr": -0.1944262908715304,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.0524750981442977,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 1,
+        "oos_start": "2023-04-03 00:00:00",
+        "oos_end": "2023-07-02 23:00:00"
+      },
+      {
+        "sharpe": -0.22606171533402908,
+        "sortino": -0.31811741297805296,
+        "profit_factor": 0.7889987562242876,
+        "max_drawdown": 0.2689406395467939,
+        "cagr": -0.18089854131827143,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.04905291474805437,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 2,
+        "oos_start": "2023-07-03 00:00:00",
+        "oos_end": "2023-10-02 23:00:00"
+      },
+      {
+        "sharpe": 5.650859786318355,
+        "sortino": 8.171034647493038,
+        "profit_factor": 142.5376121576374,
+        "max_drawdown": 0.11852466693688024,
+        "cagr": 29.39078322456087,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 1.3644612616419605,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 3,
+        "oos_start": "2023-10-03 00:00:00",
+        "oos_end": "2024-01-02 23:00:00"
+      },
+      {
+        "sharpe": 2.536182540129602,
+        "sortino": 3.464752483482202,
+        "profit_factor": 7.8419326900207285,
+        "max_drawdown": 0.20056905833908534,
+        "cagr": 4.2502415168870264,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.5119991499079262,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 4,
+        "oos_start": "2024-01-03 00:00:00",
+        "oos_end": "2024-04-02 23:00:00"
+      },
+      {
+        "sharpe": -0.7493971256064663,
+        "sortino": -1.0231904602568045,
+        "profit_factor": 0.32618222722946644,
+        "max_drawdown": 0.3120225443190582,
+        "cagr": -0.5356681501035236,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.17408506744837968,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 5,
+        "oos_start": "2024-04-03 00:00:00",
+        "oos_end": "2024-07-02 23:00:00"
+      },
+      {
+        "sharpe": -0.602384403397198,
+        "sortino": -0.8420212429695895,
+        "profit_factor": 0.353457981612217,
+        "max_drawdown": 0.391829520551909,
+        "cagr": -0.48743067399275697,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.15502909617808341,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 6,
+        "oos_start": "2024-07-03 00:00:00",
+        "oos_end": "2024-10-02 23:00:00"
+      },
+      {
+        "sharpe": 3.5924081098184124,
+        "sortino": 5.0302384436327054,
+        "profit_factor": 12.325295868528698,
+        "max_drawdown": 0.27128795463856203,
+        "cagr": 11.423515768682583,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.8871637100541034,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 7,
+        "oos_start": "2024-10-03 00:00:00",
+        "oos_end": "2025-01-02 23:00:00"
+      },
+      {
+        "sharpe": -2.043034745650254,
+        "sortino": -2.7413499062557083,
+        "profit_factor": 0.20067027384812486,
+        "max_drawdown": 0.517594361171253,
+        "cagr": -0.8908193298313237,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2160,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.42079745653342476,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 8,
+        "oos_start": "2025-01-03 00:00:00",
+        "oos_end": "2025-04-02 23:00:00"
+      },
+      {
+        "sharpe": 1.3780986054748854,
+        "sortino": 1.9521166216367818,
+        "profit_factor": 4.289474787194757,
+        "max_drawdown": 0.2966530829184021,
+        "cagr": 1.061448234061693,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.1976444927834738,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 9,
+        "oos_start": "2025-04-03 00:00:00",
+        "oos_end": "2025-07-02 23:00:00"
+      },
+      {
+        "sharpe": 3.2099545098718485,
+        "sortino": 4.674417952597212,
+        "profit_factor": 27.430321909782887,
+        "max_drawdown": 0.1884078000984334,
+        "cagr": 4.8620965340058095,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.5616777851260752,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 10,
+        "oos_start": "2025-07-03 00:00:00",
+        "oos_end": "2025-10-02 23:00:00"
+      },
+      {
+        "sharpe": -2.574475824509589,
+        "sortino": -3.4177725170409996,
+        "profit_factor": 0.0034691323165375256,
+        "max_drawdown": 0.4910247706238734,
+        "cagr": -0.8715002120189871,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2208,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.4037964188508811,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 11,
+        "oos_start": "2025-10-03 00:00:00",
+        "oos_end": "2026-01-02 23:00:00"
+      },
+      {
+        "sharpe": -2.3724862867091336,
+        "sortino": -3.26215894601095,
+        "profit_factor": 0.04475633382177678,
+        "max_drawdown": 0.4314183621607851,
+        "cagr": -0.8182614208076675,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2160,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.3432532654382175,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 12,
+        "oos_start": "2026-01-03 00:00:00",
+        "oos_end": "2026-04-02 23:00:00"
+      },
+      {
+        "sharpe": -0.6855826388007479,
+        "sortino": -0.955989489517015,
+        "profit_factor": 0.7315835747606069,
+        "max_drawdown": 0.3490009058837563,
+        "cagr": -0.40265041716312067,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_trades_closed_perp": 0,
+        "n_trades_closed_spot": 0,
+        "n_periods": 2184,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.12055150650372111,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 13,
+        "oos_start": "2026-04-03 00:00:00",
+        "oos_end": "2026-07-02 23:00:00"
+      }
+    ],
+    "concatenated": {
+      "sharpe": 0.703417723618383,
+      "sortino": 0.9700150891004851,
+      "profit_factor": 2.317380441269944,
+      "max_drawdown": 0.7198225391513938,
+      "cagr": 0.27944240284138977,
+      "average_exposure": 1.0,
+      "n_trades_closed": 0,
+      "n_trades_closed_perp": 0,
+      "n_trades_closed_spot": 0,
+      "n_periods": 30647,
+      "n_liquidations_perp": 0,
+      "n_bankrupt": 0,
+      "n_ruin": 0,
+      "pnl_breakdown": {
+        "spot_pnl": 2.300291653900795,
+        "perp_variation": 0.0,
+        "funding_received": 0.0,
+        "costs_spot": 0.0,
+        "costs_perp": 0.0,
+        "liquidation_fees": 0.0
+      }
+    }
+  },
+  "dsr_candidate": {
+    "sharpe_hat_period": -0.0005373849555726436,
+    "n_obs": 30647,
+    "skew": 6.056568541357877,
+    "kurtosis_excess": 2260.376201787187,
+    "trials_k": 68,
+    "sr0_benchmark_expected_max_sharpe": 0.013686089467613755,
+    "dsr": 0.006464541010622418
+  },
+  "cost_stress_test": {
+    "profit_factor_at_25bps_nominal": 0.9636432248998751,
+    "profit_factor_at_75bps_3x": 0.8520306275032716,
+    "profit_factor_at_125bps_5x": 0.7544032021544893,
+    "sharpe_at_25bps_nominal": -0.05029647594581667,
+    "sharpe_at_75bps_3x": -2.080623039089957,
+    "sharpe_at_125bps_5x": -2.702475149997262,
+    "full_summary_75bps": {
+      "sharpe": -2.080623039089957,
+      "sortino": -2.2424609565150386,
+      "profit_factor": 0.8520306275032716,
+      "max_drawdown": 0.05712623182652432,
+      "cagr": -0.01641169967142564,
+      "average_exposure": 0.21556838409800966,
+      "n_trades_closed": 28,
+      "n_trades_closed_perp": 14,
+      "n_trades_closed_spot": 14,
+      "n_periods": 30647,
+      "n_liquidations_perp": 0,
+      "n_bankrupt": 0,
+      "n_ruin": 0,
+      "pnl_breakdown": {
+        "spot_pnl": -0.05585475165217267,
+        "perp_variation": 0.05645986283488545,
+        "funding_received": 0.027368956399274603,
+        "costs_spot": 0.04283663960769003,
+        "costs_perp": 0.04283514076326293,
+        "liquidation_fees": 0.0
+      }
+    },
+    "full_summary_125bps": {
+      "sharpe": -2.702475149997262,
+      "sortino": -2.7857176537058748,
+      "profit_factor": 0.7544032021544893,
+      "max_drawdown": 0.1093367164935013,
+      "cagr": -0.03242628943693682,
+      "average_exposure": 0.216166538118634,
+      "n_trades_closed": 28,
+      "n_trades_closed_perp": 14,
+      "n_trades_closed_spot": 14,
+      "n_periods": 30647,
+      "n_liquidations_perp": 0,
+      "n_bankrupt": 0,
+      "n_ruin": 0,
+      "pnl_breakdown": {
+        "spot_pnl": -0.056013973232669614,
+        "perp_variation": 0.056614671130693114,
+        "funding_received": 0.027336500833991695,
+        "costs_spot": 0.07128112323617158,
+        "costs_perp": 0.07127872611713268,
+        "liquidation_fees": 0.0
+      }
+    },
+    "note": "Re-simulation OOS avec les params DÉJÀ choisis par fenêtre (jamais une nouvelle sélection), coût identique appliqué aux DEUX jambes (spot ET perp, SPEC.md §'Coûts')."
+  },
+  "leverage_sensitivity_informative": {
+    "w_0_10_margin_1_0": {
+      "weight_scale": 1.0,
+      "feasible": true,
+      "concatenated": {
+        "sharpe": -0.05029647594581667,
+        "sortino": -0.06634096535506755,
+        "profit_factor": 0.9636432248998751,
+        "max_drawdown": 0.006839833385606342,
+        "cagr": -0.00023855467930744556,
+        "average_exposure": 0.21512224813644634,
+        "n_trades_closed": 28,
+        "n_trades_closed_perp": 14,
+        "n_trades_closed_spot": 14,
+        "n_periods": 30647,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.05322627267711107,
+          "perp_variation": 0.053820914781491175,
+          "funding_received": 0.027430372007734013,
+          "costs_spot": 0.014424275503826838,
+          "costs_perp": 0.014423768199217223,
+          "liquidation_fees": 0.0
+        }
+      }
+    },
+    "note": "Informatif uniquement (SPEC.md §'Analyses d'honnêteté') -- marge initiale 1.0 = levier 1 (jamais utilisée en décision, les seuils §1.2 utilisent les défauts de l'extension, perp_initial_margin_frac=0.50). Si infaisable (ValueError) au poids nominal w=0.10, repli documenté à w=0.08 (test informatif séparé).",
+    "w_0.08_margin_1_0": {
+      "weight_scale": 0.7999999999999999,
+      "feasible": true,
+      "concatenated": {
+        "sharpe": 0.33483893783602414,
+        "sortino": 0.4435550585882755,
+        "profit_factor": 0.971629395718412,
+        "max_drawdown": 0.004381165257382635,
+        "cagr": 0.001314310059856938,
+        "average_exposure": 0.1949345838203522,
+        "n_trades_closed": 24,
+        "n_trades_closed_perp": 12,
+        "n_trades_closed_spot": 12,
+        "n_periods": 30647,
+        "n_liquidations_perp": 0,
+        "n_bankrupt": 0,
+        "n_ruin": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.05552190159011242,
+          "perp_variation": 0.05596401275397494,
+          "funding_received": 0.025195719160416543,
+          "costs_spot": 0.010518602340614108,
+          "costs_perp": 0.010518415469676228,
+          "liquidation_fees": 0.0
+        }
+      }
+    }
+  },
+  "honesty_analyses": {
+    "pnl_breakdown_oos": {
+      "spot_pnl": -0.05322627267711107,
+      "perp_variation": 0.053820914781491175,
+      "funding_received": 0.027430372007734013,
+      "costs_spot": 0.014424275503826838,
+      "costs_perp": 0.014423768199217223,
+      "liquidation_fees": 0.0
+    },
+    "pnl_breakdown_note": "Décomposition Spot/Perp(variation)/Funding/Coûts(spot,perp)/Liquidations du PnL OOS concaténé (PERP-EXTENSION-SPEC.md §4). Le funding net doit expliquer l'essentiel du PnL total (spot_pnl + perp_variation + funding_received - costs_spot - costs_perp - liquidation_fees), sinon l'hypothèse structurelle n'est pas celle testée (SPEC.md).",
+    "funding_share_of_total_pnl": 0.4823087251064438,
+    "n_liquidations_perp_oos": 0,
+    "n_bankrupt_oos": 0,
+    "n_ruin_oos": 0,
+    "activation_honesty": {
+      "n_oos_hours_total": 30647,
+      "active_hours_by_symbol": {
+        "BTC": 14336,
+        "ETH": 16200,
+        "SOL": 10178,
+        "DOGE": 15593,
+        "LINK": 20689,
+        "AVAX": 11761
+      },
+      "active_fraction_by_symbol": {
+        "BTC": 0.46777824909452803,
+        "ETH": 0.5285998629555911,
+        "SOL": 0.33210428426925964,
+        "DOGE": 0.5087936829053414,
+        "LINK": 0.675074232388162,
+        "AVAX": 0.38375697458152513
+      },
+      "active_fraction_aggregate": 0.4826845476990679,
+      "n_distinct_activation_episodes_by_symbol": {
+        "BTC": 14,
+        "ETH": 13,
+        "SOL": 9,
+        "DOGE": 13,
+        "LINK": 16,
+        "AVAX": 12
+      },
+      "n_distinct_activation_episodes_total": 77,
+      "note": "Un épisode = run continu de poids DÉCIDÉ actif (avant surcouche de risque), sur la matrice de poids complète restreinte à chaque fenêtre OOS avec les params choisis par SA PROPRE sélection IS -- une position active à la frontière entre deux fenêtres OOS consécutives compte comme deux épisodes (jamais sous-compté). À comparer à n_trades_closed_perp du run nominal (post-overlay/moteur, seul chiffre utilisé pour le seuil §1.2)."
+    },
+    "correlation_vs_equal_weight_buy_hold_spot": {
+      "value": -0.010786773858189434,
+      "note": "Corrélation des rendements OOS candidate vs benchmark B&H équipondéré spot (mêmes fenêtres OOS alignées, intersection des index). Attendue ~= 0 pour une stratégie delta-neutre -- une corrélation élevée signalerait une jambe non couverte (SPEC.md §'Analyses d'honnêteté')."
+    },
+    "subperiods_2022_2023_vs_2024_2026": {
+      "period_before": "< 2024-01-01",
+      "sharpe_before": 0.4712763992306134,
+      "n_periods_before": 8711,
+      "period_after": ">= 2024-01-01",
+      "sharpe_after": -0.4352070718929289,
+      "n_periods_after": 21936
+    }
+  },
+  "promotion_rules_1_2_thresholds_verdict": {
+    "sharpe_oos": {
+      "value": -0.05029647594581667,
+      "threshold": 0.7,
+      "rule": ">= seuil",
+      "pass": false
+    },
+    "profit_factor_oos": {
+      "value": 0.9636432248998751,
+      "threshold": 1.15,
+      "rule": "> seuil",
+      "pass": false
+    },
+    "n_trades_oos_perp_closed": {
+      "value": 14,
+      "threshold": 80,
+      "rule": ">= seuil (lignes PERP closes uniquement, SPEC.md §'Benchmark et seuils')",
+      "pass": false,
+      "honesty_note": {
+        "n_trades_closed_perp_oos": 14,
+        "n_trades_closed_spot_oos": 14,
+        "n_trades_closed_total_oos": 28,
+        "n_distinct_activation_episodes_total": 77,
+        "n_distinct_activation_episodes_by_symbol": {
+          "BTC": 14,
+          "ETH": 13,
+          "SOL": 9,
+          "DOGE": 13,
+          "LINK": 16,
+          "AVAX": 12
+        }
+      }
+    },
+    "maxdd_relative_to_benchmark": {
+      "value": 0.009502110608636807,
+      "threshold": 1.5,
+      "rule": "<= seuil (maxdd_candidate / maxdd_benchmark_OOS_aligné)",
+      "pass": true
+    },
+    "dsr": {
+      "value": 0.006464541010622418,
+      "threshold": 0.5,
+      "rule": ">= seuil",
+      "k_total": 68,
+      "pass": false
+    }
+  },
+  "promotion_rules_1_2_all_pass": false,
+  "adversarial_audit_1_4": {
+    "isSound": null,
+    "note": "SPEC.md §'Benchmark et seuils' exige un audit adversarial indépendant obligatoire (isSound: false = rejet quel que soit le chiffre). Cet audit n'est PAS exécuté par ce script (hors périmètre de la mission d'implémentation du backtest) -- à conduire séparément avant toute décision de statut dans RESEARCH-REGISTRY.json."
+  }
+}
