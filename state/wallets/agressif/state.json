@@ -1,15 +1,11 @@
 {
-  "cash_usd": 491.66016308798913,
+  "cash_usd": 546.5586800199891,
   "circuit_breakers": {
-    "consecutive_losses": 3,
+    "consecutive_losses": 4,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1132.9942696164678,
-        "ts": "2026-08-30T00:48:27.236678+00:00"
-      },
       {
         "equity": 1134.168283274468,
         "ts": "2026-08-30T05:57:38.469328+00:00"
@@ -33,6 +29,10 @@
       {
         "equity": 1128.421434474468,
         "ts": "2026-08-30T23:54:23.544082+00:00"
+      },
+      {
+        "equity": 1128.2222116744679,
+        "ts": "2026-08-31T04:14:42.703078+00:00"
       }
     ],
     "flatten_mode": false,
@@ -45,11 +45,11 @@
     "last_rate": 1.1643,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-08-30T23:54:42.963662+00:00"
+    "last_rate_ts": "2026-08-31T04:15:02.481418+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-08-30T23:54:23.544082+00:00",
-  "last_run_id": "2026-08-30T23",
+  "last_run_completed_at": "2026-08-31T04:14:42.703078+00:00",
+  "last_run_id": "2026-08-31T04",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -82,10 +82,6 @@
     "FDX": {
       "prix_moyen": 313.77352981153103,
       "qty": 0.1089
-    },
-    "ICP": {
-      "prix_moyen": 2.479449,
-      "qty": 23.2
     },
     "INTC": {
       "prix_moyen": 91.31124402692413,
@@ -120,15 +116,15 @@
       "qty": 32.6
     }
   },
-  "realized_pnl_cumulative_usd": -24.463488846857288,
+  "realized_pnl_cumulative_usd": -27.088188714857292,
   "schema_version": 1,
-  "state_hash_prev": "5688054041988793211017e7fc74785a5152e502171840df1fa8788178141405",
+  "state_hash_prev": "739c89e29f141926ca79fce2c97d685dcc429c1605c6d5af2a23967689d4b6ca",
   "strategy_state": {
     "quasi_passif_crypto": {
-      "liquidated_by_missing_data_this_cycle": {
-        "BNB": 24
-      },
-      "missing_data_cycles": {}
+      "liquidated_by_missing_data_this_cycle": {},
+      "missing_data_cycles": {
+        "BNB": 1
+      }
     },
     "xs_momentum_sp100": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -136,11 +132,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": 0.16849552847998317,
-      "symbol": "XLM",
-      "ts": "2026-07-23T19:40:28.114479+00:00"
-    },
     {
       "realized_pnl_usd": -6.308956340279967,
       "symbol": "XLM",
@@ -235,6 +226,11 @@
       "realized_pnl_usd": -0.10069761599999305,
       "symbol": "ICP",
       "ts": "2026-08-29T02:24:16.605340+00:00"
+    },
+    {
+      "realized_pnl_usd": -2.6246998680000035,
+      "symbol": "ICP",
+      "ts": "2026-08-31T04:14:42.703078+00:00"
     }
   ],
   "wallet_id": "agressif"
