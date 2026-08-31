@@ -1620,7 +1620,43 @@
   },
   "promotion_rules_1_2_all_pass": false,
   "adversarial_audit_1_4": {
-    "isSound": null,
-    "note": "SPEC.md §'Benchmark et seuils' exige un audit adversarial indépendant obligatoire (isSound: false = rejet quel que soit le chiffre). Cet audit n'est PAS exécuté par ce script (hors périmètre de la mission d'implémentation du backtest) -- à conduire séparément avant toute décision de statut dans RESEARCH-REGISTRY.json."
+    "isSound": false,
+    "auditeur": "agent adversarial indépendant, copie isolée (remote neutralisé), 2026-08-31, commit audité 6c5925c",
+    "findings": [
+      {
+        "id": "F1",
+        "severite": "CRITIQUE",
+        "sens": "PÉNALISE la candidate (artefact méthodologique)",
+        "resume": "Remise à zéro de shares/cash à chaque fenêtre OOS (engine.simulate_segment) × bande de non-négociation 5 % plate × vol targeting sur |w| : le poids vol-scalé (0.10 × scalar ∈ [0.015, 0.046]) reste sous la bande, donc AUCUN ordre n'est jamais émis dans certaines fenêtres malgré un signal actif 100 % du temps (fenêtre 4 : 0 trade sur 3 mois). Re-simulation CONTINUE (mêmes params/coûts/overlay, position portée entre fenêtres OOS contiguës) : Sharpe -0.050 -> +0.836, PF 0.964 -> 1.014, 14 -> 24 lignes perp, funding 2.74 % -> 4.05 %. Le rejet reste très probable (PF 1.014 < 1.15, 24 < 80 trades) mais ses marges affichées ne sont pas fiables. Production : bande par POCHE (5 % × capital_alloc_pct) et exécution continue — le moteur est ici PLUS sévère que la production pour une candidate à faible poids."
+      },
+      {
+        "id": "F2",
+        "severite": "MAJEUR",
+        "sens": "favorable si invoquée",
+        "resume": "Exception 'stratégie structurellement lente' de PROMOTION-RULES §1.2 (seuil 80 trades) jamais évaluée dans SPEC/REPORT. Option conservatrice retenue : non invoquée (non pré-enregistrée) ; sans effet sur le verdict (PF manqué dans les deux lectures)."
+      },
+      {
+        "id": "F3",
+        "severite": "INFO",
+        "sens": "neutre",
+        "resume": "Pic de basis SOL 23.9 % le 2022-11-09 = effondrement FTX réel, en IS de la fenêtre 0 uniquement."
+      },
+      {
+        "id": "F4",
+        "severite": "INFO",
+        "sens": "neutre",
+        "resume": "Kurtosis excess 2260 des rendements OOS reportés, conséquence de F1 (heures à rendement nul)."
+      }
+    ],
+    "axes_sains": "causalité du signal (perturbation post-t : poids identiques), reproduction indépendante bit-exacte (fenêtres OOS 0/6/12 à 1e-13, sélection IS fenêtre 6 identique), comptabilité funding (écart 5.7e-6), DSR recalculé identique (0.006464541), K_total=68 vérifié, benchmark reconstruit (Sharpe 0.7035/MaxDD 71.99 %), aucune retouche post-OOS (un seul commit, test de levier informatif hors verdict).",
+    "simulation_continue_informative": {
+      "sharpe": 0.836,
+      "profit_factor": 1.014,
+      "n_trades_perp_closed": 24,
+      "funding_received_pct": 4.05,
+      "costs_spot_pct": 1.35,
+      "note": "chiffres de l'auditeur, NON chiffres de décision (moteur pré-enregistré = reset par fenêtre) ; PF et trades manquent encore les seuils §1.2"
+    },
+    "consequence": "isSound: false ⇒ rejet automatique (§1.4) — cohérent avec l'échec chiffré. Le dossier documente que le rejet est robuste (PF < 1.15 dans les deux lectures) mais que le moteur doit être amendé et re-audité (portage de position entre fenêtres OOS contiguës, bande par poche) AVANT toute candidate à faible poids nominal — backlog #16."
   }
 }

@@ -32,7 +32,20 @@ des pièges génériques déjà couverts par `docs/PROMOTION-RULES.md` §1.4 -- 
 
 ## P0 — Priorité haute
 
-### 1. Funding carry sur perpétuels SIMULÉS (crypto) — ⏳ ÉTAPE DONNÉES LIVRÉE 2026-08-24
+### 1. Funding carry sur perpétuels SIMULÉS (crypto) — ✅ TRAITÉE 2026-08-31 : REJETÉE (Porte 1, 4/5 seuils)
+
+**VERDICT (session hebdomadaire #5, cf. `RESEARCH-LOG.md` 2026-08-31 (b)/(c) et
+`RESEARCH-REGISTRY.json:funding_carry_6majors`)** : extension short/perp + funding du moteur
+commun livrée, auditée (1 CRITIQUE + 3 MAJEURS corrigés, contre-audit `isSound: true`) puis
+Porte 1 sur les 6 majors : Sharpe OOS −0,05, PF 0,96, 14 lignes perp closes, DSR 0,0065
+(K_total = 68). Delta-neutralité confirmée, funding net +2,74 %/3,5 ans mais intégralement
+absorbé par les coûts pessimistes (25 bps/côté × 2 jambes). Audit de la candidate
+`isSound: false` pour un artefact du MOTEUR qui pénalise les candidates à faible poids (cf. #16
+ci-dessous) — lecture continue de l'auditeur : Sharpe +0,84 mais PF 1,01 et 24 trades, le rejet
+tient dans les deux lectures. Ne pas retester sans (a) le moteur amendé #16 ET (b) une décision
+de gouvernance sur le palier de coûts perp (25 bps pessimistes vs ~5 bps taker réel) — un re-run
+= nouvel id, nouvelle ligne K_total (§3.3). Incubation de toute façon impossible tant que
+`bot/sim/` reste long-only (#17).
 
 **AVANCEMENT (session #4)** : le pipeline de données est étendu (`tools/fetch_data.py`, sections
 `funding` + `perp` par défaut) — funding rates 8h/4h et klines 1h des perpétuels USDT-M Binance
@@ -453,7 +466,46 @@ l'entrée d'origine ; faire pointer le moniteur vers l'entrée de retest (ou une
 explicite « entrée la plus récente de la même famille »). Simple outil de monitoring (aucune
 règle de PROMOTION-RULES en jeu), mais à tester avec les fixtures existantes.
 
-**Priorité de la prochaine session (revue 2026-08-24, session #4)** :
+### 16. [P0 — infrastructure moteur, session DÉDIÉE + audit AVANT toute candidate, AJOUTÉE 2026-08-31] Portage de la position entre fenêtres OOS contiguës + bande de non-négociation par poche
+
+Finding F1 (CRITIQUE) de l'audit de `funding_carry_6majors` : `backtest/engine.py` remet
+`shares`/`cash` à zéro à chaque fenêtre OOS (conception historique pour concaténer des fenêtres
+indépendantes). Combiné à la bande de non-négociation PLATE de 5 % du moteur et au vol targeting
+sur |w|, une candidate dont le poids vol-scalé reste sous 0,05 n'entre JAMAIS en position
+(fenêtre entière à 0 trade malgré un signal actif 100 % du temps). En production, (a)
+l'exécution est continue et (b) la bande est PAR POCHE : 5 % × `capital_alloc_pct`
+(`bot/risk/manager.py` étape 6). Le moteur est donc aujourd'hui plus sévère que la production
+pour toute candidate à faible poids nominal ; les 12 candidates précédentes (poids plus grands)
+n'étaient vraisemblablement pas affectées, à vérifier. À faire : (1) pré-enregistrer la
+sémantique (position réellement détenue en fin de fenêtre k portée en fenêtre k+1 quand les
+fenêtres sont contiguës — la sélection IS reste fenêtrée ; paramètre `no_trade_band`
+exprimable en fraction de poche) ; (2) implémenter en conservant la rétro-compat bit-à-bit par
+défaut ; (3) audit adversarial ; (4) re-run informatif des 3 `results.json` existants pour
+quantifier l'effet. Complexité : faible à modérée. Risque : introduire une fuite d'état IS→OOS
+(la position portée doit venir de l'OOS précédent, jamais d'un segment IS).
+
+### 17. [P2 — infrastructure production, AJOUTÉE 2026-08-31] Extension short/perp de `bot/sim/` (incubation d'une candidate perp)
+
+Pré-requis pour incuber TOUTE candidate perp (statut pré-enregistré
+`validee_porte1_en_attente_infra` prévu dans la SPEC du funding carry, non utilisé). Déclassée
+en P2 : aucune candidate perp n'a passé la Porte 1 ; ne pas investir avant qu'une idée perp ait
+une valeur démontrée sur le moteur commun amendé (#16).
+
+**Priorité de la prochaine session (revue 2026-08-31, session #5)** :
+
+1. **#16 (P0 infrastructure moteur)** : session dédiée, spec pré-enregistrée + audit adversarial
+   AVANT toute candidate — le moteur commun a un défaut documenté vs la production.
+2. **#14 : décision humaine toujours attendue** (dossier `GOVERNANCE-DOSSIER-2026-08-24`) ; à
+   défaut, le critère vécu de `SELECTION-FINALE.md` §5 tranche vers fin octobre 2026. Peut
+   absorber #12a/#12b et une instruction du palier de coûts perp (25 bps pessimistes vs taker
+   réel) — question de règle, jamais tranchée dans une session de jugement.
+3. **P1#4 (saisonnalité horaire BTC 21h-23h UTC)** : première candidate long-only possible
+   après #16 (poids BTC = 1 × scalar, non affectée par F1 mais autant juger sur le moteur amendé).
+4. P2#15 (re-baser la référence « attendue » du DRIFT-REPORT — rapide, non fait en #5).
+5. Surveiller le ticker **BK** (échec yfinance + stooq au run du 2026-08-24) à la prochaine
+   régénération de `market-data`.
+
+**Priorité de la session #4 (2026-08-24, conservée pour mémoire)** :
 
 1. **#14 : le dossier d'instruction est prêt** (`docs/GOVERNANCE-DOSSIER-2026-08-24-quasi-passif.md`)
    — décision HUMAINE attendue (Mathieu). Si une option est choisie, l'appliquer en session

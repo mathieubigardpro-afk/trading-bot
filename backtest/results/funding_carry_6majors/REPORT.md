@@ -85,3 +85,26 @@ incubation. Ne pas retester de variante (seuil, fenêtre, univers plus large) sa
 structurellement neuve — §3.3, compterait dans K_total. Ce qui changerait STRUCTURELLEMENT la
 donne : des coûts perp réalistes (5-10 bps/côté) plutôt que 25 bps pessimistes — mais le seuil de
 coûts du projet est une règle, pas un paramètre de recherche.
+
+## Audit adversarial indépendant §1.4 (copie isolée, après ce rapport) : `isSound: false`
+
+**F1 (CRITIQUE — artefact qui PÉNALISE la candidate).** Le moteur remet `shares`/`cash` à zéro à
+chaque fenêtre OOS ; combiné à la bande de non-négociation plate de 5 % et au vol targeting sur
+|w| (scalar 0,15-0,46 ⇒ poids scalé 0,015-0,046 < 0,05), **aucun ordre n'est émis** dans certaines
+fenêtres malgré un signal actif 100 % du temps (fenêtre 4 : 0 trade en 3 mois). Re-simulation
+continue de l'auditeur (position portée entre fenêtres OOS contiguës, mêmes params/coûts/
+overlay) : **Sharpe −0,050 → +0,836, PF 0,964 → 1,014, 14 → 24 lignes perp, funding 2,74 % →
+4,05 %**. En production, la bande est PAR POCHE (5 % × `capital_alloc_pct`) et l'exécution est
+continue : le moteur est ici plus sévère que la production pour une candidate à faible poids.
+**F2 (MAJEUR)** : l'exception « stratégie structurellement lente » de §1.2 n'a pas été évaluée —
+non pré-enregistrée, donc non invoquée (option conservatrice), sans effet sur le verdict.
+Axes sains : causalité, reproduction bit-exacte (3 fenêtres OOS + 1 sélection IS), funding,
+DSR, K_total, benchmark, aucune retouche post-OOS.
+
+**Lecture finale.** Le rejet est **robuste** (PF 1,014 < 1,15 et 24 < 80 trades même dans la
+lecture continue ; `isSound: false` ⇒ rejet automatique §1.4), mais ses marges affichées ne
+sont pas fiables et le moteur doit être amendé et re-audité (portage de position entre fenêtres
+OOS contiguës ; bande par poche) AVANT toute future candidate à faible poids nominal — inscrit
+au backlog (#16). Aucun re-run de cette candidate dans cette session (§0 : jamais changer la
+règle du jeu après avoir vu le résultat ; un re-run sur moteur amendé = nouvel id, nouvelle
+ligne dans K_total).

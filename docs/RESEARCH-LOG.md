@@ -606,3 +606,139 @@ proposés pour les amendements #12a (valeur marginale vs incumbent) et #12b (dis
 sur OOS longs — recommandation : test Jobson-Korkie vs benchmark en priorité). **Décision humaine
 requise (Mathieu), adoption en session dédiée uniquement (§0), rien n'est appliqué par cette
 session** — la composition des wallets réels et PROMOTION-RULES.md sont inchangés.
+
+---
+
+## 2026-08-31 — Session hebdomadaire #5 (a) : REVUE des stratégies actives et candidates
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56j. **Zéro action requise, zéro action prise.**
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-08-31 : 7 lignes, toutes **SURVEILLER**
+  pour la même raison mécanique (39j vécus < 60j — Sharpe roulant 60j non calculable). Sharpe
+  vécus toujours du bruit d'échantillon court (quasi_passif équilibré +3,89, prudent −0,95 ;
+  xs_momentum équilibré +3,64, agressif −0,33) ; DD vécus ≤ 1,7 % partout. Aucune action.
+  Le rapport affiche toujours comme « attendu » les Sharpe non audités (1,24/1,47/1,49) —
+  backlog #15 non traité cette session (priorité donnée à P0#1).
+- **Gouvernance #14** : aucune décision humaine enregistrée depuis le dossier du 2026-08-24 —
+  le critère vécu de `SELECTION-FINALE.md` §5 tranchera de lui-même vers fin octobre 2026 si
+  rien n'est décidé d'ici là. Rappel priorité haute.
+- Recalibrage du 2026-08-31 : exécuté normalement (15 fenêtres), `REGIME_SMA_DAYS` inchangé
+  (175 vs 200 : +3,0 % < seuil 10 %) — conforme à la spec.
+- **Vérification du premier run réel de `fetch-data` étendu (priorité #2 de la session #4)** :
+  branche `market-data` régénérée le 2026-08-24 en 436 s (loin du timeout de 75 min) — 30
+  paires funding (5 019-5 094 règlements, 2022-01→2026-07, intervalles 8h avec épisodes 4h/2h
+  sur SOL) et 30 paires perp 1h publiées ; `DATA_ANOMALIES.md` publié (19 sauts de rendement,
+  tous des mouvements de crise connus + DHR/Fortive) ; **les 2 incohérences OHLC ABT/MS du
+  2026-07-24 ont disparu** à la régénération (capture tronquée côté fournisseur, comme supposé).
+  Un ticker action en échec : **BK** (yfinance ET stooq) — à surveiller, sans incidence sur
+  les stratégies actives (BK absent des poches).
+- Wallets au cycle 2026-08-31T04 : 🛡️ 989 € | ⚖️ 1 002 € | 🔥 969 € | 🧪 978 € (labo 100 % cash,
+  état attendu).
+
+---
+
+## 2026-08-31 — Session hebdomadaire #5 (b) : extension short/perp + funding du moteur commun (P0#1, étape simulateur) — SPEC pré-enregistrée, audit adversarial, 1 CRITIQUE + 3 MAJEURS corrigés, contre-audit `isSound: true`
+
+**Contexte.** Les données funding/perp étant disponibles (cf. (a)), l'ordre pré-enregistré par la
+session #4 imposait l'étape simulateur du funding carry : extension du moteur commun de backtest
+aux positions short sur perpétuels + règlement du funding, soumise à audit adversarial AVANT
+toute utilisation. Sémantique fixée AVANT implémentation dans `backtest/PERP-EXTENSION-SPEC.md`
+(commit 5fd2ec7) : rétro-compatibilité bit-à-bit sans perp, pessimisme systématique (liquidation
+au pire prix intra-bougie, frais de liquidation 100 bps, marge cash seule — le spot n'est jamais
+collatéral, coûts sur les deux jambes), alignement du funding réglé à H sur la bougie qui se
+clôt à H (aucun look-ahead), vol targeting sur |w| (même formule que
+`bot/risk/vol_targeting.py`, borne de corrélation 1).
+
+**Livré** (`backtest/perp.py`, `backtest/engine.py` étendu, `backtest/tests/test_perp.py`,
+`backtest/README.md`) par un agent dédié : chargeurs perp/funding (timestamps ISO8601 mixtes
+avec jitter ±2 ms → `round("h")`), `build_aligned_perp_matrices`, comptabilité par ligne perp
+(variation margin réglée chaque bougie, funding, coûts, liquidation), `pnl_breakdown` par jambe
+(identité `Δéquity = Σ breakdown` exacte), 274 règlements orphelins/146 568 sur 30 symboles
+(0,19 %, bords de série) journalisés. Deux bugs trouvés par l'implémenteur lui-même en écrivant
+ses tests (notionnel perp compté comme valeur détenue ; gap clôture→open perdu lors d'un trade
+perp) — corrigés avant livraison.
+
+**Audit adversarial indépendant (copie isolée, remote neutralisé) : verdict initial
+`isSound: false`** — 9 scripts d'attaque sur données réelles et synthétiques :
+- **F1 (CRITIQUE, démontré sur données réelles)** : le `fillna(0.0)` historique des prix
+  (inoffensif en long-only) devenait un GAIN FICTIF pour un short sur un trou de données — sur
+  le trou réel de 69 h de SOL-PERP (février 2022), une paire couverte encaissait +28,9 % de
+  capital en une bougie (ligne « close » à prix 0) et la liquidation devenait impossible
+  (`NaN < x` est faux). **Corrigé** : prix/funding perp NaN sur un symbole engagé ⇒ `ValueError`
+  (flat sans poids cible ⇒ traversée sans effet).
+- **F2 (MAJEUR)** : le funding réglé à la même bougie n'entrait pas dans le test de marge (un
+  funding extrême laissait le cash devenir négatif sans liquidation — défaut de la spec elle-même).
+  **Corrigé** : funding payable inclus dans le test ; contre-audit → le funding déclencheur
+  n'était pas débité (MAJEUR résiduel) → **corrigé** (débit total perte + funding + frais borné au
+  cash, ventilé frais → funding → prix).
+- **F3 (MAJEUR)** : perte de liquidation non plafonnée → équity négative qui inversait le signe
+  économique des rendements dans `summarize_segment`. **Corrigé** : perte plafonnée au cash (prix
+  de faillite, `bankrupt=True`), ruine (équity ≤ 0) figée à 0 avec rendements suivants nuls.
+- **F4 (MAJEUR)** : `opens`/`closes` non vérifiés pour les colonnes perp. **Corrigé.**
+- Axes sains prouvés : rétro-compat bit-à-bit (HEAD~1 vs HEAD, synthétique + réel, ET
+  reproduction bit-exacte de `vol_breakout_6majors/results.json` sur 7 fenêtres), zéro
+  look-ahead (perturbation des données futures), signe/montant du funding exacts sur BTC réel,
+  vol targeting non neutralisé, bande correctement signée, identité comptable exacte.
+- Performance : ~66 s / 10 000 bougies × 12 colonnes (walk-forward complet ≈ 45-60 min).
+
+**Contre-audit final : `isSound: true`** (commit fa8c725). Spec §6 amendée avec chaque correctif
+AVANT tout backtest de candidate. Suite : **768 tests verts + 1 skip** (+19).
+
+---
+
+## 2026-08-31 — Session hebdomadaire #5 (c) : Porte 1 de `funding_carry_6majors` (backlog P0#1) — ÉCHEC 4/5, REJETÉE ; audit `isSound: false` (artefact du moteur qui PÉNALISE la candidate)
+
+**Protocole.** SPEC intégralement PRÉ-ENREGISTRÉE et committée AVANT exécution (commit e581289) :
+long spot / short perp delta-neutre sur les 6 majors V1, signal = funding annualisé glissant sur
+`(t − D jours, t]` (D ∈ {7, 30}) avec entrée > θ_in ∈ {0,05, 0,10} et sortie < θ_in/2
+(hystérésis fixée), poids ±0,10 fixé (faisabilité de marge 6 × 0,10 × 1,5 = 0,90), coûts
+**25 bps/côté sur les DEUX jambes** (pessimiste : taker perp réel ~5 bps), overlay production,
+marge/liquidation par défaut, calendrier restreint à 2022-04-03 → 2026-07-31 (2 trous SOL-PERP
+connus, fixé avant exécution), 14 fenêtres 9m/3m, **K_total = 12 + 14 × 4 = 68**, trades comptés
+sur les seules lignes perp closes (option stricte). Sémantique des issues pré-enregistrée, y
+compris le cas « Porte 1 passée » (impossible à incuber : `bot/sim/` long-only).
+
+**Résultats (OOS concaténé, 30 647 h, net de coûts).**
+
+| | Candidate | Benchmark B&H spot équipondéré |
+|---|---|---|
+| Sharpe | **−0,050** | 0,703 |
+| Profit factor | 0,964 | — |
+| MaxDD | 0,68 % | 71,98 % |
+| Lignes perp closes | 14 | — |
+| DSR (K=68) | 0,0065 | — |
+
+Porte 1 §1.2 : **4/5 seuils manqués** (seul le MaxDD relatif passe, trivial). PnL par jambe :
+delta-neutralité confirmée (résidu spot + perp +0,06 %, corrélation au B&H −0,01), **funding net
++2,74 % du capital en 3,5 ans, intégralement absorbé par les coûts (−2,88 %)**. 0 liquidation.
+Sharpe +0,47 avant 2024, −0,44 depuis. Stress de coûts : PF 0,85 à 3×, 0,75 à 5×.
+
+**Audit adversarial indépendant (copie isolée) : `isSound: false`.** Reproduction bit-exacte (3
+fenêtres OOS à 1e-13 + 1 sélection IS complète), causalité, funding, DSR, K_total, benchmark,
+absence de retouche post-OOS : tous sains. **Mais F1 (CRITIQUE) — un artefact du MOTEUR qui
+PÉNALISE la candidate** : la remise à zéro de la position à chaque fenêtre OOS (conception
+historique du moteur pour concaténer des fenêtres indépendantes) × bande de non-négociation
+plate de 5 % × vol targeting sur |w| (poids scalé 0,015-0,046 < 0,05) ⇒ **aucun ordre n'est
+jamais émis dans certaines fenêtres** malgré un signal actif 100 % du temps (fenêtre 4 : 0
+trade en 3 mois). Re-simulation continue de l'auditeur (position portée entre fenêtres OOS
+contiguës, mêmes params/coûts/overlay) : **Sharpe +0,836, PF 1,014, 24 lignes perp** — le rejet
+reste robuste (PF < 1,15 et 24 < 80 dans les deux lectures) mais les marges affichées ne le
+sont pas. En production, la bande est PAR POCHE (5 % × `capital_alloc_pct`,
+`bot/risk/manager.py` étape 6) et l'exécution est continue : le moteur est aujourd'hui PLUS
+sévère que la production pour toute candidate à faible poids nominal — un défaut jamais
+détecté sur les 12 candidates précédentes (poids plus grands). F2 (MAJEUR) : l'exception
+« stratégie structurellement lente » de §1.2 n'avait pas été évaluée — non pré-enregistrée
+donc non invoquée (option conservatrice), sans effet.
+
+**Décision (conforme à la sémantique pré-enregistrée et à §1.4).** `isSound: false` ⇒ rejet
+automatique ; statut **`rejetee`** (entrée n°13 du registre, K_total = 68). **Aucun re-run dans
+cette session** — amender le moteur après avoir vu le résultat d'une candidate est exactement
+ce que §0 interdit. L'amendement du moteur (portage de la position entre fenêtres OOS contiguës
++ bande par poche alignée production) est inscrit au backlog comme **P0 infrastructure (#16)**,
+à pré-enregistrer et auditer dans une session dédiée AVANT toute future candidate. Un re-run du
+funding carry sur moteur amendé serait un nouvel id (§3.3) — valeur attendue faible tant que
+le palier de coûts perp reste à 25 bps (la vraie question est une question de règle de coûts,
+pas de recherche : à instruire en gouvernance, jamais dans une session de jugement).
+Prochaine candidate → K_total = 13 lignes + sa grille. Labo toujours vide (0/3). Suite de
+tests : 779 verts + 1 skip.

@@ -376,6 +376,60 @@
       },
       "raison": "ECHEC de la validation Porte 1 §1.2 pour les 3 variantes (verdicts par variante, aucune compensation) : prudent 2/5 seuils manques (PF 1.080 <= 1.15 ; DSR 0.215 < 0.50 — Sharpe 0.808, MaxDD relatif 0.15x et critere de substitution <80 trades passes) ; equilibre 3/5 (Sharpe 0.283 < 0.70 ; PF 0.718 < 1.0 = perdant net ; DSR 0.038) ; agressif 3/5 (Sharpe 0.069 ; PF 0.771 ; DSR 0.015). Equilibre et agressif sont SOUS leur benchmark buy & hold equipondere ET perdants nets aux couts nominaux. Rupture temporelle majeure : tout l'edge vient de 2022-2023, Sharpe negatif depuis 2024 pour equilibre/agressif — meme motif que vol_breakout_6majors. Correlation inter-variantes 0.75-0.83 : ~1 pari correle, pas 3 validations independantes. Audit adversarial independant isSound=true (reproduction bit-a-bit depuis les donnees brutes, zero look-ahead par perturbation, DSR reimplemente from scratch) ; 1 finding CRITIQUE de fidelite corrige en session (l'overlay du moteur appliquait un 2e vol-targeting que la production neutralise — bot/runner.py:_risk_manager_for_wallet vol_target=50.0 ; corrige, re-execute, AUCUN des 15 verdicts ne bascule ; chiffres pre-correctif conserves dans results.json). Couts au palier le plus defavorable de chaque univers (15/25/45 bps/cote — pessimiste surtout pour agressif dont 5/11 actifs sont majors ; l'audit note que le cout reel pondere serait ~29.5 bps pour agressif, ce qui ne suffit pas a inverser un PF de 0.771). CONSEQUENCE (semantique figee dans la SPEC AVANT execution) : aucune action automatique sur la production — quasi_passif_crypto reste l'antecedent hors §3 (PROMOTION-RULES.md §5), son critere d'echec operationnel reste SELECTION-FINALE.md §5 (bascule si sous-performance vecue 3 mois). Signalement priorite haute a Mathieu + session de gouvernance DEDIEE requise pour statuer sur l'alignement de l'antecedent (jamais dans cette session de jugement, §0).",
       "source": "backtest/results/quasi_passif_crypto_wf_retest/results.json"
+    },
+    {
+      "id": "funding_carry_6majors",
+      "famille": "crypto_funding_carry_delta_neutral_spot_perp",
+      "date_test": "2026-08-31",
+      "statut": "rejetee",
+      "sharpe_oos": -0.0503,
+      "sortino_oos": -0.066,
+      "profit_factor_oos": 0.9636,
+      "max_drawdown_oos_pct": 0.68,
+      "n_trades_oos_closed": 14,
+      "n_trades_oos_closed_detail": {
+        "lignes_perp": 14,
+        "lignes_spot": 14,
+        "critere_spec": "lignes PERP uniquement (option stricte pré-enregistrée)"
+      },
+      "benchmark_sharpe_oos_aligned": 0.7034,
+      "benchmark_maxdd_oos_aligned_pct": 71.98,
+      "walkforward": "9m IS / 3m OOS, pas 3m, 14 fenêtres (calendrier 2022-04-03 -> 2026-07-31 restreint AVANT exécution pour éviter 2 trous SOL-PERP ; OOS 2023-01-03 -> 2026-07-02, 30647 h), grille pré-enregistrée 4 combos (D in {7,30} jours x theta_in in {0.05,0.10} annualisé, hystérésis theta_out = theta_in/2 fixée, poids ±0.10 fixé), SPEC committée AVANT exécution (commit e581289)",
+      "univers": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "DOGE",
+        "LINK",
+        "AVAX"
+      ],
+      "instruments": "spot long + perpétuel USDT-M short (delta-neutre), moteur commun étendu short/perp + funding (backtest/PERP-EXTENSION-SPEC.md, audité et contre-audité isSound=true le même jour AVANT ce backtest)",
+      "k_total": 68,
+      "dsr": 0.0065,
+      "dsr_methode": "K_total = 12 (lignes du registre au 2026-08-31) + 14 fenêtres x 4 combos = 68 (PROMOTION-RULES.md §1.3). Bailey & López de Prado 2014 sur rendements horaires OOS concaténés (n=30647, skew 6.06, kurtosis excess 2260), recalculé à l'identique par l'audit.",
+      "audit_adversarial_isSound": false,
+      "cost_stress_profit_factor": {
+        "25bps_deux_jambes": 0.9636,
+        "75bps_3x": 0.852,
+        "125bps_5x": 0.754
+      },
+      "pnl_breakdown_oos_pct_capital": {
+        "spot": -5.32,
+        "perp_variation": 5.38,
+        "funding_net": 2.74,
+        "couts_spot": -1.44,
+        "couts_perp": -1.44,
+        "liquidations": 0.0,
+        "total": -0.08
+      },
+      "sous_periodes_sharpe": {
+        "avant_2024": 0.471,
+        "depuis_2024": -0.435
+      },
+      "correlation_oos_vs_benchmark": -0.011,
+      "n_liquidations_oos": 0,
+      "raison": "ÉCHEC Porte 1 §1.2 : 4/5 seuils manqués (Sharpe -0.050 < 0.70 ; PF 0.964 <= 1.15 ; 14 lignes perp closes < 80 ; DSR 0.0065 < 0.50 ; seul le MaxDD relatif passe, trivialement pour une stratégie delta-neutre). Delta-neutralité confirmée (résidu spot+perp +0.06 %, corrélation au B&H -0.01) et funding bien positif (+2.74 % du capital sur 3.5 ans OOS) mais INTÉGRALEMENT absorbé par les coûts pessimistes du projet (25 bps/côté x 2 jambes = -2.88 %). Audit adversarial indépendant isSound=FALSE : F1 CRITIQUE = artefact méthodologique qui PÉNALISE la candidate — la remise à zéro de la position à chaque fenêtre OOS du moteur x bande de non-négociation plate 5 % x vol targeting sur |w| bloque toute entrée quand le poids scalé (0.015-0.046) reste sous la bande (fenêtre 4 : 0 trade en 3 mois malgré signal actif 100 %) ; re-simulation continue de l'auditeur (position portée entre fenêtres contiguës) : Sharpe +0.836, PF 1.014, 24 lignes perp — le rejet reste robuste (PF < 1.15 et trades < 80 dans les deux lectures) mais les marges affichées ne sont pas fiables. En production la bande est par POCHE (5 % x capital_alloc_pct) et l'exécution continue : le moteur est plus sévère que la production pour les candidates à faible poids nominal. Aucun re-run dans cette session (§0) ; amendement du moteur (portage de position entre fenêtres OOS contiguës, bande par poche) à pré-enregistrer et auditer AVANT toute future candidate (backlog #16) ; un re-run de cette idée sur moteur amendé = nouvel id, nouvelle ligne K_total (§3.3), valeur attendue faible tant que les coûts perp restent au palier pessimiste 25 bps. Incubation de toute façon impossible : bot/sim/ reste long-only (statut pré-enregistré 'validee_porte1_en_attente_infra' non utilisé). Autres axes de l'audit sains : causalité, reproduction bit-exacte (3 fenêtres OOS + 1 sélection IS), funding, DSR, K_total, benchmark, aucune retouche post-OOS.",
+      "source": "backtest/results/funding_carry_6majors/results.json"
     }
   ]
 }
