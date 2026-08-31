@@ -67,13 +67,40 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Sequence
+from typing import Callable, Dict, Iterable, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
 
 from backtest import metrics as bt_metrics
 from backtest import risk_overlay
+
+# ------------------------------------------------------------------------------------------
+# Extension short/perpétuels + funding (backtest/PERP-EXTENSION-SPEC.md) -- clés du dict
+# `pnl_breakdown` de `SegmentResult`, toujours les MÊMES 6 clés (même sans perp -- valeurs
+# perp à 0.0 -- pour que `concatenate_segments` puisse sommer terme à terme sans jamais avoir
+# à gérer un dict partiel).
+# ------------------------------------------------------------------------------------------
+PNL_BREAKDOWN_KEYS = (
+    "spot_pnl",
+    "perp_variation",
+    "funding_received",
+    "costs_spot",
+    "costs_perp",
+    "liquidation_fees",
+)
+
+
+def _empty_pnl_breakdown() -> dict:
+    return {k: 0.0 for k in PNL_BREAKDOWN_KEYS}
+
+
+def _sum_pnl_breakdowns(breakdowns: Sequence[dict]) -> dict:
+    total = _empty_pnl_breakdown()
+    for bd in breakdowns:
+        for k in PNL_BREAKDOWN_KEYS:
+            total[k] += float(bd.get(k, 0.0))
+    return total
 
 # ------------------------------------------------------------------------------------------
 # Simulation de portefeuille sur un segment de calendrier donné
@@ -88,9 +115,17 @@ class SegmentResult:
     gross_exposure: pd.Series  # fraction (0..1 en long-only) de l'équity investie, en clôture
     trades_closed: List[dict] = field(default_factory=list)
     realized_events: List[dict] = field(default_factory=list)
+    # --- Extension perp (PERP-EXTENSION-SPEC.md §2-4), champs optionnels rétro-compatibles :
+    # listes/dict VIDES par défaut -- un appelant historique qui ignore ces champs (n'existaient
+    # pas avant cette extension) ne voit STRICTEMENT rien changer.
+    liquidations: List[dict] = field(default_factory=list)  # évènements de liquidation perp
+    pnl_breakdown: dict = field(default_factory=_empty_pnl_breakdown)  # PnL par jambe (spec §4)
 
     def n_trades_closed(self) -> int:
         return len(self.trades_closed)
+
+    def n_liquidations(self) -> int:
+        return len(self.liquidations)
 
 
 def simulate_segment(
@@ -109,6 +144,18 @@ def simulate_segment(
     vol_coldstart_min_points: int = risk_overlay.DEFAULT_VOL_COLDSTART_MIN_POINTS,
     vol_coldstart_scalar: float = risk_overlay.DEFAULT_VOL_COLDSTART_SCALAR,
     vol_periods_per_year: float = risk_overlay.DEFAULT_VOL_PERIODS_PER_YEAR,
+    # --- Extension short/perpétuels + funding (PERP-EXTENSION-SPEC.md §2), TOUS optionnels --
+    # `perp_symbols` à `None` (défaut) : AUCUNE des branches ci-dessous ne s'exécute, le moteur
+    # reproduit EXACTEMENT le comportement historique (exigence de rétro-compatibilité bit à
+    # bit, cf. docstring ci-dessous et `backtest/tests/test_perp.py`).
+    perp_symbols: Optional[Iterable[str]] = None,
+    funding: Optional[pd.DataFrame] = None,
+    highs: Optional[pd.DataFrame] = None,
+    lows: Optional[pd.DataFrame] = None,
+    perp_cost_bps: Optional[float] = None,
+    perp_initial_margin_frac: float = 0.50,
+    perp_maintenance_margin_frac: float = 0.025,
+    perp_liquidation_fee_bps: float = 100.0,
 ) -> SegmentResult:
     """Simule le portefeuille sur `calendar[start_idx:end_idx+1]`, capital remis à
     `initial_capital` au tout début du segment (nécessaire pour produire des fenêtres OOS
@@ -147,7 +194,70 @@ def simulate_segment(
     Cette surcouche est volontairement PLUS SIMPLE que `bot/risk/manager.py` (pas de circuit
     breakers, pas de caps par actif, pas de bande par poche, pas de cap d'exposition brute
     totale) — écart connu et documenté, cf. `backtest/risk_overlay.py` et la ligne de tête de
-    `docs/RESEARCH-BACKLOG.md`."""
+    `docs/RESEARCH-BACKLOG.md`.
+
+    --------------------------------------------------------------------------------------
+    Extension short/perpétuels + funding (`backtest/PERP-EXTENSION-SPEC.md`, pré-enregistrée --
+    cette spec prime en cas de divergence avec cette docstring)
+    --------------------------------------------------------------------------------------
+    `perp_symbols` désigne le sous-ensemble des colonnes de `weights_decided` (et donc de
+    `opens`/`closes`, qui doivent déjà contenir CES colonnes -- l'appelant fusionne
+    spot+perp AVANT d'appeler cette fonction, cf. `backtest/perp.py:build_aligned_perp_matrices`)
+    traité comme des PERPÉTUELS : poids SIGNÉS autorisés (short = poids négatif), marge
+    (jamais le spot comme collatéral), liquidation intra-bougie, funding périodique. Les
+    colonnes NON listées dans `perp_symbols` restent long-only strict (poids négatif -> `ValueError`
+    -- règle inconditionnelle, indépendante de `perp_symbols`, cf. spec §2).
+
+    `funding`/`highs`/`lows` sont OBLIGATOIRES dès que `perp_symbols` est non vide (`ValueError`
+    sinon) -- alignées sur le MÊME calendrier que `opens`/`closes` (une ligne = une bougie,
+    même position `i`), colonnes = au moins `perp_symbols`. `perp_cost_bps` défaut = `cost_bps`
+    (coût par côté sur le turnover dollar de la jambe perp, séparé du spot). `perp_initial_margin_frac`
+    (défaut 0,50 = levier 2 max), `perp_maintenance_margin_frac` (défaut 0,025) et
+    `perp_liquidation_fee_bps` (défaut 100 = 1 %) suivent `PERP-EXTENSION-SPEC.md` §2.
+
+    Comptabilité PAR BOUGIE (spec §3, DANS CET ORDRE, jamais réordonnée) :
+      1. Surcouche de risque (vol targeting PUIS bande, inchangée) -- SEULE différence : la vol
+         de portefeuille utilisée pour le vol targeting est estimée sur `|w|` (poids en valeur
+         absolue) quand `perp_symbols` est non vide, cf. `risk_overlay.compute_portfolio_vol_scalar`
+         (surestime la vol d'une paire couverte spot long / perp short -> DÉ-RISQUE davantage,
+         choix pessimiste explicite). NOTE D'IMPLÉMENTATION : `compute_portfolio_vol_scalar`
+         applique déjà `abs(w)` en interne pour CHAQUE poids avant de l'agréger (cf. sa
+         docstring) -- passer `raw_w` ou `raw_w.abs()` produit donc aujourd'hui EXACTEMENT le
+         même résultat numérique. L'appel explicite à `.abs()` est conservé ici tel que prescrit
+         par la spec §3.1 (contrat explicite, robuste à une éventuelle évolution future de
+         `compute_portfolio_vol_scalar` qui cesserait d'être symétrique en signe), pas parce
+         qu'il change quoi que ce soit aujourd'hui -- documenté pour qu'un audit ne le découvre
+         pas comme un mystère.
+      2. Exécution à l'open (spot inchangé). Perp : `target_shares = w * equity / open` (signé).
+         Contrainte de faisabilité AVANT exécution (cf. spec §3.2) : `spot_dollars_cible +
+         perp_initial_margin_frac * |notionnel_perp_cible| <= equity_avant_trade * (1+1e-9)` --
+         violée -> `ValueError` immédiat (jamais de clipping silencieux). Cette contrainte n'est
+         évaluée QUE si `perp_symbols` est non vide (le spot seul n'a jamais été contraint ainsi
+         historiquement -- l'introduire inconditionnellement changerait le comportement légitime
+         de candidates spot existantes qui somment leurs poids au-delà de 1, cf. rétro-compat).
+      3. Coûts : `cost_bps` sur le turnover dollar spot, `perp_cost_bps` sur le turnover dollar
+         perp -- déduits séparément, jamais confondus.
+      4. Liquidation intra-bougie (perp uniquement) : prix adverse `high` pour un short, `low`
+         pour un long, testée par rapport au cash de marge SEUL (jamais le spot comme
+         collatéral) -- cf. spec §3.4 pour la formule exacte. Évènement journalisé dans
+         `SegmentResult.liquidations`.
+      5. Mise au marché à la clôture (perp) -- variation margin réglée en cash chaque bougie.
+      6. Funding à la clôture (perp) -- short reçoit si `rate > 0`, paie si `rate < 0` (et
+         l'inverse pour un long).
+      7. Équity/exposition brute inchangées EN FORMULE (`shares.abs() * close`) mais désormais
+         correctes AUTOMATIQUEMENT pour le perp puisque `shares` signé porte déjà |notionnel|
+         via `.abs()` -- aucune branche perp séparée nécessaire ici.
+
+    `SegmentResult.trades_closed`/`realized_events` accumulent les lignes PERP à côté des lignes
+    spot (marquées `"leg": "perp"`) -- `n_trades_closed()`/`profit_factor()` les agrègent donc
+    automatiquement (spec §4 : "pas de trade synthétique qui masquerait la contribution de
+    chaque jambe"). Le PnL réalisé d'une ligne perp = Σ variation margin + Σ funding − coûts
+    (− frais de liquidation le cas échéant) accumulés pendant sa vie -- PAS un `avg_cost` façon
+    spot (qui n'a pas de sens pour un instrument marqué au marché chaque bougie), cf.
+    commentaires du corps de fonction pour le détail exact de cette comptabilité par ligne.
+    `SegmentResult.pnl_breakdown` publie la décomposition Spot/Perp/Funding/Coûts/Liquidation
+    du PnL total du segment (toujours présente, à 0.0 sur les clés perp si `perp_symbols` est
+    vide -- spec §4, "le rapport DOIT publier le PnL par jambe")."""
     universe = list(weights_decided.columns)
     if start_idx <= 0:
         raise ValueError(
@@ -184,12 +294,64 @@ def simulate_segment(
                 "vol_ewma_halflife_days=risk_overlay.HOURLY_VOL_EWMA_HALFLIFE_PERIODS et "
                 "vol_periods_per_year=risk_overlay.HOURLY_VOL_PERIODS_PER_YEAR (audit F2)."
             )
+    # Règle inconditionnelle (spec §2) : un poids négatif sur une colonne NON perp n'est
+    # JAMAIS valide (pas de short spot simulé par ce moteur) -- vérifié que `perp_symbols` soit
+    # renseigné ou non, cf. docstring "règle inconditionnelle". N'affecte AUCUN appelant
+    # existant (toutes les stratégies de production/backtest actuelles sont long-only, poids
+    # >= 0 par construction) -- seul un poids invalide qui n'aurait jamais dû être produit se
+    # met désormais à lever une erreur bruyante plutôt que d'être silencieusement exécuté.
+    perp_set = set(perp_symbols) if perp_symbols else set()
+    _spot_cols_for_check = [c for c in w_slice.columns if c not in perp_set]
+    if _spot_cols_for_check:
+        _neg_mask = w_slice[_spot_cols_for_check] < -1e-9
+        if bool(_neg_mask.any().any()):
+            _bad_cols = [c for c in _spot_cols_for_check if bool(_neg_mask[c].any())]
+            raise ValueError(
+                f"weights_decided contient des poids négatifs sur des colonnes NON perp "
+                f"{_bad_cols} -- long-only strict sur le spot ; un short n'est autorisé QUE "
+                "sur une colonne déclarée via perp_symbols (PERP-EXTENSION-SPEC.md §2)."
+            )
+
+    # --- Validation perp (spec §2) : funding/highs/lows obligatoires dès que perp_symbols est
+    # non vide, colonnes perp présentes partout où elles sont nécessaires -- refus bruyant
+    # immédiat, jamais un calcul partiel silencieux (principe pessimiste ARCHITECTURE.md §0.2).
+    if perp_set:
+        _missing_in_weights = [s for s in perp_set if s not in weights_decided.columns]
+        if _missing_in_weights:
+            raise ValueError(
+                f"perp_symbols {_missing_in_weights} absent(s) des colonnes de weights_decided."
+            )
+        if funding is None or highs is None or lows is None:
+            raise ValueError(
+                "perp_symbols non vide exige funding, highs ET lows (spec §2) -- fournir les "
+                "trois matrices alignées sur le même calendrier que opens/closes, cf. "
+                "backtest/perp.py:build_aligned_perp_matrices."
+            )
+        for _label, _df in (("funding", funding), ("highs", highs), ("lows", lows)):
+            _missing_cols = [s for s in perp_set if s not in _df.columns]
+            if _missing_cols:
+                raise ValueError(f"{_label} ne contient pas les colonnes perp {_missing_cols}.")
 
     shares = pd.Series(0.0, index=universe)
     avg_cost = pd.Series(0.0, index=universe)
     open_date: Dict[str, pd.Timestamp] = {}
     cash = float(initial_capital)
     cost_rate = float(cost_bps) / 10000.0
+
+    # --- État dédié à la comptabilité perp (spec §3-4), inerte si perp_set est vide ----------
+    perp_cost_rate = float(perp_cost_bps if perp_cost_bps is not None else cost_bps) / 10000.0
+    perp_open_date: Dict[str, pd.Timestamp] = {}
+    perp_pnl_accum: Dict[str, float] = {}  # PnL couru de la ligne perp OUVERTE par symbole
+    perp_ref: Dict[str, float] = {}  # dernier prix de mise au marché par symbole (spec §3.4)
+    liquidations: List[dict] = []
+    spot_cols = [c for c in universe if c not in perp_set]
+    pnl_breakdown = _empty_pnl_breakdown()
+    # Équity spot+cash de la borne PRÉCÉDENTE, pour isoler le "gap" de prix (clôture précédente
+    # -> open de ce tour) sur le PnL spot -- même logique que le rattrapage perp ci-dessus,
+    # nécessaire pour que `pnl_breakdown["spot_pnl"] + pnl_breakdown["perp_variation"] ≈ 0` sur
+    # une paire parfaitement couverte (sinon `spot_pnl` sous-compterait silencieusement ce gap,
+    # cf. `test_hedged_pair_delta_neutral_...`).
+    prev_spot_equity = float(initial_capital)
 
     n = end_idx - start_idx + 1
     equity = np.empty(n)
@@ -214,8 +376,17 @@ def simulate_segment(
 
         raw_w = weights_decided.iloc[i - 1]
         if apply_vol_targeting:
+            # Spec §3.1 : vol targeting sur |w| dès qu'une jambe perp existe (surestime la vol
+            # d'une paire couverte spot long / perp short -> dé-risque davantage, pessimisme
+            # explicite). Note : `compute_portfolio_vol_scalar` applique déjà `abs(w)` en
+            # interne pour chaque poids (cf. sa docstring) -- ce `.abs()` explicite ne change
+            # donc RIEN au résultat aujourd'hui, il documente un contrat attendu par la spec de
+            # façon robuste à une évolution future de cette fonction. Conditionné à `perp_set`
+            # non vide pour ne RIEN changer au chemin historique (spot pur, même objet `raw_w`
+            # passé tel quel qu'auparavant).
+            vol_input_w = raw_w.abs() if perp_set else raw_w
             vol_scalar = risk_overlay.compute_portfolio_vol_scalar(
-                raw_w,
+                vol_input_w,
                 vol_annual_full.iloc[i - 1],
                 valid_count_full.iloc[i - 1],
                 target_vol_annualized=vol_target_annualized,
@@ -226,7 +397,11 @@ def simulate_segment(
         else:
             scaled_w = raw_w
 
-        equity_before_trade = cash + float((shares * open_price).sum())
+        # Même correction qu'à la clôture (spec §3.7, cf. plus bas) : le perp étant réglé en
+        # cash chaque bougie, seul le spot contribue une "valeur de marché" à l'équity servant
+        # de base au dimensionnement (`target_dollars` ci-dessous) -- `spot_cols == universe`
+        # quand `perp_set` est vide, formule bit-identique au chemin historique dans ce cas.
+        equity_before_trade = cash + float((shares[spot_cols] * open_price[spot_cols]).sum())
         safe_open = open_price.replace(0.0, np.nan)
         target_dollars = scaled_w * equity_before_trade
         target_shares = (target_dollars / safe_open).fillna(0.0)
@@ -245,13 +420,50 @@ def simulate_segment(
             hold = (scaled_w - current_w).abs() < no_trade_band
             target_shares = target_shares.where(~hold, shares)
 
+        # --- Contrainte de faisabilité de marge (spec §3.2), SEULEMENT si perp_set non vide --
+        # jamais appliquée au spot pur (une candidate spot dont les poids somment > 1 n'a
+        # jamais été bloquée par ce moteur -- l'introduire inconditionnellement serait un
+        # changement de comportement du chemin historique, cf. docstring). Évaluée sur les
+        # `target_shares` FINAUX (post bande) -- ce qui sera RÉELLEMENT exécuté cette bougie.
+        if perp_set:
+            final_target_dollars = target_shares * open_price
+            spot_dollars_target = float(final_target_dollars[spot_cols].sum())
+            perp_notional_target = float(final_target_dollars[list(perp_set)].abs().sum())
+            required_capital = spot_dollars_target + perp_initial_margin_frac * perp_notional_target
+            if required_capital > equity_before_trade * (1.0 + 1e-9):
+                raise ValueError(
+                    "Contrainte de faisabilité de marge violée à "
+                    f"{date} : spot_dollars_cible={spot_dollars_target:.6f} + "
+                    f"perp_initial_margin_frac*|notionnel_perp_cible|="
+                    f"{perp_initial_margin_frac * perp_notional_target:.6f} = "
+                    f"{required_capital:.6f} > equity_avant_trade={equity_before_trade:.6f} "
+                    "(spec §3.2) -- la stratégie doit dimensionner correctement ses poids, "
+                    "jamais de clipping silencieux."
+                )
+
         trade_shares = target_shares - shares
 
         changed = trade_shares[trade_shares.abs() > 1e-9]
-        turnover_dollars = float((changed.abs() * open_price.reindex(changed.index)).sum())
-        cost = turnover_dollars * cost_rate
+        # Turnover/coût SÉPARÉS spot vs perp (spec §3.3, "coûts par côté sur les DEUX jambes",
+        # jamais confondus) -- `perp_changed`/`spot_changed` vides quand perp_set est vide,
+        # auquel cas `spot_changed` == `changed` et le calcul ci-dessous reproduit EXACTEMENT
+        # la formule historique (une seule variable `cost`, un seul `cost_rate`).
+        if perp_set:
+            is_perp_changed = changed.index.isin(perp_set)
+            spot_changed = changed[~is_perp_changed]
+            perp_changed = changed[is_perp_changed]
+        else:
+            spot_changed = changed
+            perp_changed = changed.iloc[0:0]
+        spot_turnover_dollars = float((spot_changed.abs() * open_price.reindex(spot_changed.index)).sum())
+        spot_cost = spot_turnover_dollars * cost_rate
+        perp_turnover_dollars = float((perp_changed.abs() * open_price.reindex(perp_changed.index)).sum())
+        perp_cost = perp_turnover_dollars * perp_cost_rate
+        cost = spot_cost + perp_cost  # nom historique conservé -- déduit du cash ci-dessous
 
         for sym, d_shares in changed.items():
+            if sym in perp_set:
+                continue  # comptabilité perp traitée séparément plus bas (spec §4)
             old_sh = float(shares[sym])
             new_sh = old_sh + float(d_shares)
             price = float(open_price[sym])
@@ -290,13 +502,217 @@ def simulate_segment(
                 pnl = sold * (sell_price_net - avg_cost[sym])
                 realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": False})
 
-        cash = cash - float((trade_shares * open_price).sum()) - cost
+        # --- Comptabilité PAR LIGNE perp (spec §4) --------------------------------------------
+        # PAS d'`avg_cost` façon spot : un perpétuel est marqué au marché chaque bougie (variation
+        # margin + funding, cf. boucle "mise au marché" plus bas), il n'a pas de "prix de revient"
+        # au sens spot. Le PnL réalisé d'une ligne = Σ(variation margin + funding − coûts − frais
+        # de liquidation) accumulée PENDANT sa vie (`perp_pnl_accum`), réalisée :
+        #   - en TOTALITÉ à la fermeture complète (ordre OU liquidation, cf. boucle suivante) ;
+        #   - PROPORTIONNELLEMENT à la réduction, sur une réduction partielle (même convention
+        #     que le spot : "les rebalances partiels comptent proportionnellement") ;
+        #   - un changement de SIGNE est traité comme une fermeture de l'ancienne ligne SUIVIE
+        #     d'une ouverture d'une nouvelle (spec §4, jamais un unique "trade" qui masquerait
+        #     la sortie du risque précédent).
+        # Le coût de CE trade (perp_cost_rate) est imputé à la ligne fermée/réduite (portion
+        # concernée) ou à la ligne ouverte/renforcée (portion concernée) -- jamais aux deux à
+        # la fois, jamais oublié (la somme des portions égale exactement `perp_cost` ci-dessus).
+        for sym in perp_changed.index:
+            d_shares = float(perp_changed[sym])
+            old_sh = float(shares[sym])
+            new_sh = old_sh + d_shares
+            price = float(open_price[sym])
+
+            if abs(old_sh) > 1e-9:
+                # Rattrapage "clôture précédente -> cet open" sur la position PRÉEXISTANTE,
+                # AVANT tout traitement du trade (symétrique à `equity_before_trade`, qui
+                # remarque le SPOT au nouvel open avant de recalculer sa cible). Sans cette
+                # étape, dès qu'un trade perp a lieu, la variation entre le dernier close et
+                # cet open sur les shares TENUES depuis la bougie précédente disparaissait
+                # purement et simplement (jamais créditée ni débitée) -- cassant la
+                # delta-neutralité d'une paire couverte spot/perp dès que la position perp est
+                # réajustée (bug détecté par `test_hedged_pair_delta_neutral_...` en écriture
+                # de ce module). `ref` = dernière mise au marché connue (close précédent, ou
+                # open lui-même si la ligne vient tout juste d'être ouverte, auquel cas ce
+                # terme est nul par construction : `perp_ref` n'existe pas encore pour elle).
+                prior_ref = perp_ref.get(sym, price)
+                gap_margin = old_sh * (price - prior_ref)
+                cash += gap_margin
+                perp_pnl_accum[sym] = perp_pnl_accum.get(sym, 0.0) + gap_margin
+                pnl_breakdown["perp_variation"] += gap_margin
+
+            if abs(old_sh) <= 1e-9 and abs(new_sh) > 1e-9:
+                # Ouverture pure (ligne vide -> non vide).
+                perp_open_date[sym] = date
+                opening_cost = abs(new_sh) * price * perp_cost_rate
+                perp_pnl_accum[sym] = -opening_cost
+            elif abs(old_sh) > 1e-9 and abs(new_sh) <= 1e-9:
+                # Fermeture complète PAR ORDRE (la fermeture par liquidation est gérée séparément
+                # dans la boucle de mise au marché ci-dessous, jamais ici : à ce stade `new_sh`
+                # est le résultat d'un ORDRE de la stratégie, pas d'un évènement de liquidation).
+                closing_cost = abs(old_sh) * price * perp_cost_rate
+                pnl = perp_pnl_accum.get(sym, 0.0) - closing_cost
+                realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True, "leg": "perp"})
+                trades_closed.append(
+                    {
+                        "symbol": sym,
+                        "open_date": perp_open_date.get(sym, date),
+                        "close_date": date,
+                        "pnl": pnl,
+                        "leg": "perp",
+                    }
+                )
+                perp_pnl_accum[sym] = 0.0
+                perp_open_date.pop(sym, None)
+            elif old_sh * new_sh < 0.0:
+                # Changement de signe : fermeture de l'ancienne ligne (au PnL accumulé jusqu'ici,
+                # net du coût de clôture de la portion ancienne) PUIS ouverture immédiate d'une
+                # nouvelle ligne (net du coût d'ouverture de la portion nouvelle).
+                closing_cost = abs(old_sh) * price * perp_cost_rate
+                pnl = perp_pnl_accum.get(sym, 0.0) - closing_cost
+                realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True, "leg": "perp"})
+                trades_closed.append(
+                    {
+                        "symbol": sym,
+                        "open_date": perp_open_date.get(sym, date),
+                        "close_date": date,
+                        "pnl": pnl,
+                        "leg": "perp",
+                    }
+                )
+                perp_open_date[sym] = date
+                opening_cost = abs(new_sh) * price * perp_cost_rate
+                perp_pnl_accum[sym] = -opening_cost
+            elif abs(new_sh) > abs(old_sh):
+                # Renforcement (même sens) : pas de réalisation, coût imputé à la ligne en cours.
+                added_cost = abs(new_sh - old_sh) * price * perp_cost_rate
+                perp_pnl_accum[sym] = perp_pnl_accum.get(sym, 0.0) - added_cost
+            else:
+                # Réduction partielle (même sens, |new| < |old|, new != 0) : réalisation
+                # PROPORTIONNELLE de l'accumulé, coût de la réduction imputé à la seule part
+                # réalisée (même logique que le "sell_price_net" du spot ci-dessus).
+                frac = (abs(old_sh) - abs(new_sh)) / abs(old_sh)
+                reduce_cost = abs(new_sh - old_sh) * price * perp_cost_rate
+                prior_accum = perp_pnl_accum.get(sym, 0.0)
+                realized_pnl = frac * prior_accum - reduce_cost
+                realized_events.append({"date": date, "symbol": sym, "pnl": realized_pnl, "closes_line": False, "leg": "perp"})
+                perp_pnl_accum[sym] = prior_accum * (1.0 - frac)
+
+        # Coût spot déduit du cash comme avant (`trade_shares*open_price` limité aux colonnes
+        # SPOT -- un perpétuel n'échange AUCUN cash à l'exécution, seule sa marge est vérifiée
+        # en amont ; le spot seul, `perp_set` vide, reproduit EXACTEMENT `trade_shares*open_price`
+        # sur tout l'univers comme avant, `spot_cols == universe` dans ce cas).
+        cash = cash - float((trade_shares[spot_cols] * open_price[spot_cols]).sum()) - cost
+        pnl_breakdown["costs_spot"] += spot_cost
+        pnl_breakdown["costs_perp"] += perp_cost
         shares = target_shares
 
-        equity[j] = cash + float((shares * close_price).sum())
+        # --- Liquidation intra-bougie / mise au marché / funding (spec §3.4-3.6, perp) --------
+        # Exécutée pour TOUTE colonne perp en position (`shares[sym] != 0`), qu'un trade ait eu
+        # lieu ou non cette bougie -- inerte (boucle sur ensemble vide) si `perp_set` est vide.
+        # Lignes complètes extraites UNE SEULE FOIS (comme `open_price`/`close_price` plus haut)
+        # plutôt que dans la boucle par symbole -- même style que le reste de la fonction.
+        if perp_set:
+            high_row = highs.iloc[i]
+            low_row = lows.iloc[i]
+            funding_row = funding.iloc[i]
+        for sym in perp_set:
+            sh = float(shares[sym])
+            if abs(sh) <= 1e-9:
+                continue
+            traded_this_bar = sym in changed.index
+            # ref = prix de la DERNIÈRE mise au marché (spec §3.4) : l'open d'exécution si un
+            # ordre vient de s'exécuter cette bougie pour ce symbole (ouverture, renforcement,
+            # réduction ou changement de signe -- dans tous les cas la position TENUE cette
+            # bougie débute à l'open), sinon le close de la bougie précédente (position inchangée
+            # depuis, déjà marquée au marché à ce prix la bougie d'avant).
+            ref = float(open_price[sym]) if traded_this_bar else float(perp_ref.get(sym, open_price[sym]))
+            close_i = float(close_price[sym])
+            worst = float(high_row[sym]) if sh < 0 else float(low_row[sym])
+            loss_at_worst = sh * (worst - ref)
+            maint_threshold = perp_maintenance_margin_frac * abs(sh) * worst
+            if (cash + loss_at_worst) < maint_threshold:
+                # Liquidation (spec §3.4) : jambe perp fermée AU PIRE PRIX intra-bougie, frais
+                # punitifs en plus de perp_cost_bps, le SPOT n'est PAS touché (la stratégie
+                # re-décide au tour suivant). Le cash de marge est le SEUL collatéral testé --
+                # la valeur du spot n'entre jamais dans ce test (spec §3.4, dernier point).
+                liq_fee = abs(sh * worst) * (perp_cost_rate + float(perp_liquidation_fee_bps) / 10000.0)
+                cash += loss_at_worst - liq_fee
+                pnl = perp_pnl_accum.get(sym, 0.0) + loss_at_worst - liq_fee
+                realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True, "leg": "perp"})
+                trades_closed.append(
+                    {
+                        "symbol": sym,
+                        "open_date": perp_open_date.get(sym, date),
+                        "close_date": date,
+                        "pnl": pnl,
+                        "leg": "perp",
+                    }
+                )
+                liquidations.append(
+                    {
+                        "date": date,
+                        "symbol": sym,
+                        "side": "short" if sh < 0 else "long",
+                        "shares_before": sh,
+                        "worst_price": worst,
+                        "ref_price": ref,
+                        "loss": loss_at_worst,
+                        "fee": liq_fee,
+                    }
+                )
+                perp_pnl_accum[sym] = 0.0
+                perp_open_date.pop(sym, None)
+                shares[sym] = 0.0
+                pnl_breakdown["perp_variation"] += loss_at_worst
+                pnl_breakdown["liquidation_fees"] += liq_fee
+                continue  # spec §3 : liquidation (4) avant mise au marché (5) et funding (6) --
+                # la ligne est déjà fermée, aucune variation margin ni funding supplémentaire.
+
+            # Pas de liquidation : mise au marché à la clôture (spec §3.5) puis funding (§3.6).
+            var_margin = sh * (close_i - ref)
+            cash += var_margin
+            perp_pnl_accum[sym] = perp_pnl_accum.get(sym, 0.0) + var_margin
+            pnl_breakdown["perp_variation"] += var_margin
+            perp_ref[sym] = close_i
+
+            funding_rate_i = float(funding_row[sym])
+            funding_cash = -sh * close_i * funding_rate_i
+            cash += funding_cash
+            perp_pnl_accum[sym] = perp_pnl_accum.get(sym, 0.0) + funding_cash
+            pnl_breakdown["funding_received"] += funding_cash
+
+        # Équity (spec §3.7) : `cash + Σ shares_spot × close` UNIQUEMENT -- le perp est
+        # INTÉGRALEMENT réglé en cash chaque bougie (variation margin + funding déjà versés
+        # dans `cash` ci-dessus), son "notionnel" ne doit JAMAIS être ré-ajouté ici (ce serait
+        # compter deux fois la même exposition -- une fois via le cash déjà mouvementé, une
+        # fois via une "valeur de marché" fictive que ce moteur ne détient pas réellement).
+        # `spot_cols == universe` quand `perp_set` est vide -> reproduit EXACTEMENT la formule
+        # historique `shares * close_price` sur tout l'univers.
+        equity[j] = cash + float((shares[spot_cols] * close_price[spot_cols]).sum())
+        # Exposition brute (spec §3.7) : `(Σ spot_dollars + Σ|notionnel perp|) / equity` -- les
+        # poids spot étant TOUJOURS >= 0 (long-only strict, vérifié en amont), `shares.abs()`
+        # sur les colonnes spot égale déjà `shares` ; sur les colonnes perp, `shares.abs()`
+        # donne exactement |notionnel perp|. Une seule expression vectorisée sur TOUT l'univers
+        # reproduit donc la formule spec sans branche perp séparée, et reste bit-identique au
+        # calcul historique quand `perp_set` est vide.
         exposure[j] = (
             float((shares.abs() * close_price).sum()) / equity[j] if equity[j] != 0 else float("nan")
         )
+        # Spot PnL (spec §4, "publier le PnL par jambe") : DEUX composantes, symétriques au
+        # rattrapage perp ci-dessus --
+        #   (1) le "gap" clôture précédente -> open de ce tour sur les shares TENUES depuis
+        #       avant (`equity_before_trade - prev_spot_equity` : ce gap est DÉJÀ implicitement
+        #       réalisé dans la comptabilité cash historique du moteur, ce terme ne fait que le
+        #       RENDRE VISIBLE dans le breakdown, sans toucher `cash`/`equity`) ;
+        #   (2) la tenue de la position post-trade depuis l'open jusqu'à la clôture de cette
+        #       bougie (`shares[spot_cols] * (close-open)`, déjà présent avant ce correctif).
+        # Sans (1), `spot_pnl` sous-comptait silencieusement toute paire couverte spot/perp
+        # dès que le poids spot est réajusté chaque bougie (cf. `test_hedged_pair_delta_
+        # neutral_...` -- cette décomposition est PUREMENT informative, `equity`/`returns` ne
+        # changent pas).
+        pnl_breakdown["spot_pnl"] += equity_before_trade - prev_spot_equity
+        pnl_breakdown["spot_pnl"] += float((shares[spot_cols] * (close_price[spot_cols] - open_price[spot_cols])).sum())
+        prev_spot_equity = equity[j]
 
     dates = calendar[start_idx : end_idx + 1]
     equity_series = pd.Series(equity, index=dates)
@@ -311,6 +727,8 @@ def simulate_segment(
         gross_exposure=exposure_series,
         trades_closed=trades_closed,
         realized_events=realized_events,
+        liquidations=liquidations,
+        pnl_breakdown=pnl_breakdown,
     )
 
 
@@ -450,6 +868,13 @@ class ConcatenatedOosResult:
     trades_closed: List[dict]
     realized_events: List[dict]
     gross_exposure: pd.Series
+    # --- Extension perp (PERP-EXTENSION-SPEC.md) : agrégation simple (concaténation des
+    # évènements, somme terme à terme du breakdown) -- défauts vides/nuls, rétro-compatible.
+    liquidations: List[dict] = field(default_factory=list)
+    pnl_breakdown: dict = field(default_factory=_empty_pnl_breakdown)
+
+    def n_liquidations(self) -> int:
+        return len(self.liquidations)
 
 
 def concatenate_segments(segments: Sequence[SegmentResult]) -> ConcatenatedOosResult:
@@ -460,6 +885,8 @@ def concatenate_segments(segments: Sequence[SegmentResult]) -> ConcatenatedOosRe
             trades_closed=[],
             realized_events=[],
             gross_exposure=pd.Series(dtype=float),
+            liquidations=[],
+            pnl_breakdown=_empty_pnl_breakdown(),
         )
     returns = pd.concat([s.returns for s in segments])
     equity_curve = (1.0 + returns).cumprod()
@@ -467,19 +894,31 @@ def concatenate_segments(segments: Sequence[SegmentResult]) -> ConcatenatedOosRe
     trades_closed = [t for s in segments for t in s.trades_closed]
     realized_events = [e for s in segments for e in s.realized_events]
     gross_exposure = pd.concat([s.gross_exposure for s in segments])
+    # `getattr(..., [])`/`getattr(..., {})` : défense en profondeur si un appelant construit un
+    # `SegmentResult` "à la main" sans les nouveaux champs (ex. test antérieur à cette extension
+    # qui instancierait le dataclass directement plutôt que via `simulate_segment`) -- jamais
+    # une AttributeError sur un champ qui, par défaut, est justement censé être vide.
+    liquidations = [l for s in segments for l in getattr(s, "liquidations", [])]
+    pnl_breakdown = _sum_pnl_breakdowns([getattr(s, "pnl_breakdown", {}) for s in segments])
     return ConcatenatedOosResult(
         returns=returns,
         equity_curve=equity_curve,
         trades_closed=trades_closed,
         realized_events=realized_events,
         gross_exposure=gross_exposure,
+        liquidations=liquidations,
+        pnl_breakdown=pnl_breakdown,
     )
 
 
 def summarize_segment(seg: "SegmentResult | ConcatenatedOosResult") -> dict:
     """Bloc de métriques standard (backtest/metrics.py) appliqué à un segment (fenêtre unique)
     ou à un résultat concaténé multi-fenêtres — même fonction pour garantir que les métriques
-    "par fenêtre" et "concaténées" sont calculées de façon strictement identique."""
+    "par fenêtre" et "concaténées" sont calculées de façon strictement identique.
+
+    Extension perp (PERP-EXTENSION-SPEC.md §4) : `n_liquidations` et `pnl_breakdown` sont
+    TOUJOURS présents dans le dict retourné (valeurs nulles si `perp_symbols` n'a jamais été
+    utilisé) -- un appelant qui ignore ces deux clés voit le reste du dict inchangé."""
     returns = seg.returns
     pnls = [e["pnl"] for e in seg.realized_events]
     equity = (1.0 + returns).cumprod()
@@ -492,4 +931,6 @@ def summarize_segment(seg: "SegmentResult | ConcatenatedOosResult") -> dict:
         "average_exposure": bt_metrics.average_exposure(seg.gross_exposure),
         "n_trades_closed": len(seg.trades_closed),
         "n_days": len(returns),
+        "n_liquidations": len(getattr(seg, "liquidations", [])),
+        "pnl_breakdown": dict(getattr(seg, "pnl_breakdown", _empty_pnl_breakdown())),
     }

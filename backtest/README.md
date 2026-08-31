@@ -26,7 +26,8 @@ non ré-exécutable ni auditable).
 | `metrics.py` | Sharpe, Sortino, profit factor, max drawdown (pic-à-creux), CAGR, ratio d'information, exposition moyenne, Deflated Sharpe Ratio / PSR (Bailey & López de Prado 2014). |
 | `strategies/xsmom.py` | Version backtest vectorisée de `bot/strategies/xs_momentum_sp100.py` (constantes SPEC importées, jamais dupliquées). |
 | `run_xsmom_invvol.py` | Script d'exécution de bout en bout (exemple complet, cf. `backtest/results/xs_momentum_invvol_sp100/`). |
-| `tests/` | Preuves pytest : anti-look-ahead, coûts proportionnels au turnover, bornes walk-forward, cas limites DSR, bande de non-négociation par défaut, vol targeting. |
+| `perp.py` | Extension short/perpétuels + funding (`PERP-EXTENSION-SPEC.md`) : chargeurs `load_perp_klines`/`load_funding`, alignement `align_funding_to_calendar` (+ `funding_alignment_report`), et `build_aligned_perp_matrices` (opens/highs/lows/closes/funding perp alignés sur un calendrier). Voir §"Extension perp" ci-dessous. |
+| `tests/` | Preuves pytest : anti-look-ahead, coûts proportionnels au turnover, bornes walk-forward, cas limites DSR, bande de non-négociation par défaut, vol targeting, extension perp (`test_perp.py`). |
 
 ## Règles non négociables implémentées
 
@@ -34,8 +35,10 @@ non ré-exécutable ni auditable).
    données de clôture `<= t` (responsabilité de la couche stratégie) — le moteur exécute
    TOUJOURS à `opens.iloc[i+1]`, jamais au prix ayant servi à la décision. Testé explicitement
    (`test_lookahead_cheat_collapses_...`).
-2. **Long-only** : les poids négatifs ne sont pas gérés par ce moteur (cohérent avec les 4
-   stratégies de production, toutes long/flat).
+2. **Long-only sur le spot** : un poids négatif sur une colonne spot lève `ValueError` (cohérent
+   avec les 4 stratégies de production, toutes long/flat). Le short est autorisé UNIQUEMENT sur
+   les colonnes explicitement déclarées via `perp_symbols` (extension short/perpétuels, cf.
+   §"Extension perp" ci-dessous) — jamais un short spot simulé par ce moteur.
 3. **Coûts systématiques sur turnover dollar réel** (`cost_bps`, points de base PAR CÔTÉ) —
    jamais de backtest "sans coûts" comme chiffre de décision (`docs/PROMOTION-RULES.md` §1.1).
 4. **Walk-forward IS/OOS, sélection IS-only, métriques sur l'OOS concaténé** — jamais sur une
@@ -137,6 +140,30 @@ walk-forward (IS/OOS jamais chevauchantes), cas limites du DSR (K=1 ≈ PSR(0), 
 DSR décroissant), bande de non-négociation par défaut = 0,05 (micro-rebalance filtré,
 rebalance réel exécuté), vol targeting qui réduit bien l'exposition moyenne et le MaxDD par
 rapport à une exécution sans surcouche.
+
+## Extension perp (short/perpétuels + funding)
+
+Sémantique complète, pré-enregistrée AVANT implémentation : `backtest/PERP-EXTENSION-SPEC.md`
+(cette spec fait foi ; toute divergence avec l'implémentation est un finding d'audit). Résumé :
+
+- `backtest/perp.py` charge les klines perpétuelles (`_data/perp/<SYM>.csv.gz`) et le funding
+  (`_data/funding/<SYM>.csv.gz`, timestamps ISO8601 mixtes + jitter — parsing documenté dans le
+  module) et les aligne sur un calendrier commun (colonnes `<SYM>-PERP`, jamais confondues avec
+  le spot `<SYM>`) via `build_aligned_perp_matrices`.
+- `engine.simulate_segment()` accepte des paramètres optionnels (`perp_symbols`, `funding`,
+  `highs`, `lows`, `perp_cost_bps`, `perp_initial_margin_frac`, `perp_maintenance_margin_frac`,
+  `perp_liquidation_fee_bps`) : poids SIGNÉS sur les colonnes `perp_symbols` (short autorisé),
+  marge jamais collatéralisée par le spot, liquidation intra-bougie au pire prix, funding réglé
+  à la clôture de la bonne bougie. **Rétro-compatibilité bit-à-bit garantie** quand
+  `perp_symbols` est `None` (ou vide) — testé explicitement (`np.array_equal` sur `equity`,
+  `backtest/tests/test_perp.py`).
+- `SegmentResult`/`ConcatenatedOosResult` gagnent `liquidations` (évènements journalisés) et
+  `pnl_breakdown` (décomposition Spot/Perp/Funding/Coûts/Liquidation du PnL, spec §4) —
+  `summarize_segment()` publie `n_liquidations` et `pnl_breakdown` en plus des métriques
+  existantes.
+- Cette extension ne change RIEN à `bot/sim/` (toujours long-only) ni à la production — voir
+  spec §5 pour le périmètre exact et ce qui reste hors scope (pas de carnet d'ordres, pas d'ADL,
+  pas de levier spot).
 
 ## Limites connues (assumées, pas des bugs)
 
