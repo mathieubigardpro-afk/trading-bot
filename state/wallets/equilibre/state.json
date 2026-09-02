@@ -1,15 +1,11 @@
 {
-  "cash_usd": 349.5559140161328,
+  "cash_usd": 346.79928939657435,
   "circuit_breakers": {
-    "consecutive_losses": 1,
+    "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1172.2197680131649,
-        "ts": "2026-09-01T16:36:16.874112+00:00"
-      },
       {
         "equity": 1173.3215771298123,
         "ts": "2026-09-01T19:34:48.768461+00:00"
@@ -33,6 +29,10 @@
       {
         "equity": 1164.3606999277915,
         "ts": "2026-09-02T13:20:51.196949+00:00"
+      },
+      {
+        "equity": 1175.6958884758662,
+        "ts": "2026-09-02T17:14:05.859400+00:00"
       }
     ],
     "flatten_mode": false,
@@ -42,14 +42,14 @@
   "equity_peak_usd": 1181.1862817655408,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.159,
+    "last_rate": 1.1578,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-09-02T13:21:10.717608+00:00"
+    "last_rate_ts": "2026-09-02T17:14:25.228575+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-09-02T13:20:51.196949+00:00",
-  "last_run_id": "2026-09-02T13",
+  "last_run_completed_at": "2026-09-02T17:14:05.859400+00:00",
+  "last_run_id": "2026-09-02T17",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -58,10 +58,6 @@
     "BTC": {
       "prix_moyen": 69393.4794,
       "qty": 0.00043
-    },
-    "CAT": {
-      "prix_moyen": 879.7540947187501,
-      "qty": 0.0454
     },
     "CSCO": {
       "prix_moyen": 114.2741922057724,
@@ -75,10 +71,6 @@
       "prix_moyen": 28.412715647660065,
       "qty": 3.3711
     },
-    "DE": {
-      "prix_moyen": 605.5350739009551,
-      "qty": 0.0651
-    },
     "EEM": {
       "prix_moyen": 63.81602095391006,
       "qty": 1.4912
@@ -86,10 +78,6 @@
     "ETH": {
       "prix_moyen": 2259.2890799999996,
       "qty": 0.0132
-    },
-    "FDX": {
-      "prix_moyen": 313.77352981153103,
-      "qty": 0.1274
     },
     "INTC": {
       "prix_moyen": 91.31124402692413,
@@ -103,9 +91,17 @@
       "prix_moyen": 8.868859999999998,
       "qty": 2.860000000000001
     },
+    "MET": {
+      "prix_moyen": 96.70163251154136,
+      "qty": 0.4259
+    },
     "SOL": {
       "prix_moyen": 84.92244,
       "qty": 0.353
+    },
+    "SPG": {
+      "prix_moyen": 210.77061019615172,
+      "qty": 0.1954
     },
     "TGT": {
       "prix_moyen": 139.6745735495224,
@@ -118,11 +114,15 @@
     "UNH": {
       "prix_moyen": 415.72791632812505,
       "qty": 0.0949
+    },
+    "UNP": {
+      "prix_moyen": 290.790572625,
+      "qty": 0.1416
     }
   },
-  "realized_pnl_cumulative_usd": 8.971466678708662,
+  "realized_pnl_cumulative_usd": 10.548218500273867,
   "schema_version": 1,
-  "state_hash_prev": "b664b5c0f1e136ec05b1185e1d4f98a3b7aa55da9532a573681c3ae88db838b8",
+  "state_hash_prev": "ba4c377ac858503bf8e4824684712bb12d103400740b54fb3e5d4a615e398d0b",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -182,6 +182,21 @@
       "realized_pnl_usd": -1.429069279679997,
       "symbol": "DOGE",
       "ts": "2026-08-26T00:07:36.973943+00:00"
+    },
+    {
+      "realized_pnl_usd": -4.402067948413555,
+      "symbol": "CAT",
+      "ts": "2026-09-02T17:14:05.859400+00:00"
+    },
+    {
+      "realized_pnl_usd": 5.021662906109203,
+      "symbol": "DE",
+      "ts": "2026-09-02T17:14:05.859400+00:00"
+    },
+    {
+      "realized_pnl_usd": 0.9571568638695571,
+      "symbol": "FDX",
+      "ts": "2026-09-02T17:14:05.859400+00:00"
     }
   ],
   "wallet_id": "equilibre"
