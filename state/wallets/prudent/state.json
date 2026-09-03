@@ -1,15 +1,11 @@
 {
-  "cash_usd": 461.11977008677445,
+  "cash_usd": 451.51688307769695,
   "circuit_breakers": {
-    "consecutive_losses": 0,
+    "consecutive_losses": 1,
     "cooldown_until": null,
-    "daily_loss_freeze_until": "2026-09-03T13:20:51.196949+00:00",
+    "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1151.1055527583533,
-        "ts": "2026-09-02T13:20:51.196949+00:00"
-      },
       {
         "equity": 1187.2804670862954,
         "ts": "2026-09-02T17:14:05.859400+00:00"
@@ -33,23 +29,27 @@
       {
         "equity": 1151.5924325583533,
         "ts": "2026-09-03T09:44:17.239896+00:00"
+      },
+      {
+        "equity": 1189.0145752712592,
+        "ts": "2026-09-03T13:56:21.391412+00:00"
       }
     ],
     "flatten_mode": false,
     "manual_review_required": false
   },
-  "equity_peak_ts": "2026-08-21T18:03:41.902796+00:00",
-  "equity_peak_usd": 1188.2899610646675,
+  "equity_peak_ts": "2026-09-03T13:56:21.391412+00:00",
+  "equity_peak_usd": 1189.0145752712592,
   "fx": {
     "initial_rate": 1.141079,
     "last_rate": 1.1578,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-09-03T09:44:41.600059+00:00"
+    "last_rate_ts": "2026-09-03T13:56:40.955360+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-09-03T09:44:17.239896+00:00",
-  "last_run_id": "2026-09-03T09",
+  "last_run_completed_at": "2026-09-03T13:56:21.391412+00:00",
+  "last_run_id": "2026-09-03T13",
   "positions": {
     "BTC": {
       "prix_moyen": 72253.058475,
@@ -67,14 +67,14 @@
       "prix_moyen": 2298.7688099999996,
       "qty": 0.0121
     },
-    "IWM": {
-      "prix_moyen": 295.0158669953201,
-      "qty": 0.7096
+    "GLD": {
+      "prix_moyen": 409.68255639836883,
+      "qty": 0.5325
     }
   },
-  "realized_pnl_cumulative_usd": 8.606229672730622,
+  "realized_pnl_cumulative_usd": 8.034200687187493,
   "schema_version": 1,
-  "state_hash_prev": "a1f99aec6b863e4910ee3fedccb26a737b24ffe34e80455fa5c937ecd97b06e4",
+  "state_hash_prev": "a36f750b6dc02c7f82613e626141bd3c0010071ee056dbe21ff6f1fde0fb1e2e",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -100,6 +100,11 @@
       "realized_pnl_usd": 0.8743160703965764,
       "symbol": "EFA",
       "ts": "2026-08-21T13:35:45.887123+00:00"
+    },
+    {
+      "realized_pnl_usd": -0.5720289855431284,
+      "symbol": "IWM",
+      "ts": "2026-09-03T13:56:21.391412+00:00"
     }
   ],
   "wallet_id": "prudent"

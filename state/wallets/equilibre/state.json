@@ -1,15 +1,11 @@
 {
-  "cash_usd": 346.79928939657435,
+  "cash_usd": 343.5468571876599,
   "circuit_breakers": {
-    "consecutive_losses": 0,
+    "consecutive_losses": 1,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1164.3606999277915,
-        "ts": "2026-09-02T13:20:51.196949+00:00"
-      },
       {
         "equity": 1175.6958884758662,
         "ts": "2026-09-02T17:14:05.859400+00:00"
@@ -33,6 +29,10 @@
       {
         "equity": 1167.5661673017541,
         "ts": "2026-09-03T09:44:17.239896+00:00"
+      },
+      {
+        "equity": 1175.9650579608503,
+        "ts": "2026-09-03T13:56:21.391412+00:00"
       }
     ],
     "flatten_mode": false,
@@ -45,11 +45,11 @@
     "last_rate": 1.1578,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-09-03T09:44:41.600059+00:00"
+    "last_rate_ts": "2026-09-03T13:56:40.955360+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-09-03T09:44:17.239896+00:00",
-  "last_run_id": "2026-09-03T09",
+  "last_run_completed_at": "2026-09-03T13:56:21.391412+00:00",
+  "last_run_id": "2026-09-03T13",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -79,13 +79,13 @@
       "prix_moyen": 2259.2890799999996,
       "qty": 0.0132
     },
+    "GLD": {
+      "prix_moyen": 409.68255639836883,
+      "qty": 0.2393
+    },
     "INTC": {
       "prix_moyen": 91.31124402692413,
       "qty": 0.4378
-    },
-    "IWM": {
-      "prix_moyen": 295.0158669953201,
-      "qty": 0.3225
     },
     "LINK": {
       "prix_moyen": 8.868859999999998,
@@ -120,9 +120,9 @@
       "qty": 0.1416
     }
   },
-  "realized_pnl_cumulative_usd": 10.548218500273867,
+  "realized_pnl_cumulative_usd": 10.288241967244472,
   "schema_version": 1,
-  "state_hash_prev": "ac01c5d24867493b14965755db109ac7c9bf5ce7423a5d8d3392572df4df9f19",
+  "state_hash_prev": "2c01cf1f6d16941553e8bbb74028865f62c46692ebd988113e66538c7e4506d5",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -197,6 +197,11 @@
       "realized_pnl_usd": 0.9571568638695571,
       "symbol": "FDX",
       "ts": "2026-09-02T17:14:05.859400+00:00"
+    },
+    {
+      "realized_pnl_usd": -0.25997653302939533,
+      "symbol": "IWM",
+      "ts": "2026-09-03T13:56:21.391412+00:00"
     }
   ],
   "wallet_id": "equilibre"
