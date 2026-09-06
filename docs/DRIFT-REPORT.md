@@ -1,6 +1,6 @@
 # DRIFT-REPORT.md — Moniteur de dérive (backtest vs vécu)
 
-*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-08-31T00:19:20.210343+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
+*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-09-06T23:39:02.767611+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
 
 ## 1. Moniteur de dérive par stratégie
 
@@ -8,13 +8,13 @@ Compare les métriques VÉCUES (journaux `state/wallets/*/`) aux métriques OOS 
 
 | Stratégie | Wallet | Statut | Jours observés | Sharpe vécu | Sharpe attendu | DD vécu | DD attendu | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| dual_momentum_etf | prudent | active | 39 | 0.66 | n/d | 1.4% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | prudent | active | 39 | -0.95 | 1.24 | 0.1% | 8.0% | **SURVEILLER** |
-| xs_momentum_sp100 | equilibre | active | 39 | 3.64 | 0.82 | 0.3% | 50.3% | **SURVEILLER** |
-| dual_momentum_etf | equilibre | active | 39 | 2.95 | n/d | 0.3% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | equilibre | active | 39 | 3.89 | 1.47 | 0.1% | 16.4% | **SURVEILLER** |
-| xs_momentum_sp100 | agressif | active | 39 | -0.33 | 0.82 | 1.7% | 50.3% | **SURVEILLER** |
-| quasi_passif_crypto | agressif | active | 39 | 0.21 | 1.49 | 1.2% | 33.4% | **SURVEILLER** |
+| dual_momentum_etf | prudent | active | 46 | 0.56 | n/d | 1.5% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | prudent | active | 46 | -0.30 | 1.24 | 0.1% | 8.0% | **SURVEILLER** |
+| xs_momentum_sp100 | equilibre | active | 46 | 4.47 | 0.82 | 0.3% | 50.3% | **SURVEILLER** |
+| dual_momentum_etf | equilibre | active | 46 | 3.51 | n/d | 0.3% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | equilibre | active | 46 | 4.99 | 1.47 | 0.1% | 16.4% | **SURVEILLER** |
+| xs_momentum_sp100 | agressif | active | 46 | 1.01 | 0.82 | 1.7% | 50.3% | **SURVEILLER** |
+| quasi_passif_crypto | agressif | active | 46 | 1.37 | 1.49 | 1.2% | 33.4% | **SURVEILLER** |
 
 ### Détail des raisons
 
@@ -43,10 +43,4 @@ Rafraîchissement des données de marché (`tools/fetch_data.py --only crypto`) 
 
 Grille pré-enregistrée (`docs/RECALIBRATION-SPEC.md`) : `REGIME_SMA_DAYS ∈ [150, 175, 200, 225, 250]` (seuil de changement : amélioration OOS relative > 10%).
 
-- Fenêtres walk-forward (9m IS / 3m OOS) : **15**
-- Valeur en production : `REGIME_SMA_DAYS = 200` (Sharpe OOS concaténé : 0.508)
-- Meilleure valeur de la grille : `REGIME_SMA_DAYS = 175` (Sharpe OOS concaténé : 0.523)
-- Valeur la plus souvent sélectionnée en IS (informatif) : `175`
-- Amélioration relative : 3.0%
-- **Décision : aucun changement**
-  - amélioration OOS relative 3.0% <= seuil 10% — pas assez significatif, aucun changement
+_Recalibrage SAUTÉ : données insuffisantes ou indisponibles ce cycle (['AVAX', 'BTC', 'DOGE', 'ETH', 'LINK', 'SOL'])._
