@@ -182,7 +182,19 @@ d'implémentation limité.
 
 ## P1 — Priorité moyenne
 
-### 4. Saisonnalité horaire BTC (21h-23h UTC) — à revalider 2024-2026
+### 4. Saisonnalité horaire BTC (21h-23h UTC) — ✅ TRAITÉE 2026-09-07 : REJETÉE (Porte 1, 4/5 seuils)
+
+**VERDICT (session hebdomadaire #6, cf. `RESEARCH-LOG.md` 2026-09-07 (c) et
+`RESEARCH-REGISTRY.json:btc_seasonality_2123utc`)** : SPEC pré-enregistrée (fenêtre 21h-23h UTC
+strictement, zéro grille, zéro variante d'heure), walk-forward 15 fenêtres 9m/3m horaire,
+K_total = 28. Sharpe OOS **−6,68**, PF 0,33, MaxDD relatif 1,67×, DSR ~0 — seul le seuil de
+trades passe (1 369). Audit adversarial indépendant `isSound: true` (reproduction from scratch,
+zéro look-ahead, aucun artefact pénalisant). Constat d'honnêteté important : **l'effet BRUT
+existe et n'a pas disparu** (+6,4 bps/jour OOS ; +3,6 avant 2024, +7,8 depuis) mais reste ~4,7×
+sous le hurdle de coûts du projet (30 bps/jour round-trip pour 2 h de détention). Conclusion
+transférable : aucune stratégie à détention ~2 h/jour n'est viable sur ce périmètre de coûts
+sans un edge brut ≥ ~5× celui-ci — ne pas retester de variante calendaire horaire sans
+changement structurel du régime de coûts (§3.3, compterait dans K_total).
 
 **Hypothèse** : la recherche initiale (`rapport-recherche.md` §7) rapporte un effet de
 saisonnalité horaire BTC (rendement annualisé 40%+ dans des études Quantpedia) sur la
@@ -466,7 +478,21 @@ l'entrée d'origine ; faire pointer le moniteur vers l'entrée de retest (ou une
 explicite « entrée la plus récente de la même famille »). Simple outil de monitoring (aucune
 règle de PROMOTION-RULES en jeu), mais à tester avec les fixtures existantes.
 
-### 16. [P0 — infrastructure moteur, session DÉDIÉE + audit AVANT toute candidate, AJOUTÉE 2026-08-31] Portage de la position entre fenêtres OOS contiguës + bande de non-négociation par poche
+### 16. [P0 — infrastructure moteur] Portage de position entre fenêtres OOS contiguës — ✅ TRAITÉE 2026-09-07
+
+**LIVRÉ (session hebdomadaire #6, cf. `RESEARCH-LOG.md` 2026-09-07 (b))** : SPEC pré-enregistrée
+`backtest/CARRY-EXTENSION-SPEC.md` committée AVANT implémentation, extension opt-in
+(`carry_in`/`carry_out`, reconstruction au dernier close sans coût, anti-gaming du comptage de
+trades). Audit adversarial : verdict initial `isSound: false` (F1 CRITIQUE : gonflement du
+profit factor par artefact de normalisation aux frontières — corrigé, biais 15/15 seeds
+favorables → répartition équilibrée ; F3 MAJEUR : NaN non gardé au packaging — corrigé ;
+1 MINEUR corrigé), contre-audit **`isSound: true`**. Rétro-compat bit-à-bit prouvée (hash +
+reproduction bit-exacte de `vol_breakout_6majors/results.json` sur données réelles, 46 min).
+**F2 (CRITIQUE, non corrigeable ici)** : l'équivalence « bande poche = bande wallet » supposée
+par la spec §5 est **RÉFUTÉE** en régime de compounding (relation affine, pas homothétique) —
+clause d'arrêt respectée, comportement de bande inchangé, statut NON RÉSOLU → **#19 ci-dessous**.
+Premier usage : Porte 1 de `btc_seasonality_2123utc` (portage structurellement neutre) ;
+re-run informatif de `funding_carry_6majors`, cf. RESEARCH-LOG 2026-09-07 (b).
 
 Finding F1 (CRITIQUE) de l'audit de `funding_carry_6majors` : `backtest/engine.py` remet
 `shares`/`cash` à zéro à chaque fenêtre OOS (conception historique pour concaténer des fenêtres
@@ -491,7 +517,51 @@ Pré-requis pour incuber TOUTE candidate perp (statut pré-enregistré
 en P2 : aucune candidate perp n'a passé la Porte 1 ; ne pas investir avant qu'une idée perp ait
 une valeur démontrée sur le moteur commun amendé (#16).
 
-**Priorité de la prochaine session (revue 2026-08-31, session #5)** :
+### 18. [P2 — infrastructure données, AJOUTÉE 2026-09-07] Robustesse début-de-mois du rafraîchissement crypto de la maintenance
+
+Incident du 2026-09-06 : recalibrage sauté (`DONNEES_INSUFFISANTES`, 0/6 symboles) alors que le
+rafraîchissement rapportait « OK ». Cause la plus probable : maintenance exécutée un 6 du mois ⇒
+le « dernier mois complet » (août) n'avait vraisemblablement pas encore son archive mensuelle
+sur Binance Vision ⇒ règle de complétude ⇒ tous les symboles exclus — le complément API
+(`fetch_binance_current_month_completion`) ne couvre que le mois COURANT, jamais un mois
+d'archive manquant. Mode d'échec systématique de toute maintenance en tout début de mois.
+Correctif candidat : étendre le complément API aux mois requis manquants EN QUEUE d'historique
+(jamais aux trous anciens — la trace du biais du survivant doit rester), avec tests offline.
+Diagnostic à confirmer au préalable sur un run réel (journaliser les `reason` d'exclusion par
+symbole dans DRIFT-REPORT.json — actuellement seuls les `missing_symbols` remontent).
+
+### 19. [P2 — fidélité moteur, analyse dédiée, AJOUTÉE 2026-09-07] Bande de non-négociation : deux écarts moteur/production documentés, non résolus
+
+(a) **Équivalence poche/wallet RÉFUTÉE en compounding** (audit F2 de l'extension carry,
+démonstration : `equity_wallet = 1 + alloc·(equity_pocket − 1)`, relation affine — décisions
+hold/trade divergentes dès que l'équity s'écarte de 1, d'autant plus que l'alloc est petite).
+Le statut de fidélité de `no_trade_band=0.05` du moteur vs `no_trade_band × capital_alloc_pct`
+de la production pour `capital_alloc_pct < 1` est NON RÉSOLU (test de garde committé :
+`test_no_trade_band_pocket_wallet_homothety_refuted_under_compounding`). (b) **Flatten sous la
+bande** : la production exécute TOUJOURS un flatten (cible 0) même sous la bande
+(`bot/risk/manager.py` étape 6) ; le moteur, lui, retient un flatten sous la bande (position qui
+dérive au lieu de sortir). Les deux écarts sont à instruire ensemble (analyse quantitative de
+l'impact sur les candidates passées et futures), en session dédiée, AVANT de re-revendiquer la
+fidélité de la bande dans une spec.
+
+**Priorité de la prochaine session (revue 2026-09-07, session #6)** :
+
+1. **#14 (gouvernance, décision HUMAINE)** : toujours en attente depuis le 2026-08-24 — à
+   défaut, le critère vécu de `SELECTION-FINALE.md` §5 tranche de lui-même vers fin octobre
+   2026 (le Sharpe roulant 60j devient calculable ~fin septembre : les verdicts du
+   DRIFT-REPORT deviendront réellement informatifs). Peut absorber #12a/#12b et le palier de
+   coûts perp — questions de règle, jamais dans une session de jugement.
+2. **P1#6 (protective put synthétique)** : prochaine candidate de jugement recommandée —
+   long-only, aucune extension d'infra requise, valeur de réduction de risque pour les 3
+   wallets ; attention au piège « equity curve trading » explicitement documenté dans la fiche.
+3. **P1#5 (pairs ETH/BTC)** : version dégradée long-only possible sans extension short ; la
+   version complète attend #17 (P2).
+4. #18 ci-dessus (diagnostic + correctif début-de-mois — rapide, avec le premier point :
+   vérifier que le recalibrage du 2026-09-13 s'est exécuté normalement).
+5. Vérifier le premier run du cron fetch-data (samedi 2026-09-12 05h UTC) : régénération de
+   `market-data`, funding/perp à jour, ticker BK, anomalies OHLC.
+
+**Priorité de la session #6 (2026-08-31, conservée pour mémoire)** :
 
 1. **#16 (P0 infrastructure moteur)** : session dédiée, spec pré-enregistrée + audit adversarial
    AVANT toute candidate — le moteur commun a un défaut documenté vs la production.

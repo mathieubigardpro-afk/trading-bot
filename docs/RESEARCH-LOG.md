@@ -742,3 +742,177 @@ le palier de coûts perp reste à 25 bps (la vraie question est une question de 
 pas de recherche : à instruire en gouvernance, jamais dans une session de jugement).
 Prochaine candidate → K_total = 13 lignes + sa grille. Labo toujours vide (0/3). Suite de
 tests : 779 verts + 1 skip.
+
+---
+
+## 2026-09-07 — Session hebdomadaire #6 (a) : REVUE des stratégies actives et candidates + incidents données
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56j. **Zéro action requise, zéro action prise.**
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-09-06 : 7 lignes, toutes **SURVEILLER**
+  (46j vécus < 60j — Sharpe roulant 60j non calculable). Sharpe vécus toujours du bruit
+  d'échantillon court ; DD vécus ≤ 1,7 % partout. Aucune action. À partir de ~fin septembre le
+  Sharpe roulant 60j deviendra calculable et le critère vécu de `SELECTION-FINALE.md` §5
+  (3 mois) arrivera à maturité vers fin octobre.
+- **Gouvernance #14** : toujours aucune décision humaine enregistrée depuis le dossier du
+  2026-08-24 (`GOVERNANCE-DOSSIER-2026-08-24-quasi-passif.md`). Rappel priorité haute.
+- **INCIDENT 1 — recalibrage du 2026-09-06 SAUTÉ** : le rafraîchissement crypto de la
+  maintenance a rapporté « OK » mais 0/6 symboles en staging (`DONNEES_INSUFFISANTES`).
+  Cause la plus probable (déduite du code, logs de maintenance non conservés) : maintenance
+  exécutée le 6 septembre ⇒ « dernier mois complet » = août 2026, dont l'archive mensuelle
+  Binance Vision n'était vraisemblablement pas encore publiée ⇒ règle de complétude ⇒ TOUS
+  les symboles exclus (le complément API ne couvre que le mois COURANT, pas un mois d'archive
+  manquant). Mode d'échec systématique de tout début de mois — inscrit au backlog (#18),
+  aucune correction improvisée cette session. Sans impact : `REGIME_SMA_DAYS` inchangé depuis
+  6 recalibrages, le prochain (2026-09-13) rattrapera.
+- **INCIDENT 2 — branche `market-data` stale depuis le 2026-08-24** : `fetch-data.yml` n'avait
+  AUCUN schedule (dispatch/push uniquement — le run du 2026-08-24 venait du push de la session
+  #4). Corrigé cette session : cron hebdomadaire samedi 05h UTC (avant la maintenance du
+  dimanche), le push de la session déclenche une régénération immédiate — qui permettra aussi
+  de re-vérifier le ticker **BK** (échec yfinance+stooq du 2026-08-24, toujours à surveiller).
+- **Note cadence** : les cycles du bot tournent à ~10-12/jour (trous horaires journalisés par
+  le bot lui-même) — famine connue du scheduler GitHub Actions, déjà mitigée en session #1
+  (6 tentatives/heure), dédup par run_id saine. Aucune action.
+- Wallets au cycle 2026-09-07T06 : 🛡️ 992 € | ⚖️ 1 014 € | 🔥 1 005 € | 🧪 980 € (labo 100 %
+  cash, état attendu).
+
+---
+
+## 2026-09-07 — Session hebdomadaire #6 (b) : backlog #16 — portage de la position entre fenêtres OOS contiguës (SPEC pré-enregistrée, audit adversarial, 2 CRITIQUES + 1 MAJEUR + 1 MINEUR traités, contre-audit `isSound: true`)
+
+**Contexte.** Priorité n°1 pré-enregistrée par la revue de la session #5 : le finding F1
+(CRITIQUE) de l'audit du 2026-08-31 avait démontré que la remise à zéro de la position à chaque
+fenêtre OOS × bande de non-négociation × vol targeting rendait le moteur PLUS SÉVÈRE que la
+production pour toute candidate à faible poids nominal (funding carry : fenêtres entières sans
+un seul ordre malgré un signal actif 100 % du temps).
+
+**Protocole.** SPEC pré-enregistrée `backtest/CARRY-EXTENSION-SPEC.md` committée AVANT
+implémentation (commit 060a643) : extension 100 % opt-in (rétro-compat bit-à-bit par défaut),
+portage exclusivement d'OOS k vers OOS k+1 contiguë (jamais depuis un segment IS),
+reconstruction au dernier close SANS coût (c'est la même position, pas un ordre), anti-gaming
+du comptage (une ligne traversant N fenêtres = 1 seul trade clos, à sa vraie sortie).
+Implémentation par un agent dédié, audit par un agent adversarial indépendant sur copie isolée
+(remote neutralisé).
+
+**Audit adversarial : verdict initial `isSound: false`** — 3 findings démontrés par exécution :
+- **F1 (CRITIQUE)** : le portage GONFLAIT le profit factor (chiffre de seuil §1.2 !) — l'équity
+  restait exacte à 1e-16 mais la classification réalisé/latent aux frontières était
+  systématiquement favorable (15/15 seeds, jusqu'à +54 % de PF relatif). Cause racine : PnL
+  accumulé normalisé par le capital de DÉBUT de fenêtre alors que les poids portés sont
+  normalisés par l'équity de FIN. **Corrigé** (normalisation sur l'équity finale, télescopage
+  exact) — après correctif : biais disparu (5 favorables / 8 défavorables / 2 nuls, résidu
+  équilibré, tests multi-seeds committés).
+- **F2 (CRITIQUE, spec elle-même)** : l'équivalence « bande poche = bande wallet » AFFIRMÉE par
+  la spec §5 est **RÉFUTÉE** en régime de compounding (relation affine
+  `E_wallet = 1 + alloc·(E_pocket − 1)`, jamais homothétique — décisions hold/trade totalement
+  divergentes dès que l'équity s'écarte de 1). Clause d'arrêt de la spec respectée : AUCUN
+  changement de bande, statut documenté NON RÉSOLU (amendement §7 + README + test de garde
+  committé), instruction renvoyée au backlog (#19) avec le second écart observé au passage
+  (la production exécute toujours un flatten même sous la bande, le moteur non).
+- **F3 (MAJEUR)** : `carry_out` empoisonnable par un close final NaN (spot mark-to-zero
+  historique) détecté une fenêtre trop tard. **Corrigé** : `ValueError` immédiate au packaging.
+- 1 MINEUR (ligne à poids ~0 dont le PnL accumulé disparaissait) corrigé.
+
+**Contre-audit : `isSound: true`** (rejeu des scripts d'attaque de l'auditeur sur le code
+corrigé). Preuves finales : rétro-compat bit-à-bit (hash HEAD vs modifié, synthétique + réel
+spot/perp, ET reproduction bit-exacte de `vol_breakout_6majors/results.json` sur données
+réelles, 46 min de calcul) ; conservation économique vs simulation continue unique à 1e-16
+(bande active) ; zéro fuite IS→OOS (perturbations) ; liquidation/funding perp dès la première
+bougie post-frontière (aucune immunité). Commit 0fcd699.
+
+**Re-run informatif de `funding_carry_6majors`** (spec §6.6, quantification de l'artefact F1 du
+2026-08-31 — INFORMATIF uniquement, aucun verdict passé ne change, §3.3) : chiffres consignés
+dans l'entrée (e) ci-dessous (calcul long, terminé en fin de session).
+
+---
+
+## 2026-09-07 — Session hebdomadaire #6 (c) : Porte 1 de `btc_seasonality_2123utc` (backlog P1#4) — ÉCHEC 4/5, REJETÉE ; audit `isSound: true`
+
+**Protocole.** SPEC intégralement PRÉ-ENREGISTRÉE et committée AVANT exécution (commit 70b75b5) :
+long BTC pendant les bougies ouvrant à 21h et 22h UTC, flat sinon — fenêtre STRICTEMENT issue de
+la littérature externe (Quantpedia ≤ 2023), zéro grille, zéro variante d'heure, zéro filtre
+(interdit absolu du backlog #4 : pas de re-recherche de la « meilleure » heure). 15 fenêtres
+9m IS / 3m OOS horaires (OOS 2022-10-01 → 2026-06-30, 32 855 h), coûts majors 15 bps/côté
+(importés de `bot/config.py`), overlay standard horaire, **K_total = 13 + 15 × 1 = 28**.
+Premier backtest de candidate exécuté avec le portage inter-fenêtres ACTIVÉ (vérifié
+structurellement neutre : positions tenues 2 h, 0 frontière traversée). Sémantique des issues
+figée d'avance, y compris l'attendu honnête écrit AVANT le run : échec probable sur les coûts.
+
+**Résultats (OOS concaténé, net de coûts).**
+
+| | Candidate | Benchmark B&H BTC aligné |
+|---|---|---|
+| Sharpe | **−6,68** | 0,864 |
+| Profit factor | 0,328 | — |
+| MaxDD | 89,7 % | 53,7 % (relatif : 1,67× > 1,5×) |
+| Trades clos | 1 369 | — |
+| DSR (K=28) | ~0 (3e-38) | — |
+
+Porte 1 §1.2 : **4/5 seuils manqués** (seul le seuil de trades passe). Stress de coûts : PF 0,05
+à 3×, 0,01 à 5×. **Constat d'honnêteté central** : l'effet BRUT existe et n'a PAS disparu avec
+l'institutionnalisation (+6,4 bps/jour OOS ; +3,6 avant 2024, **+7,8 depuis 2024**) — mais il
+reste ~4,7× SOUS le hurdle de coûts du projet (2 côtés × 15 bps = 30 bps/jour pour 2 h de
+détention). C'est un échec de STRUCTURE DE COÛTS, pas une absence d'effet ni un artefact.
+
+**Audit adversarial indépendant (copie isolée) : `isSound: true`.** Reproduction from scratch
+(hors pipeline) convergente à 0,0005 de Sharpe, 1 369 trades identiques ; zéro look-ahead
+(perturbation des données futures : diff bit-exacte 0,0) ; DSR/K_total recalculés identiques au
+dernier chiffre ; benchmark aligné reproduit à 5 décimales ; hypothèse « annualisation 8760 sur
+série à 94 % de zéros = artefact » réfutée mathématiquement ; vérification explicite de
+l'artefact du précédent funding_carry : vol scalar min 0,178 >> bande 0,05, 0 entrée bloquée.
+1 MINEUR : la citation `rapport-recherche.md` (source de la fenêtre) est intraçable dans le
+dépôt — la fenêtre était pré-identifiée par le backlog dès l'origine (aucun choix a posteriori),
+mais la traçabilité de la référence de littérature est à améliorer.
+
+**Décision (conforme à la sémantique pré-enregistrée).** Statut **`rejetee`**, entrée n°14 du
+registre (commit 639c5c9). Conclusion transférable consignée au registre : aucune stratégie à
+détention ~2 h/jour n'est viable sur ce périmètre de coûts sans un edge brut ≥ ~5× celui
+mesuré — ne pas retester de variante calendaire horaire sans changement structurel du régime de
+coûts. Backlog P1#4 soldé. Prochaine candidate → K_total = 14 lignes + sa grille. Labo toujours
+vide (0/3).
+
+---
+
+## 2026-09-07 — Session hebdomadaire #6 (d) : hygiène — backlog #15 (référence du DRIFT-REPORT) et cron fetch-data
+
+- **#15 soldé** (commit 2068097) : `tools/weekly_maintenance.py` référence désormais le retest
+  AUDITÉ de `quasi_passif_crypto` (Sharpe attendu 0,808/0,283/0,069 ; MaxDD 8,4/27,3/56,4 % par
+  wallet) via une table de redirection explicite — le registre append-only reste intouché,
+  fallback silencieux si l'entrée de retest venait à manquer, note explicite dans le rendu.
+  Dès le prochain rapport (2026-09-13), les verdicts de dérive seront calculés contre des
+  chiffres crédibles.
+- **Cron fetch-data** (commit précédent, cf. (a) incident 2) : samedi 05h UTC.
+- Suite de tests complète au moment du push : verte (cf. commit final).
+
+---
+
+## 2026-09-07 — Session hebdomadaire #6 (e) : re-run informatif de `funding_carry_6majors` sur moteur amendé + correctif d'un test tautologique
+
+**Re-run informatif (spec carry §6.6, AUCUN verdict ne change — §3.3).** `run_funding_carry
+--carry-across-windows` (2,5 h de calcul) : le run NOMINAL (à plat entre fenêtres) reproduit
+exactement l'archive (Sharpe −0,0503) ; le run avec PORTAGE donne **Sharpe OOS +0,836,
+PF 1,014, MaxDD 0,79 %, 24 lignes perp closes** — identique à la re-simulation continue de
+l'auditeur du 2026-08-31, qui quantifiait l'artefact F1. Confirmation : (a) l'artefact était
+réel et matériel (−0,89 point de Sharpe pour cette candidate) ; (b) **le rejet reste inchangé
+et robuste dans les deux lectures** (PF 1,014 ≤ 1,15 ; 24 < 80 trades). Note datée ajoutée à
+l'entrée du registre (append-only respecté), résultats archivés dans
+`backtest/results/funding_carry_6majors/results_carry_informative_2026-09-07.json`.
+`vol_breakout_6majors` et `quasi_passif_crypto_wf_retest` n'ont PAS été re-runnés (budget de
+calcul ; poids nominaux 0,2-1,0 largement au-dessus de la bande 0,05, artefact F1 non
+plausible pour eux — la reproduction bit-exacte des 14 fenêtres de vol_breakout sur le moteur
+amendé, extension désactivée, en tient lieu de non-régression).
+
+**Correctif de session (honnêteté des preuves).** Le test de reproduction §1.1a livré par
+l'implémentation était TAUTOLOGIQUE (il comparait le results.json que `main()` venait
+d'écraser… à lui-même) et DESTRUCTEUR (il écrasait l'archive `vol_breakout_6majors/results.json`
+avec un run sur données plus récentes). Détecté par l'orchestrateur en revoyant le diff de
+working tree, archive restaurée (sha256 vérifié), test réécrit (archive chargée AVANT, sortie
+en tmp_path, garde anti-écriture) et RE-EXÉCUTÉ pour de vrai : **14/14 fenêtres communes
+bit-identiques** (sharpe, PF, MaxDD, trades, bornes IS/OOS) — la preuve de rétro-compatibilité
+est désormais réelle. Leçon consignée : un test de reproduction doit toujours charger sa
+référence avant d'exécuter quoi que ce soit qui puisse l'écrire.
+
+**Bilan de session** : registre à 14 entrées (K_total prochaine candidate = 14 + grille),
+labo toujours vide (0/3), aucune stratégie active modifiée, framework de risque et circuit
+breakers intouchés. Suite de tests complète verte au push final.
