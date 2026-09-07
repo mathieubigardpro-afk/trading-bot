@@ -430,6 +430,40 @@
       "n_liquidations_oos": 0,
       "raison": "ÉCHEC Porte 1 §1.2 : 4/5 seuils manqués (Sharpe -0.050 < 0.70 ; PF 0.964 <= 1.15 ; 14 lignes perp closes < 80 ; DSR 0.0065 < 0.50 ; seul le MaxDD relatif passe, trivialement pour une stratégie delta-neutre). Delta-neutralité confirmée (résidu spot+perp +0.06 %, corrélation au B&H -0.01) et funding bien positif (+2.74 % du capital sur 3.5 ans OOS) mais INTÉGRALEMENT absorbé par les coûts pessimistes du projet (25 bps/côté x 2 jambes = -2.88 %). Audit adversarial indépendant isSound=FALSE : F1 CRITIQUE = artefact méthodologique qui PÉNALISE la candidate — la remise à zéro de la position à chaque fenêtre OOS du moteur x bande de non-négociation plate 5 % x vol targeting sur |w| bloque toute entrée quand le poids scalé (0.015-0.046) reste sous la bande (fenêtre 4 : 0 trade en 3 mois malgré signal actif 100 %) ; re-simulation continue de l'auditeur (position portée entre fenêtres contiguës) : Sharpe +0.836, PF 1.014, 24 lignes perp — le rejet reste robuste (PF < 1.15 et trades < 80 dans les deux lectures) mais les marges affichées ne sont pas fiables. En production la bande est par POCHE (5 % x capital_alloc_pct) et l'exécution continue : le moteur est plus sévère que la production pour les candidates à faible poids nominal. Aucun re-run dans cette session (§0) ; amendement du moteur (portage de position entre fenêtres OOS contiguës, bande par poche) à pré-enregistrer et auditer AVANT toute future candidate (backlog #16) ; un re-run de cette idée sur moteur amendé = nouvel id, nouvelle ligne K_total (§3.3), valeur attendue faible tant que les coûts perp restent au palier pessimiste 25 bps. Incubation de toute façon impossible : bot/sim/ reste long-only (statut pré-enregistré 'validee_porte1_en_attente_infra' non utilisé). Autres axes de l'audit sains : causalité, reproduction bit-exacte (3 fenêtres OOS + 1 sélection IS), funding, DSR, K_total, benchmark, aucune retouche post-OOS.",
       "source": "backtest/results/funding_carry_6majors/results.json"
+    },
+    {
+      "id": "btc_seasonality_2123utc",
+      "famille": "crypto_calendar_seasonality",
+      "date_test": "2026-09-07",
+      "statut": "rejetee",
+      "sharpe_oos": -6.6796,
+      "sortino_oos": -8.8391,
+      "profit_factor_oos": 0.3281,
+      "max_drawdown_oos_pct": 89.66,
+      "n_trades_oos_closed": 1369,
+      "benchmark_sharpe_oos_aligned": 0.8643,
+      "benchmark_maxdd_oos_aligned_pct": 53.74,
+      "walkforward": "9m IS / 3m OOS, pas 3m, 15 fenêtres (2022-01 -> 2026-07, horaire, OOS 2022-10-01 -> 2026-06-30, 32855 h), AUCUNE grille (fenêtre 21h-23h UTC strictement issue de la littérature externe, zéro degré de liberté, SPEC pré-enregistrée committée AVANT exécution, commit 70b75b5)",
+      "univers": [
+        "BTC"
+      ],
+      "k_total": 28,
+      "dsr": 3.03e-38,
+      "dsr_methode": "K_total = 13 (lignes du registre au 2026-09-07) + 15 fenêtres x 1 combo = 28 (PROMOTION-RULES.md §1.3). Bailey & López de Prado 2014 sur rendements horaires OOS concaténés (n=32855, skew -2.15, kurtosis excess 453 — série flat ~94% du temps), recalculé indépendamment par l'audit (identique au dernier chiffre).",
+      "audit_adversarial_isSound": true,
+      "cost_stress_profit_factor": {
+        "15bps": 0.3281,
+        "45bps_3x": 0.0483,
+        "75bps_5x": 0.0124
+      },
+      "sous_periodes_sharpe": {
+        "avant_2024": -7.132,
+        "depuis_2024": -6.451
+      },
+      "correlation_oos_vs_benchmark": 0.266,
+      "moteur": "Premier backtest de candidate exécuté avec le portage inter-fenêtres ACTIVÉ (CARRY-EXTENSION-SPEC.md, audité isSound=true le même jour AVANT ce backtest) — vérifié structurellement neutre pour cette candidate (0 position à cheval sur une frontière, positions tenues 2 h).",
+      "raison": "ÉCHEC Porte 1 §1.2 : 4/5 seuils manqués (Sharpe OOS -6.68 < 0.70 ; PF 0.328 <= 1.15 ; MaxDD relatif 1.67x > 1.5x ; DSR ~0 ; seul le seuil de trades passe, 1369 >= 80). L'effet de saisonnalité BRUT existe pourtant dans les données (+6.4 bps/jour OOS, +3.6 avant 2024, +7.8 depuis — il ne s'est PAS éteint avec l'institutionnalisation) mais reste ~4.7x SOUS le hurdle de coûts du projet (2 côtés x 15 bps = 30 bps/jour pour une détention de 2 h/jour) : perte nette de -23.6 bps/jour. C'est un échec de STRUCTURE DE COÛTS, pas un artefact — audit adversarial indépendant isSound=true (reproduction from scratch convergente à 0.0005 de Sharpe, zéro look-ahead par perturbation bit-exacte, DSR/K_total/benchmark recalculés identiques, vol-targeting jamais sous la bande — min scalar 0.178, 0 entrée bloquée, contrairement au précédent funding_carry). Conclusion transférable consignée : AUCUNE stratégie à détention ~2 h/jour sur ce périmètre de coûts ne peut être viable sans un edge brut >= ~5x celui-ci — ne pas retester de variante calendaire horaire sans changement structurel du régime de coûts (§3.3, compterait dans K_total). Backlog P1#4 soldé.",
+      "source": "backtest/results/btc_seasonality_2123utc/results.json"
     }
   ]
 }

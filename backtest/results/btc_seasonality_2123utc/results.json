@@ -1,0 +1,750 @@
+{
+  "meta": {
+    "candidate_id": "btc_seasonality_2123utc",
+    "backlog_ref": "backtest/SEASONALITY-BTC-SPEC.md (P1#4, pré-enregistrée 2026-09-07)",
+    "engine": "backtest/engine.py (docs/PROMOTION-RULES.md §1.1), portage inter-fenêtres ACTIVÉ (CARRY-EXTENSION-SPEC.md)",
+    "data_dir": "/home/claude/repo/_data/crypto",
+    "univers": [
+      "BTC"
+    ],
+    "calendar_start": "2022-01-01 00:00:00",
+    "calendar_end": "2026-07-31 23:00:00",
+    "calendar_end_vs_spec_note": "SPEC.md §2 anticipait '~2026-08-24' AVANT exécution ; le dernier timestamp RÉELLEMENT présent dans _data/crypto/BTC.csv.gz est 2026-07-31 23:00:00 -- écart documenté, non ajusté (mission : le chiffre constaté prime, jamais retouché après coup).",
+    "n_calendar_hours": 40151,
+    "real_data_gaps_by_symbol": {
+      "BTC": 0
+    },
+    "n_nan_after_align": 0,
+    "n_windows": 15,
+    "n_windows_matches_spec_expectation": true,
+    "expected_n_windows_spec": 15,
+    "walkforward": "9m IS / 3m OOS / pas 3m",
+    "param_grid": [
+      {}
+    ],
+    "target_open_hours_utc": [
+      21,
+      22
+    ],
+    "cost_bps_nominal_per_side": 15.0,
+    "cost_bps_source": "bot.config.COST_TIER_FEE_TAKER_BPS['majors'] + bot.config.COST_TIER_SLIPPAGE_PENALTY_BPS['majors'] (10 + 5)",
+    "sim_kwargs_hourly": {
+      "vol_ewma_halflife_days": 60.0,
+      "vol_periods_per_year": 8760.0
+    },
+    "no_trade_band": 0.05,
+    "vol_target_annualized": 0.275,
+    "periods_per_year_metrics": 8760.0,
+    "k_total": 28,
+    "k_total_detail": {
+      "registry_rows": 13,
+      "n_windows": 15,
+      "n_grid_combos": 1,
+      "formula": "K_total = registry_rows + n_windows * n_grid_combos (PROMOTION-RULES.md §1.3, SPEC.md §3)"
+    },
+    "carry_verification": {
+      "carry_across_windows_enabled": true,
+      "note": "SPEC.md §2 : mode NOMINAL (pas un opt-in informatif comme funding_carry_6majors) -- alimente directement promotion_rules_1_2_thresholds_verdict.",
+      "n_windows_with_carry_in_used": 0,
+      "n_carry_boundary_events_non_contiguous": 0,
+      "carry_boundary_events": [],
+      "n_carry_out_not_flat_at_boundary": 0,
+      "carry_out_not_flat_events": [],
+      "expected": "n_carry_boundary_events_non_contiguous == 0 ET n_carry_out_not_flat_at_boundary == 0 (SPEC.md §2 : positions tenues 2h, jamais à cheval sur une frontière de fenêtre)."
+    },
+    "runtime_seconds": 659.6
+  },
+  "candidate_btc_seasonality": {
+    "cost_bps": 15.0,
+    "per_window": [
+      {
+        "sharpe": -14.346475865556474,
+        "sortino": -15.60177030044587,
+        "profit_factor": 0.07302634881730874,
+        "max_drawdown": 0.22632104004857123,
+        "cagr": -0.6372038576948951,
+        "average_exposure": 0.059290157180149614,
+        "n_trades_closed": 92,
+        "n_periods": 2208,
+        "window_index": 0,
+        "is_start": "2022-01-01 00:00:00",
+        "is_end": "2022-09-30 23:00:00",
+        "oos_start": "2022-10-01 00:00:00",
+        "oos_end": "2022-12-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -6.8379657430031555,
+        "sortino": -8.604215028131366,
+        "profit_factor": 0.3097860143691608,
+        "max_drawdown": 0.14848430310156668,
+        "cagr": -0.4757576920511115,
+        "average_exposure": 0.04939451512369755,
+        "n_trades_closed": 90,
+        "n_periods": 2159,
+        "window_index": 1,
+        "is_start": "2022-04-01 00:00:00",
+        "is_end": "2022-12-31 23:00:00",
+        "oos_start": "2023-01-01 00:00:00",
+        "oos_end": "2023-03-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -6.133958805014761,
+        "sortino": -9.269096713395108,
+        "profit_factor": 0.40121724908221573,
+        "max_drawdown": 0.11222341701775296,
+        "cagr": -0.3500041566089711,
+        "average_exposure": 0.05824051670012213,
+        "n_trades_closed": 91,
+        "n_periods": 2184,
+        "window_index": 2,
+        "is_start": "2022-07-01 00:00:00",
+        "is_end": "2023-03-31 23:00:00",
+        "oos_start": "2023-04-01 00:00:00",
+        "oos_end": "2023-06-30 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -8.417361489704303,
+        "sortino": -8.813130490464385,
+        "profit_factor": 0.0672049675035376,
+        "max_drawdown": 0.240366132662575,
+        "cagr": -0.6640221757412086,
+        "average_exposure": 0.07196264978566087,
+        "n_trades_closed": 92,
+        "n_periods": 2208,
+        "window_index": 3,
+        "is_start": "2022-10-01 00:00:00",
+        "is_end": "2023-06-30 23:00:00",
+        "oos_start": "2023-07-01 00:00:00",
+        "oos_end": "2023-09-30 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -3.4901742762467554,
+        "sortino": -6.8373786523098286,
+        "profit_factor": 0.540798631638783,
+        "max_drawdown": 0.13382758560425878,
+        "cagr": -0.3611478809523664,
+        "average_exposure": 0.059927994709147475,
+        "n_trades_closed": 92,
+        "n_periods": 2208,
+        "window_index": 4,
+        "is_start": "2023-01-01 00:00:00",
+        "is_end": "2023-09-30 23:00:00",
+        "oos_start": "2023-10-01 00:00:00",
+        "oos_end": "2023-12-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -7.172664256821046,
+        "sortino": -8.942753781503809,
+        "profit_factor": 0.32329292183265956,
+        "max_drawdown": 0.12813658350430035,
+        "cagr": -0.4187733064954452,
+        "average_exposure": 0.0452906832093016,
+        "n_trades_closed": 91,
+        "n_periods": 2184,
+        "window_index": 5,
+        "is_start": "2023-04-01 00:00:00",
+        "is_end": "2023-12-31 23:00:00",
+        "oos_start": "2024-01-01 00:00:00",
+        "oos_end": "2024-03-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -3.591187334890796,
+        "sortino": -6.4104819988332045,
+        "profit_factor": 0.5903789436767195,
+        "max_drawdown": 0.09067859684423518,
+        "cagr": -0.21313620767324915,
+        "average_exposure": 0.05195432962330181,
+        "n_trades_closed": 91,
+        "n_periods": 2184,
+        "window_index": 6,
+        "is_start": "2023-07-01 00:00:00",
+        "is_end": "2024-03-31 23:00:00",
+        "oos_start": "2024-04-01 00:00:00",
+        "oos_end": "2024-06-30 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -5.239548674400893,
+        "sortino": -7.094198658648882,
+        "profit_factor": 0.4384195172857935,
+        "max_drawdown": 0.11523955963183208,
+        "cagr": -0.38169984823931213,
+        "average_exposure": 0.04572521759119067,
+        "n_trades_closed": 92,
+        "n_periods": 2208,
+        "window_index": 7,
+        "is_start": "2023-10-01 00:00:00",
+        "is_end": "2024-06-30 23:00:00",
+        "oos_start": "2024-07-01 00:00:00",
+        "oos_end": "2024-09-30 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -5.661831281729937,
+        "sortino": -7.0798305332159694,
+        "profit_factor": 0.39944296776923865,
+        "max_drawdown": 0.11952911791326948,
+        "cagr": -0.38661122162560835,
+        "average_exposure": 0.04819795098844496,
+        "n_trades_closed": 92,
+        "n_periods": 2208,
+        "window_index": 8,
+        "is_start": "2024-01-01 00:00:00",
+        "is_end": "2024-09-30 23:00:00",
+        "oos_start": "2024-10-01 00:00:00",
+        "oos_end": "2024-12-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -6.889645027676588,
+        "sortino": -8.150710075737228,
+        "profit_factor": 0.31321897565240664,
+        "max_drawdown": 0.1298241343623019,
+        "cagr": -0.43033144008009616,
+        "average_exposure": 0.046860318266741925,
+        "n_trades_closed": 90,
+        "n_periods": 2160,
+        "window_index": 9,
+        "is_start": "2024-04-01 00:00:00",
+        "is_end": "2024-12-31 23:00:00",
+        "oos_start": "2025-01-01 00:00:00",
+        "oos_end": "2025-03-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -7.0688036796169005,
+        "sortino": -10.135160503873252,
+        "profit_factor": 0.3630566222695752,
+        "max_drawdown": 0.16635689610670779,
+        "cagr": -0.5179941626121456,
+        "average_exposure": 0.0607971032045682,
+        "n_trades_closed": 91,
+        "n_periods": 2184,
+        "window_index": 10,
+        "is_start": "2024-07-01 00:00:00",
+        "is_end": "2025-03-31 23:00:00",
+        "oos_start": "2025-04-01 00:00:00",
+        "oos_end": "2025-06-30 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -7.1335547569869435,
+        "sortino": -10.495657381203271,
+        "profit_factor": 0.3235241978939089,
+        "max_drawdown": 0.15103937740185702,
+        "cagr": -0.45459639712957867,
+        "average_exposure": 0.07427214954494643,
+        "n_trades_closed": 92,
+        "n_periods": 2208,
+        "window_index": 11,
+        "is_start": "2024-10-01 00:00:00",
+        "is_end": "2025-06-30 23:00:00",
+        "oos_start": "2025-07-01 00:00:00",
+        "oos_end": "2025-09-30 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -4.829088897417972,
+        "sortino": -6.613677304228344,
+        "profit_factor": 0.45395943804975136,
+        "max_drawdown": 0.07990341542862112,
+        "cagr": -0.2784562022329258,
+        "average_exposure": 0.05226263307633168,
+        "n_trades_closed": 92,
+        "n_periods": 2208,
+        "window_index": 12,
+        "is_start": "2025-01-01 00:00:00",
+        "is_end": "2025-09-30 23:00:00",
+        "oos_start": "2025-10-01 00:00:00",
+        "oos_end": "2025-12-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -8.370449065971423,
+        "sortino": -10.852520531589569,
+        "profit_factor": 0.27543926833482874,
+        "max_drawdown": 0.14343359505433706,
+        "cagr": -0.4560059744729055,
+        "average_exposure": 0.05120034640744489,
+        "n_trades_closed": 90,
+        "n_periods": 2160,
+        "window_index": 13,
+        "is_start": "2025-04-01 00:00:00",
+        "is_end": "2025-12-31 23:00:00",
+        "oos_start": "2026-01-01 00:00:00",
+        "oos_end": "2026-03-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      },
+      {
+        "sharpe": -8.311576359939622,
+        "sortino": -11.737102633852487,
+        "profit_factor": 0.27315408142843256,
+        "max_drawdown": 0.19787989182093835,
+        "cagr": -0.5749091180175178,
+        "average_exposure": 0.06098318491294727,
+        "n_trades_closed": 91,
+        "n_periods": 2184,
+        "window_index": 14,
+        "is_start": "2025-07-01 00:00:00",
+        "is_end": "2026-03-31 23:00:00",
+        "oos_start": "2026-04-01 00:00:00",
+        "oos_end": "2026-06-30 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false,
+        "carry_out_flat": true
+      }
+    ],
+    "concatenated": {
+      "sharpe": -6.679625350828789,
+      "sortino": -8.839088320307436,
+      "profit_factor": 0.3281206447476724,
+      "max_drawdown": 0.8966468400392339,
+      "cagr": -0.45384865746581926,
+      "average_exposure": 0.05578757284877058,
+      "n_trades_closed": 1369,
+      "n_periods": 32855
+    }
+  },
+  "benchmark_buy_and_hold_btc": {
+    "cost_bps": 0.0,
+    "overlay": "désactivé (apply_vol_targeting=False, no_trade_band=0.0)",
+    "per_window": [
+      {
+        "sharpe": -1.1332898458875975,
+        "sortino": -1.6210030849900625,
+        "profit_factor": NaN,
+        "max_drawdown": 0.2702352712406517,
+        "cagr": -0.47102294450940696,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 0,
+        "oos_start": "2022-10-01 00:00:00",
+        "oos_end": "2022-12-31 23:00:00"
+      },
+      {
+        "sharpe": 4.39210497317044,
+        "sortino": 6.634206179633461,
+        "profit_factor": NaN,
+        "max_drawdown": 0.21740843715488212,
+        "cagr": 8.046446037076327,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2159,
+        "window_index": 1,
+        "oos_start": "2023-01-01 00:00:00",
+        "oos_end": "2023-03-31 23:00:00"
+      },
+      {
+        "sharpe": 0.8634910214409365,
+        "sortino": 1.169544468155989,
+        "profit_factor": NaN,
+        "max_drawdown": 0.19453140578104344,
+        "cagr": 0.31420228464874556,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2184,
+        "window_index": 2,
+        "oos_start": "2023-04-01 00:00:00",
+        "oos_end": "2023-06-30 23:00:00"
+      },
+      {
+        "sharpe": -1.3681652588043836,
+        "sortino": -1.8882975802106239,
+        "profit_factor": NaN,
+        "max_drawdown": 0.2083575244075465,
+        "cagr": -0.3845765425931581,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 3,
+        "oos_start": "2023-07-01 00:00:00",
+        "oos_end": "2023-09-30 23:00:00"
+      },
+      {
+        "sharpe": 4.611566264541422,
+        "sortino": 7.064892957807032,
+        "profit_factor": NaN,
+        "max_drawdown": 0.08588768159068116,
+        "cagr": 4.960322767139372,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 4,
+        "oos_start": "2023-10-01 00:00:00",
+        "oos_end": "2023-12-31 23:00:00"
+      },
+      {
+        "sharpe": 4.042926639733339,
+        "sortino": 5.848208429711467,
+        "profit_factor": NaN,
+        "max_drawdown": 0.20183721965394297,
+        "cagr": 7.122248454422397,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2184,
+        "window_index": 5,
+        "oos_start": "2024-01-01 00:00:00",
+        "oos_end": "2024-03-31 23:00:00"
+      },
+      {
+        "sharpe": -0.8133404629688898,
+        "sortino": -1.1042520874189556,
+        "profit_factor": NaN,
+        "max_drawdown": 0.21432517540467344,
+        "cagr": -0.3993980120805588,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2184,
+        "window_index": 6,
+        "oos_start": "2024-04-01 00:00:00",
+        "oos_end": "2024-06-30 23:00:00"
+      },
+      {
+        "sharpe": 0.3391368672473639,
+        "sortino": 0.48313728428491803,
+        "profit_factor": NaN,
+        "max_drawdown": 0.2864693067474231,
+        "cagr": 0.03557822760855389,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 7,
+        "oos_start": "2024-07-01 00:00:00",
+        "oos_end": "2024-09-30 23:00:00"
+      },
+      {
+        "sharpe": 3.3078623649449326,
+        "sortino": 4.75532302412779,
+        "profit_factor": NaN,
+        "max_drawdown": 0.15125294215071772,
+        "cagr": 3.707131015583859,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 8,
+        "oos_start": "2024-10-01 00:00:00",
+        "oos_end": "2024-12-31 23:00:00"
+      },
+      {
+        "sharpe": -0.6255195496608236,
+        "sortino": -0.8611284714652032,
+        "profit_factor": NaN,
+        "max_drawdown": 0.2830940469817126,
+        "cagr": -0.3985690676616678,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2160,
+        "window_index": 9,
+        "oos_start": "2025-01-01 00:00:00",
+        "oos_end": "2025-03-31 23:00:00"
+      },
+      {
+        "sharpe": 2.725493105913194,
+        "sortino": 3.984475595065416,
+        "profit_factor": NaN,
+        "max_drawdown": 0.1407585673170375,
+        "cagr": 1.846349801589176,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2184,
+        "window_index": 10,
+        "oos_start": "2025-04-01 00:00:00",
+        "oos_end": "2025-06-30 23:00:00"
+      },
+      {
+        "sharpe": 0.9642861906891329,
+        "sortino": 1.3862024733861193,
+        "profit_factor": NaN,
+        "max_drawdown": 0.13273329052272798,
+        "cagr": 0.28105747856467755,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 11,
+        "oos_start": "2025-07-01 00:00:00",
+        "oos_end": "2025-09-30 23:00:00"
+      },
+      {
+        "sharpe": -2.039848942092592,
+        "sortino": -2.751596689884414,
+        "profit_factor": NaN,
+        "max_drawdown": 0.34761471164701363,
+        "cagr": -0.6481673543770886,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 12,
+        "oos_start": "2025-10-01 00:00:00",
+        "oos_end": "2025-12-31 23:00:00"
+      },
+      {
+        "sharpe": -1.714859874040431,
+        "sortino": -2.3515965083364216,
+        "profit_factor": NaN,
+        "max_drawdown": 0.35589760225970357,
+        "cagr": -0.6366773859348722,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2160,
+        "window_index": 13,
+        "oos_start": "2026-01-01 00:00:00",
+        "oos_end": "2026-03-31 23:00:00"
+      },
+      {
+        "sharpe": -1.2663939304654344,
+        "sortino": -1.7647916756234514,
+        "profit_factor": NaN,
+        "max_drawdown": 0.2936484652924827,
+        "cagr": -0.4576163091977282,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2184,
+        "window_index": 14,
+        "oos_start": "2026-04-01 00:00:00",
+        "oos_end": "2026-06-30 23:00:00"
+      }
+    ],
+    "concatenated": {
+      "sharpe": 0.8642914750929612,
+      "sortino": 1.2231747342743913,
+      "profit_factor": NaN,
+      "max_drawdown": 0.537420662880086,
+      "cagr": 0.34253130102176477,
+      "average_exposure": 1.0,
+      "n_trades_closed": 0,
+      "n_periods": 32855
+    }
+  },
+  "dsr_candidate": {
+    "sharpe_hat_period": -0.0713674289281014,
+    "n_obs": 32855,
+    "skew": -2.1501408650935647,
+    "kurtosis_excess": 453.1324985400499,
+    "trials_k": 28,
+    "sr0_benchmark_expected_max_sharpe": 0.013471891679026939,
+    "dsr": 3.027416840181079e-38
+  },
+  "cost_stress_test": {
+    "profit_factor_at_15bps_nominal": 0.3281206447476724,
+    "profit_factor_at_45bps_3x": 0.04832766092265499,
+    "profit_factor_at_75bps_5x": 0.012400566554610548,
+    "sharpe_at_15bps_nominal": -6.679625350828789,
+    "sharpe_at_45bps_3x": -17.56717183461754,
+    "sharpe_at_75bps_5x": -22.144941858105717,
+    "full_summary_45bps_3x": {
+      "sharpe": -17.56717183461754,
+      "sortino": -19.401730364074048,
+      "profit_factor": 0.04832766092265499,
+      "max_drawdown": 0.9995855849719417,
+      "cagr": -0.874651231553204,
+      "average_exposure": 0.05590816661366249,
+      "n_trades_closed": 1369,
+      "n_periods": 32855
+    },
+    "full_summary_75bps_5x": {
+      "sharpe": -22.144941858105717,
+      "sortino": -22.74045274200648,
+      "profit_factor": 0.012400566554610548,
+      "max_drawdown": 0.999998379556958,
+      "cagr": -0.9714150573345308,
+      "average_exposure": 0.05602780025373849,
+      "n_trades_closed": 1369,
+      "n_periods": 32855
+    },
+    "note": "Re-simulation walk-forward COMPLÈTE (avec portage inter-fenêtres, mode nominal), seul cost_bps change -- pas de 'params déjà choisis' à figer (grille à 1 combo, SPEC.md §1)."
+  },
+  "honesty_analyses": {
+    "correlation_vs_buy_and_hold_btc": {
+      "value": 0.26614947415255585,
+      "note": "Corrélation des rendements horaires OOS candidate vs B&H BTC (mêmes fenêtres OOS alignées, intersection des index)."
+    },
+    "subperiods_2022_2023_vs_2024_2026": {
+      "period_before": "< 2024-01-01",
+      "sharpe_before": -7.131995648835312,
+      "n_periods_before": 10967,
+      "period_after": ">= 2024-01-01",
+      "sharpe_after": -6.451280887333215,
+      "n_periods_after": 21888
+    },
+    "beats_benchmark_sharpe_oos_aligned": false,
+    "beats_benchmark_note": "SPEC.md §5 : une candidate long-BTC-2h/jour est corrélée au B&H BTC -- si elle passe les 5 seuils SANS battre le Sharpe B&H BTC OOS aligné, précédent `ecartee` (valeur marginale nulle vs incumbent, session #1) applicable. Ce champ ne constitue PAS un verdict (réservé à l'orchestrateur/l'auditeur, cf. mission), seulement le fait mesuré."
+  },
+  "promotion_rules_1_2_thresholds_verdict": {
+    "sharpe_oos": {
+      "value": -6.679625350828789,
+      "threshold": 0.7,
+      "rule": ">= seuil",
+      "pass": false
+    },
+    "profit_factor_oos": {
+      "value": 0.3281206447476724,
+      "threshold": 1.15,
+      "rule": "> seuil",
+      "pass": false
+    },
+    "n_trades_oos_closed": {
+      "value": 1369,
+      "threshold": 80,
+      "rule": ">= seuil",
+      "pass": true
+    },
+    "maxdd_relative_to_benchmark": {
+      "value": 1.6684264338368051,
+      "threshold": 1.5,
+      "rule": "<= seuil (maxdd_candidate / maxdd_benchmark_OOS_aligné)",
+      "pass": false
+    },
+    "dsr": {
+      "value": 3.027416840181079e-38,
+      "threshold": 0.5,
+      "rule": ">= seuil",
+      "k_total": 28,
+      "pass": false
+    }
+  },
+  "promotion_rules_1_2_all_pass": false,
+  "adversarial_audit_1_4": {
+    "isSound": null,
+    "note": "SPEC.md §4 exige un audit adversarial indépendant obligatoire (isSound: false = rejet automatique quels que soient les chiffres). Cet audit n'est PAS exécuté par ce script (hors périmètre de la mission d'implémentation du backtest) -- à conduire séparément avant toute décision de statut dans RESEARCH-REGISTRY.json."
+  }
+}
