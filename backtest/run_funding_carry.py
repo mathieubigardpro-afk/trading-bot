@@ -103,6 +103,23 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--data-dir", default=str(DEFAULT_DATA_DIR))
     p.add_argument("--output-dir", default=str(OUTPUT_DIR))
+    # Opt-in, défaut OFF (CARRY-EXTENSION-SPEC.md §2/§7) : le run NOMINAL (celui qui alimente
+    # `promotion_rules_1_2_thresholds_verdict`) reste TOUJOURS calculé à plat entre fenêtres,
+    # STRICTEMENT identique à avant cette extension, que ce flag soit passé ou non -- il ne fait
+    # qu'ACTIVER un second run supplémentaire, purement informatif (jamais un verdict), publié
+    # dans un bloc séparé de `results.json` (spec §7 : "ne touche pas au format existant par
+    # défaut"). Sert à quantifier l'artefact F1 de l'audit du 2026-08-31 (spec §6.6).
+    p.add_argument(
+        "--carry-across-windows",
+        action="store_true",
+        default=False,
+        help=(
+            "Lance EN PLUS du run nominal (inchangé) un second run informatif walk-forward avec "
+            "portage de la position entre fenêtres OOS contiguës activé (CARRY-EXTENSION-SPEC.md). "
+            "N'affecte JAMAIS les seuils de promotion §1.2 (verdict basé exclusivement sur le run "
+            "nominal, toujours calculé à plat)."
+        ),
+    )
     return p
 
 
@@ -272,10 +289,24 @@ def make_sim_kwargs(
 # ------------------------------------------------------------------------------------------
 
 
-def run_walkforward(windows, calendar, opens, closes, weights_cache: WeightsCache, cost_bps: float, sim_kwargs: dict):
+def run_walkforward(
+    windows, calendar, opens, closes, weights_cache: WeightsCache, cost_bps: float, sim_kwargs: dict,
+    carry_across_windows: bool = False,
+):
+    """Walk-forward nominal (sélection IS + simulation OOS). `carry_across_windows` (défaut
+    `False`, OPT-IN explicite -- CARRY-EXTENSION-SPEC.md §2/§7) : quand activé, enchaîne
+    `carry_in(fenêtre k+1) = carry_out(fenêtre OOS k)` SI la frontière est calendaire-adjacente
+    (`carry_out.last_idx + 1 == w.oos_start_idx`), sinon démarre à plat (`carry_in=None`) et
+    JOURNALISE l'évènement dans `carry_boundary_events` (spec §1.3 : jamais silencieux) -- c'est
+    ICI, au niveau du RUNNER, que la contiguïté est décidée/vérifiée une première fois ;
+    `simulate_segment` la re-vérifie ensuite lui-même défensivement (spec §3, ne suppose jamais
+    un invariant fourni par l'appelant). `False` (défaut) : comportement STRICTEMENT identique à
+    avant cette extension, `carry_in` jamais transmis (spec §1.1)."""
     per_window = []
     segments = []
+    carry_boundary_events: List[dict] = []
     t_start = time.time()
+    prev_carry_out = None  # État de portage de la fenêtre OOS PRÉCÉDENTE (None si désactivé ou 1ère fenêtre)
     for w in windows:
         t0 = time.time()
         # `simulate_segment` exige `start_idx >= 1` -- inévitable pour la toute PREMIÈRE fenêtre
@@ -296,9 +327,40 @@ def run_walkforward(windows, calendar, opens, closes, weights_cache: WeightsCach
         )
         chosen = sel.chosen_params
         weights_chosen = weights_cache.get(chosen)
+        # Décision de portage (spec §1.3/§7) : uniquement si l'option est active ET qu'un état
+        # PRÉCÉDENT existe ET que la frontière est calendaire-adjacente -- sinon carry_in=None
+        # (comportement historique pour cette fenêtre) + évènement journalisé si la NON-
+        # contiguïté est la cause (jamais journalisé pour la toute première fenêtre, où
+        # `prev_carry_out is None` est attendu et normal, pas une anomalie).
+        carry_in_this_window = None
+        if carry_across_windows and prev_carry_out is not None:
+            if int(prev_carry_out.last_idx) + 1 == w.oos_start_idx:
+                carry_in_this_window = prev_carry_out
+            else:
+                carry_boundary_events.append(
+                    {
+                        "window_index": w.index,
+                        "prev_carry_last_idx": int(prev_carry_out.last_idx),
+                        "oos_start_idx": w.oos_start_idx,
+                        "reason": (
+                            "frontière non calendaire-adjacente (prev_carry.last_idx + 1 != "
+                            "oos_start_idx) -- démarrage à plat pour cette fenêtre "
+                            "(CARRY-EXTENSION-SPEC.md §1.3)."
+                        ),
+                    }
+                )
+                print(
+                    f"[carry] fenêtre {w.index} : frontière NON contiguë avec la fenêtre "
+                    f"précédente (prev_last_idx={prev_carry_out.last_idx}, "
+                    f"oos_start_idx={w.oos_start_idx}) -- démarrage à plat, évènement journalisé.",
+                    flush=True,
+                )
         seg = engine.simulate_segment(
-            calendar, weights_chosen, opens, closes, w.oos_start_idx, w.oos_end_idx, cost_bps, **sim_kwargs
+            calendar, weights_chosen, opens, closes, w.oos_start_idx, w.oos_end_idx, cost_bps,
+            carry_in=carry_in_this_window, **sim_kwargs,
         )
+        if carry_across_windows:
+            prev_carry_out = seg.carry_out
         segments.append(seg)
         summary = summarize_hourly(seg)
         summary.update(
@@ -313,6 +375,11 @@ def run_walkforward(windows, calendar, opens, closes, weights_cache: WeightsCach
                 "is_candidates": sel.all_candidates,
             }
         )
+        if carry_across_windows:
+            # Informatif (spec §7) -- n'existe QUE si l'option est active, jamais dans le run
+            # nominal par défaut (format existant intouché, spec §7 dernier point).
+            summary["carry_in_used"] = carry_in_this_window is not None
+            summary["carry_out_has_open_position"] = seg.carry_out is not None
         per_window.append(summary)
         print(
             f"[walk-forward] fenêtre {w.index}/{len(windows) - 1} ({w.oos_start.date()} -> "
@@ -329,6 +396,7 @@ def run_walkforward(windows, calendar, opens, closes, weights_cache: WeightsCach
         "concatenated": concat_summary,
         "_segments": segments,
         "_concatenated_result": concatenated,
+        "carry_boundary_events": carry_boundary_events,
     }
 
 
@@ -515,6 +583,33 @@ def main():
     print("[run] walk-forward candidate funding_carry (25 bps/côté nominal, spot+perp) ...", flush=True)
     candidate_result = run_walkforward(windows, calendar, opens, closes, weights_cache, COST_BPS_NOMINAL, sim_kwargs_nominal)
     per_window_chosen = [pw["chosen_params"] for pw in candidate_result["per_window"]]
+
+    # --- Portage inter-fenêtres, opt-in informatif (CARRY-EXTENSION-SPEC.md §2/§7) -------------
+    # Second run walk-forward COMPLET (mêmes fenêtres, mêmes coûts, même sélection IS -> les
+    # `chosen_params` peuvent différer trivialement de `per_window_chosen` ci-dessus si la
+    # sélection IS est déterministe -- elle L'EST ici, `select_params_via_is` ne dépend pas de
+    # l'OOS -- donc les DEUX runs choisissent EXACTEMENT les mêmes paramètres par fenêtre ; seule
+    # la SIMULATION OOS diffère, par le portage de position) -- jamais utilisé pour les seuils
+    # §1.2 (verdict `promotion_rules_1_2_thresholds_verdict` ci-dessous n'utilise QUE
+    # `candidate_result`, calculé À PLAT entre fenêtres comme avant cette extension).
+    carry_result = None
+    if args.carry_across_windows:
+        print(
+            "[run] walk-forward INFORMATIF avec portage de position entre fenêtres OOS "
+            "contiguës (--carry-across-windows, CARRY-EXTENSION-SPEC.md) ...",
+            flush=True,
+        )
+        carry_result = run_walkforward(
+            windows, calendar, opens, closes, weights_cache, COST_BPS_NOMINAL, sim_kwargs_nominal,
+            carry_across_windows=True,
+        )
+        if carry_result["carry_boundary_events"]:
+            print(
+                f"[carry] {len(carry_result['carry_boundary_events'])} frontière(s) NON contiguë(s) "
+                "détectée(s) -- portage réinitialisé à plat pour la/les fenêtre(s) concernée(s), "
+                "détail dans results.json.",
+                flush=True,
+            )
 
     print("[run] benchmark buy & hold équipondéré SPOT (sans coûts ni overlay) ...", flush=True)
     benchmark_result = run_benchmark(windows, calendar, spot_opens, spot_closes)
@@ -751,6 +846,42 @@ def main():
             ),
         },
     }
+
+    # --- Bloc informatif portage inter-fenêtres (CARRY-EXTENSION-SPEC.md §7) -------------------
+    # UNIQUEMENT présent si `--carry-across-windows` est passé -- absent par défaut, format
+    # existant du reste de `results.json` STRICTEMENT inchangé sinon (spec §7 dernier point).
+    # Jamais consommé par `promotion_rules_1_2_thresholds_verdict` ci-dessus (déjà figé avant ce
+    # bloc, à partir de `candidate_result`/`cand_concat`, calculés À PLAT entre fenêtres).
+    if carry_result is not None:
+        carry_concat = carry_result["concatenated"]
+        results["carry_across_windows_informative"] = {
+            "note": (
+                "INFORMATIF UNIQUEMENT (CARRY-EXTENSION-SPEC.md §2/§6.6/§7) -- quantifie "
+                "l'artefact F1 de l'audit adversarial du 2026-08-31 (la remise à plat de la "
+                "position à chaque fenêtre OOS empêche toute entrée sous la bande de "
+                "non-négociation). N'INFLUENCE JAMAIS `promotion_rules_1_2_thresholds_verdict` "
+                "ci-dessus (calculé exclusivement à partir du run NOMINAL, toujours à plat entre "
+                "fenêtres, identique à avant cette extension). Un re-run avec ce bloc est "
+                "INFORMATIF par construction (PROMOTION-RULES.md §3.3 par analogie perp -- aucun "
+                "verdict passé ne change) ; l'utiliser pour juger une candidate exige l'audit "
+                "adversarial indépendant préalable de CARRY-EXTENSION-SPEC.md §6.5."
+            ),
+            "carry_across_windows": True,
+            "per_window": carry_result["per_window"],
+            "concatenated": carry_concat,
+            "carry_boundary_events": carry_result["carry_boundary_events"],
+            "n_carry_boundary_events": len(carry_result["carry_boundary_events"]),
+            "comparison_vs_nominal_flat_between_windows": {
+                "sharpe_nominal_flat": cand_concat["sharpe"],
+                "sharpe_carry_across_windows": carry_concat["sharpe"],
+                "profit_factor_nominal_flat": cand_concat["profit_factor"],
+                "profit_factor_carry_across_windows": carry_concat["profit_factor"],
+                "n_trades_closed_perp_nominal_flat": cand_concat["n_trades_closed_perp"],
+                "n_trades_closed_perp_carry_across_windows": carry_concat["n_trades_closed_perp"],
+                "n_trades_closed_spot_nominal_flat": cand_concat["n_trades_closed_spot"],
+                "n_trades_closed_spot_carry_across_windows": carry_concat["n_trades_closed_spot"],
+            },
+        }
 
     results["meta"]["runtime_seconds"] = round(time.time() - t_global, 1)
 

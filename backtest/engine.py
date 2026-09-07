@@ -103,6 +103,80 @@ def _sum_pnl_breakdowns(breakdowns: Sequence[dict]) -> dict:
     return total
 
 # ------------------------------------------------------------------------------------------
+# Extension portage inter-fenêtres (backtest/CARRY-EXTENSION-SPEC.md) -- structures de données
+# UNIQUEMENT (la logique de reconstruction/packaging vit dans le corps de `simulate_segment`,
+# cf. commentaires dédiés plus bas). Ces deux dataclasses sont intégralement OPTIONNELLES :
+# `CarryState` n'est jamais construite ni consommée si l'appelant ne passe pas `carry_in` et
+# n'utilise pas `SegmentResult.carry_out` -- aucun impact sur le chemin historique (spec §1.1).
+# ------------------------------------------------------------------------------------------
+
+
+@dataclass
+class CarryLine:
+    """Métadonnées d'UNE ligne (spot ou perp) encore ouverte à la fin d'un segment, destinée à
+    être portée vers la fenêtre OOS suivante si le RUNNER active l'extension et que la
+    contiguïté calendaire est vérifiée (CARRY-EXTENSION-SPEC.md §1.3/§2/§4).
+
+    `pnl_accum`/`cost_accum` sont NORMALISÉS : fraction de L'ÉQUITY DE CLÔTURE DU SEGMENT
+    (`equity.iloc[-1]`, PAS `initial_capital`) DE CHAQUE FENÊTRE où ils ont été accrus, sommée
+    fenêtre après fenêtre -- jamais un montant dollar brut (spec §2/§4.2, cohérent avec
+    `concatenate_segments` qui concatène déjà des RENDEMENTS fractionnaires d'une fenêtre à
+    l'autre, jamais des dollars absolus).
+    Correctif audit adversarial F1 (CRITIQUE, cf. amendement CARRY-EXTENSION-SPEC.md §7 et
+    `backtest/README.md` section "Portage inter-fenêtres") : la base de normalisation DOIT être
+    la MÊME que celle utilisée pour reconstruire les `shares` au segment suivant
+    (`weights_at_last_close[s] = shares_final[s]*last_close[s] / equity_final` -- déjà une
+    fraction de `equity_final`, jamais de `initial_capital`). Normaliser `pnl_accum` par
+    `initial_capital` (l'ancienne convention, MATHÉMATIQUEMENT PROUVÉE FAUSSE dès que le segment
+    ne rend pas exactement 0% -- `equity_final != initial_capital` presque toujours) introduisait
+    un facteur d'échelle DIFFÉRENT de celui des `shares` reconstruites (`initial_capital_suivant
+    / equity_final` pour les shares, contre `initial_capital_suivant / initial_capital` pour le
+    PnL porté, les deux ne coïncidant QUE si `equity_final == initial_capital`) : le PnL non
+    réalisé "manquant" par action (`pnl_accum_$ / shares`) divergeait alors du véritable coût de
+    revient moyen implicite, et cette erreur se propageait -- gonflée ou dégonflée selon le sens
+    du rendement du segment précédent -- à CHAQUE réalisation ultérieure (réduction partielle OU
+    fermeture complète), y compris SANS aucun renforcement post-reconstruction (démontré par
+    `backtest/tests/test_carry.py::test_anti_gaming_profit_factor_matches_continuous_simulation_
+    across_seeds`, cas à une seule réduction). Avec `equity_final` comme base, le même facteur
+    d'échelle s'applique aux DEUX quantités (`shares` et `pnl_accum` en dollars du segment
+    suivant) et la reconstruction préserve EXACTEMENT le ratio "PnL non réalisé par action" --
+    la comptabilité par ligne (`avg_cost` + `_spot_prior_pnl`/`perp_pnl_accum`) redevient alors
+    l'exact télescopage d'une simulation continue, réduction partielle ou renforcement compris
+    (cf. dérivation complète dans le rapport d'implémentation). `pnl_accum` reste NET de coûts
+    (il inclut déjà l'effet de `cost_accum`) -- à la fermeture réelle de la ligne, la contribution
+    de la fenêtre COURANTE (déjà nette de SES PROPRES coûts par la mécanique existante du moteur)
+    est simplement ADDITIONNÉE à `pnl_accum` porté, jamais recombinée une seconde fois avec
+    `cost_accum`. `cost_accum` est une décomposition INFORMATIVE (audit/transparence : "combien
+    cette ligne a-t-elle payé de coûts cumulés sur toute sa vie, toutes fenêtres confondues") --
+    monotone croissante, jamais réinjectée dans un calcul de PnL (pour ne jamais compter un coût
+    deux fois) -- normalisée par la MÊME base (`equity_final`) uniquement par cohérence de
+    représentation avec `pnl_accum`, sa valeur n'entrant elle-même jamais dans une formule de
+    PnL."""
+
+    symbol: str
+    leg: str  # "spot" ou "perp" -- jamais autre chose (miroir de `perp_symbols` du segment)
+    line_id: str  # stable tant que la ligne reste ouverte -- `f"{symbol}:{leg}"` (au plus UNE
+    # ligne ouverte par (symbole, jambe) à la fois dans ce moteur -- cf. docstring module)
+    pnl_accum: float
+    cost_accum: float
+    entry_ts: "pd.Timestamp"  # timestamp d'entrée D'ORIGINE, jamais réécrit par un portage
+    carried_windows: int  # nombre de frontières de fenêtre déjà traversées par cette ligne
+
+
+@dataclass
+class CarryState:
+    """État de fin de segment nécessaire à la reconstruction du début du segment suivant
+    (CARRY-EXTENSION-SPEC.md §2-3). Produit TOUJOURS par `simulate_segment` (même sans
+    `carry_in`, cf. spec §2) -- c'est au RUNNER de décider de le rebrancher ou non en
+    `carry_in` de l'appel suivant."""
+
+    last_idx: int  # position ENTIÈRE dans le calendrier de la DERNIÈRE bougie simulée (spec §1.3)
+    weights_at_last_close: pd.Series  # poids RÉELLEMENT détenus, marqués à `last_close`, SIGNÉS
+    last_close: pd.Series  # prix de clôture par symbole porté (spec §3, reconstruction)
+    open_lines: List[CarryLine] = field(default_factory=list)
+
+
+# ------------------------------------------------------------------------------------------
 # Simulation de portefeuille sur un segment de calendrier donné
 # ------------------------------------------------------------------------------------------
 
@@ -120,6 +194,11 @@ class SegmentResult:
     # pas avant cette extension) ne voit STRICTEMENT rien changer.
     liquidations: List[dict] = field(default_factory=list)  # évènements de liquidation perp
     pnl_breakdown: dict = field(default_factory=_empty_pnl_breakdown)  # PnL par jambe (spec §4)
+    # --- Extension portage inter-fenêtres (CARRY-EXTENSION-SPEC.md §2) : `None` par défaut --
+    # un appelant historique (qui ignore ce champ, n'existait pas avant cette extension) ne voit
+    # STRICTEMENT rien changer. TOUJOURS renseigné par `simulate_segment` (même sans `carry_in`)
+    # SAUF si aucune position n'est ouverte en fin de segment (spec §2, dernier point).
+    carry_out: Optional["CarryState"] = None
 
     def n_trades_closed(self) -> int:
         return len(self.trades_closed)
@@ -156,6 +235,10 @@ def simulate_segment(
     perp_initial_margin_frac: float = 0.50,
     perp_maintenance_margin_frac: float = 0.025,
     perp_liquidation_fee_bps: float = 100.0,
+    # --- Extension portage inter-fenêtres (CARRY-EXTENSION-SPEC.md §2), optionnelle --
+    # `carry_in=None` (défaut) : AUCUNE des branches ci-dessous ne s'exécute, comportement
+    # historique bit-identique (spec §1.1, cf. `backtest/tests/test_carry.py`).
+    carry_in: Optional["CarryState"] = None,
 ) -> SegmentResult:
     """Simule le portefeuille sur `calendar[start_idx:end_idx+1]`, capital remis à
     `initial_capital` au tout début du segment (nécessaire pour produire des fenêtres OOS
@@ -257,7 +340,46 @@ def simulate_segment(
     commentaires du corps de fonction pour le détail exact de cette comptabilité par ligne.
     `SegmentResult.pnl_breakdown` publie la décomposition Spot/Perp/Funding/Coûts/Liquidation
     du PnL total du segment (toujours présente, à 0.0 sur les clés perp si `perp_symbols` est
-    vide -- spec §4, "le rapport DOIT publier le PnL par jambe")."""
+    vide -- spec §4, "le rapport DOIT publier le PnL par jambe").
+
+    --------------------------------------------------------------------------------------
+    Extension portage inter-fenêtres (`backtest/CARRY-EXTENSION-SPEC.md`, pré-enregistrée --
+    cette spec prime en cas de divergence avec cette docstring)
+    --------------------------------------------------------------------------------------
+    `carry_in` (défaut `None`) : reconstruit, AVANT la première bougie du segment, la position
+    RÉELLEMENT détenue à la fin du segment précédent (`CarryState` produite par un appel
+    antérieur de cette même fonction, cf. `SegmentResult.carry_out`) -- réplique l'exécution
+    CONTINUE de production, modulo la renormalisation du capital à `initial_capital` par
+    fenêtre (spec §3). `None` (défaut) : comportement historique bit-identique, aucune des
+    branches de reconstruction ne s'exécute (spec §1.1).
+
+    Contiguïté (spec §1.3/§3) VÉRIFIÉE, jamais supposée : `carry_in.last_idx + 1 != start_idx`
+    lève `ValueError` immédiatement -- c'est au RUNNER de garantir cet invariant (démarrer à
+    plat + journaliser si les fenêtres ne sont pas calendaires-adjacentes), le moteur ne fait
+    JAMAIS silencieusement un flat sur un carry_in incohérent (ARCHITECTURE.md §0.2).
+
+    Reconstruction (spec §3, pour chaque symbole `s` de `carry_in.weights_at_last_close` à
+    poids non nul) : `shares_0[s] = weights_at_last_close[s] * initial_capital / last_close[s]`
+    (signé pour perp), `cash_0 = initial_capital - Σ_spot shares_0 * last_close` (le perp ne
+    déduit JAMAIS son notionnel du cash, cohérent avec la comptabilité perp existante). AUCUN
+    coût d'entrée sur cette reconstruction (spec §3.2, ce n'est PAS un ordre) -- obtenu
+    gratuitement en pré-amorçant `avg_cost`/`perp_ref` à `last_close` : la mécanique PAR BOUGIE
+    existante (gap clôture->ouverture, bande, coûts sur `trade_shares` réel) s'applique alors
+    SANS AUCUNE modification à la boucle principale, la position reconstruite n'étant jamais vue
+    comme une "ouverture" (elle n'est jamais à 0 juste avant). Un prix `NaN` nécessaire à la
+    reconstruction d'un symbole à poids non nul lève `ValueError` (spec §3.4, alignée politique
+    perp F1 du 2026-08-31) ; un poids exactement `0.0` est simplement omis.
+
+    Anti-gaming (spec §4) : une ligne qui traverse une frontière de fenêtre reste UNE SEULE
+    ligne économique -- elle n'entre dans `trades_closed`/`n_trades_closed()` qu'à sa VRAIE
+    sortie (jamais artificiellement à la frontière), avec un `pnl` total = somme NORMALISÉE de
+    ses contributions à travers toutes les fenêtres traversées (`carried_windows`/`entry_ts`
+    ajoutés en champs ADDITIFS sur cette entrée de `trades_closed`, uniquement si la ligne a
+    réellement été portée au moins une fois -- jamais présents sinon, schéma historique
+    inchangé). En fin de segment, toute ligne encore ouverte est publiée dans
+    `SegmentResult.carry_out.open_lines` (jamais forcée à se fermer, comportement historique
+    inchangé) -- c'est au RUNNER de choisir de rebrancher `carry_out` en `carry_in` de la
+    fenêtre suivante ou non (le moteur n'a pas la notion de "dernière fenêtre du walk-forward")."""
     universe = list(weights_decided.columns)
     if start_idx <= 0:
         raise ValueError(
@@ -346,6 +468,153 @@ def simulate_segment(
     liquidations: List[dict] = []
     spot_cols = [c for c in universe if c not in perp_set]
     pnl_breakdown = _empty_pnl_breakdown()
+    # `trades_closed`/`realized_events` déclarés ICI (et non plus loin, juste avant la boucle
+    # principale comme avant cette extension) : le garde MINEUR de reconstruction ci-dessous
+    # (poids porté ~0 avec PnL accumulé substantiel -> clôture synthétique à la frontière) doit
+    # pouvoir y écrire AVANT que la boucle principale ne démarre -- même listes, aucun changement
+    # de sémantique pour le chemin historique (`carry_in=None` : ces deux lignes restent vides
+    # jusqu'à la boucle principale exactement comme avant, seul leur point de DÉCLARATION bouge).
+    trades_closed: List[dict] = []
+    realized_events: List[dict] = []
+
+    # --- État dédié au portage inter-fenêtres (CARRY-EXTENSION-SPEC.md §4), inerte si
+    # `carry_in` est `None` -- ces dicts restent VIDES dans ce cas, aucune branche ci-dessous ni
+    # dans la boucle principale n'a d'effet observable (spec §1.1, rétro-compat bit-à-bit).
+    _spot_prior_pnl: Dict[str, float] = {}  # PnL net-de-coûts des fenêtres PRÉCÉDENTES (spot
+    # uniquement -- le perp réutilise directement `perp_pnl_accum`, pré-amorcé ci-dessous, cf.
+    # docstring : sa mécanique de fermeture/réduction partielle est DÉJÀ exactement celle dont
+    # le portage a besoin, aucune duplication de logique n'est nécessaire côté perp).
+    _carry_cost_accum: Dict[str, float] = {}  # coûts cumulés informatifs (spot ET perp), $ de
+    # CETTE fenêtre + coût déjà porté des fenêtres précédentes -- monotone, jamais soustrait
+    # d'un PnL (spec §2 : "coûts accumulés", champ séparé et purement informatif).
+    _carry_windows_count: Dict[str, int] = {}  # nb de frontières déjà traversées AVANT cette
+    # fenêtre (0 = ligne ouverte pour la première fois DANS cette fenêtre) -- n'est incrémenté
+    # qu'au moment de la publication dans `carry_out.open_lines` en fin de segment, jamais ici.
+    _carry_entry_ts: Dict[str, pd.Timestamp] = {}  # timestamp d'entrée D'ORIGINE (spot ET perp)
+
+    if carry_in is not None:
+        # Contiguïté défensive (spec §1.3/§3) : le RUNNER doit déjà garantir cet invariant AVANT
+        # d'appeler cette fonction (démarrer à plat + journaliser sinon) -- le moteur ne suppose
+        # JAMAIS un invariant fourni par l'appelant sans le revérifier lui-même
+        # (ARCHITECTURE.md §0.2) : un carry_in non contigu est un bug de l'appelant, jamais une
+        # dégradation silencieuse vers un flat.
+        if int(carry_in.last_idx) + 1 != start_idx:
+            raise ValueError(
+                f"carry_in non contigu : carry_in.last_idx={carry_in.last_idx} + 1 != "
+                f"start_idx={start_idx} (CARRY-EXTENSION-SPEC.md §1.3) -- le RUNNER doit "
+                "démarrer à plat (carry_in=None) et journaliser l'évènement quand les fenêtres "
+                "OOS ne sont pas calendaires-adjacentes, jamais appeler simulate_segment avec "
+                "un état non contigu."
+            )
+        _lines_by_key = {(ln.symbol, ln.leg): ln for ln in carry_in.open_lines}
+        _total_spot_dollars = 0.0
+        for _sym, _w_last in carry_in.weights_at_last_close.items():
+            _wf = float(_w_last)
+            if abs(_wf) <= 1e-12:
+                # Correctif audit (MINEUR) : un poids porté ~0 (`shares[s] > 1e-9` au packaging,
+                # mais `weight = shares*price/equity` retombé sous 1e-12, cf. docstring
+                # `CarryLine`) était jusqu'ici simplement OMIS -- la ligne `open_lines`
+                # correspondante (et TOUT son PnL accumulé, potentiellement non nul) disparaissait
+                # sans jamais alimenter `trades_closed`/`realized_events`. Choix retenu (le plus
+                # simple et honnête, cf. rapport d'implémentation) : cette ligne est CLOSE ICI --
+                # à la frontière, dans le segment qui reconstruit -- avec son PnL accumulé publié
+                # normalement (mêmes champs additifs `carried_windows`/`entry_ts` que toute autre
+                # ligne portée, spec §4.3), plutôt que de risquer un PnL qui s'évapore. Le poids
+                # étant sous 1e-12, AUCUN ordre/coût n'est jamais généré pour cette clôture
+                # (spec §3.2 : pas de coût d'entrée sur du portage -- ici c'est une clôture, pas
+                # une entrée, et il n'y a de toute façon aucun trade réel à ce prix). Validation
+                # (universe/NaN) volontairement PAS appliquée à cette branche (comportement
+                # historique inchangé pour un poids réellement nul, cf.
+                # `test_reconstruction_zero_weight_symbol_omitted_no_nan_check`) -- seule une
+                # ligne connue de `carry_in.open_lines` (donc déjà validée à sa création) peut
+                # être close ici, jamais une ligne inconnue.
+                _leg0 = "perp" if _sym in perp_set else "spot"
+                _line0 = _lines_by_key.get((_sym, _leg0))
+                if _line0 is not None and (abs(_line0.pnl_accum) > 0.0 or abs(_line0.cost_accum) > 0.0):
+                    _boundary_ts = calendar[int(carry_in.last_idx)]
+                    _pnl0 = float(_line0.pnl_accum) * float(initial_capital)
+                    _event0 = {"date": _boundary_ts, "symbol": _sym, "pnl": _pnl0, "closes_line": True}
+                    _rec0 = {
+                        "symbol": _sym,
+                        "open_date": _line0.entry_ts,
+                        "close_date": _boundary_ts,
+                        "pnl": _pnl0,
+                        "carried_windows": int(_line0.carried_windows),
+                        "entry_ts": _line0.entry_ts,
+                    }
+                    if _leg0 == "perp":
+                        _event0["leg"] = "perp"
+                        _rec0["leg"] = "perp"
+                    realized_events.append(_event0)
+                    trades_closed.append(_rec0)
+                continue  # spec §3.4 : poids porté exactement 0 -> jamais reconstruit.
+            if _sym not in universe:
+                raise ValueError(
+                    f"carry_in porte un symbole {_sym!r} absent de l'univers de ce segment "
+                    "(weights_decided.columns) -- l'univers doit rester stable d'une fenêtre à "
+                    "l'autre pour que le portage ait un sens (CARRY-EXTENSION-SPEC.md §2)."
+                )
+            _is_perp_sym = _sym in perp_set
+            _leg = "perp" if _is_perp_sym else "spot"
+            if not _is_perp_sym and _wf < 0.0:
+                raise ValueError(
+                    f"carry_in porte un poids négatif ({_wf}) sur {_sym!r}, non déclaré perp "
+                    "dans CE segment -- incohérence de configuration (leg spot/perp) entre "
+                    "fenêtres portées, long-only strict sur le spot (PERP-EXTENSION-SPEC.md §2)."
+                )
+            _price = carry_in.last_close.get(_sym)
+            if _price is None or pd.isna(_price):
+                raise ValueError(
+                    f"carry_in.last_close manquant/NaN pour {_sym!r} à poids porté non nul -- "
+                    "jamais de reconstruction sur un prix manquant (spec §3.4, alignée politique "
+                    "perp F1 du 2026-08-31 : jamais un prix 0/NaN silencieux)."
+                )
+            _price = float(_price)
+            _shares0 = _wf * float(initial_capital) / _price
+            shares[_sym] = _shares0
+            _line = _lines_by_key.get((_sym, _leg))
+            # PnL/coûts portés convertis de "fraction de L'ÉQUITY DE CLÔTURE de la fenêtre
+            # PRÉCÉDENTE" (spec §3 préambule + correctif audit F1, cf. docstring `CarryLine` --
+            # PAS "fraction de son `initial_capital`", c'était le bug F1) vers un montant $ de
+            # CETTE fenêtre -- multiplication par LE `initial_capital` COURANT, symétrique de la
+            # division par `_equity_final` (PAS `initial_capital`) appliquée à la publication de
+            # `carry_out` ci-dessous. C'est EXACTEMENT le même facteur d'échelle
+            # (`initial_capital_courant / equity_final_précédente`) que celui implicitement subi
+            # par `shares_0` ci-dessus via `_wf` (qui est déjà `shares_final*last_close/
+            # equity_final_précédente`, cf. publication `weights_at_last_close` plus bas) --
+            # c'est cette COHÉRENCE des deux facteurs d'échelle qui rend le télescopage du PnL
+            # porté exact (spec §6.3, `_frac = sold/old_sh` dans la boucle principale reste alors
+            # rigoureusement exacte, renforcement post-reconstruction inclus).
+            _prior_pnl = float(_line.pnl_accum) * float(initial_capital) if _line is not None else 0.0
+            _prior_cost = float(_line.cost_accum) * float(initial_capital) if _line is not None else 0.0
+            _entry_ts = _line.entry_ts if _line is not None else calendar[int(carry_in.last_idx)]
+            _windows_count = int(_line.carried_windows) if _line is not None else 0
+            _carry_cost_accum[_sym] = _prior_cost
+            _carry_windows_count[_sym] = _windows_count
+            _carry_entry_ts[_sym] = _entry_ts
+            if _is_perp_sym:
+                perp_open_date[_sym] = _entry_ts
+                # Réutilise TEL QUEL le mécanisme perp existant (fermeture complète, réduction
+                # partielle proportionnelle, changement de signe) -- `perp_pnl_accum` pré-amorcé
+                # au PnL net déjà porté est tout ce qu'il faut, spec §4.2 tombe gratuitement.
+                perp_pnl_accum[_sym] = _prior_pnl
+                # `perp_ref` = dernière mise au marché connue = `last_close` PORTÉ (spec §3.1,
+                # dernier point : "la dérive clôture->ouverture de la première bougie est vécue
+                # par la position portée, comme en continu") -- la mécanique de gap existante
+                # (`prior_ref`/mise au marché) s'en sert SANS aucune autre modification.
+                perp_ref[_sym] = _price
+            else:
+                open_date[_sym] = _entry_ts
+                # Base de coût = `last_close` PORTÉ : isole la contribution PROPRE à CETTE
+                # fenêtre dans les calculs `avg_cost` existants (achat/vente), le PnL des
+                # fenêtres précédentes étant suivi séparément dans `_spot_prior_pnl` et rajouté
+                # explicitement à la fermeture/réduction de la ligne (cf. boucle principale).
+                avg_cost[_sym] = _price
+                _spot_prior_pnl[_sym] = _prior_pnl
+                _total_spot_dollars += _shares0 * _price
+        # Spec §3.1 : équity de départ = EXACTEMENT `initial_capital` ; le perp ne déduit JAMAIS
+        # son notionnel du cash (marge testée au premier tour comme tout ordre, spec §3.2).
+        cash = float(initial_capital) - _total_spot_dollars
     # Équity spot+cash de la borne PRÉCÉDENTE, pour isoler le "gap" de prix (clôture précédente
     # -> open de ce tour) sur le PnL spot -- même logique que le rattrapage perp ci-dessus,
     # nécessaire pour que `pnl_breakdown["spot_pnl"] + pnl_breakdown["perp_variation"] ≈ 0` sur
@@ -357,8 +626,8 @@ def simulate_segment(
     n = end_idx - start_idx + 1
     equity = np.empty(n)
     exposure = np.empty(n)
-    trades_closed: List[dict] = []
-    realized_events: List[dict] = []
+    # `trades_closed`/`realized_events` déclarés plus haut (avant le bloc de reconstruction) --
+    # cf. commentaire à leur déclaration.
 
     # Précalcul vectorisé (une seule fois pour tout le calendrier fourni, cf. docstring de
     # `risk_overlay.precompute_vol_stats`) -- désactivé si `apply_vol_targeting=False`.
@@ -507,23 +776,41 @@ def simulate_segment(
             # agrégat de `cash` ci-dessous pour la courbe d'équity -- pas un coût compté deux fois
             # sur l'équity, seulement reflété deux fois dans deux rapports différents (équity
             # globale vs PnL par ligne), pratique standard de reporting de trading.
+            # Portage inter-fenêtres (CARRY-EXTENSION-SPEC.md §2, "coûts accumulés") : ce coût
+            # ($ de CETTE fenêtre) s'ajoute au ledger informatif, monotone, indépendant de la
+            # branche (ouverture/renforcement/réduction/fermeture) -- couvre TOUS les cas d'un
+            # seul coup, jamais soustrait d'un PnL (décomposition purement informative).
+            _carry_cost_accum[sym] = _carry_cost_accum.get(sym, 0.0) + abs(d_shares) * price * cost_rate
             if old_sh <= 1e-9 and new_sh > 1e-9:
                 avg_cost[sym] = price * (1.0 + cost_rate)
                 open_date[sym] = date
             elif old_sh > 1e-9 and new_sh <= 1e-9:
                 sell_price_net = price * (1.0 - cost_rate)
                 pnl = old_sh * (sell_price_net - avg_cost[sym])
+                # Anti-gaming (spec §4.1/§4.2) : si cette ligne a été RECONSTRUITE depuis une
+                # fenêtre précédente, son PnL total = somme de TOUTES ses contributions
+                # (normalisées), ajoutée ICI en une fois car la ligne se ferme ENTIÈREMENT --
+                # `_spot_prior_pnl` est vide (pop renvoie 0.0) pour une ligne jamais portée,
+                # terme neutre, aucun changement pour le chemin historique.
+                pnl += _spot_prior_pnl.pop(sym, 0.0)
+                _carried_w = _carry_windows_count.pop(sym, 0)
+                _entry_ts_orig = _carry_entry_ts.pop(sym, open_date.get(sym, date))
                 realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True})
-                trades_closed.append(
-                    {
-                        "symbol": sym,
-                        "open_date": open_date.get(sym, date),
-                        "close_date": date,
-                        "pnl": pnl,
-                    }
-                )
+                _trade_rec = {
+                    "symbol": sym,
+                    "open_date": open_date.get(sym, date),
+                    "close_date": date,
+                    "pnl": pnl,
+                }
+                if _carried_w > 0:
+                    # Champs ADDITIFS (spec §4.3) -- UNIQUEMENT présents pour une ligne
+                    # réellement portée au moins une fois, schéma historique inchangé sinon.
+                    _trade_rec["carried_windows"] = _carried_w
+                    _trade_rec["entry_ts"] = _entry_ts_orig
+                trades_closed.append(_trade_rec)
                 avg_cost[sym] = 0.0
                 open_date.pop(sym, None)
+                _carry_cost_accum.pop(sym, None)
             elif new_sh > old_sh > 1e-9:
                 added = new_sh - old_sh
                 buy_price_gross = price * (1.0 + cost_rate)
@@ -532,6 +819,17 @@ def simulate_segment(
                 sold = old_sh - new_sh
                 sell_price_net = price * (1.0 - cost_rate)
                 pnl = sold * (sell_price_net - avg_cost[sym])
+                # Réduction partielle d'une ligne PORTÉE (spec §4.2) : la part du PnL des
+                # fenêtres précédentes attachée à cette ligne se réalise PROPORTIONNELLEMENT à
+                # la fraction vendue (même convention que le spot natif : "les rebalances
+                # partiels comptent proportionnellement"), le reste demeure attaché à la portion
+                # encore ouverte. Terme neutre (`sym not in _spot_prior_pnl`) pour une ligne
+                # jamais portée -- aucun changement pour le chemin historique.
+                if sym in _spot_prior_pnl:
+                    _frac = sold / old_sh
+                    _prior = _spot_prior_pnl[sym]
+                    pnl += _frac * _prior
+                    _spot_prior_pnl[sym] = _prior * (1.0 - _frac)
                 realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": False})
 
         # --- Comptabilité PAR LIGNE perp (spec §4) --------------------------------------------
@@ -553,6 +851,10 @@ def simulate_segment(
             old_sh = float(shares[sym])
             new_sh = old_sh + d_shares
             price = float(open_price[sym])
+            # Portage inter-fenêtres (CARRY-EXTENSION-SPEC.md §2, "coûts accumulés") : ledger
+            # informatif monotone, symétrique de l'incrément spot ci-dessus -- jamais soustrait
+            # d'un PnL (déjà net de coût via `perp_pnl_accum`), purement pour audit/transparence.
+            _carry_cost_accum[sym] = _carry_cost_accum.get(sym, 0.0) + abs(d_shares) * price * perp_cost_rate
 
             if abs(old_sh) > 1e-9:
                 # Rattrapage "clôture précédente -> cet open" sur la position PRÉEXISTANTE,
@@ -584,15 +886,23 @@ def simulate_segment(
                 closing_cost = abs(old_sh) * price * perp_cost_rate
                 pnl = perp_pnl_accum.get(sym, 0.0) - closing_cost
                 realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True, "leg": "perp"})
-                trades_closed.append(
-                    {
-                        "symbol": sym,
-                        "open_date": perp_open_date.get(sym, date),
-                        "close_date": date,
-                        "pnl": pnl,
-                        "leg": "perp",
-                    }
-                )
+                # Anti-gaming (spec §4.1/§4.3) : champs additifs UNIQUEMENT si cette ligne a
+                # réellement été portée au moins une fois (`_carry_windows_count.pop` -> 0 pour
+                # une ligne jamais portée, schéma historique inchangé dans ce cas).
+                _carried_w = _carry_windows_count.pop(sym, 0)
+                _entry_ts_orig = _carry_entry_ts.pop(sym, perp_open_date.get(sym, date))
+                _carry_cost_accum.pop(sym, None)
+                _trade_rec = {
+                    "symbol": sym,
+                    "open_date": perp_open_date.get(sym, date),
+                    "close_date": date,
+                    "pnl": pnl,
+                    "leg": "perp",
+                }
+                if _carried_w > 0:
+                    _trade_rec["carried_windows"] = _carried_w
+                    _trade_rec["entry_ts"] = _entry_ts_orig
+                trades_closed.append(_trade_rec)
                 perp_pnl_accum[sym] = 0.0
                 perp_open_date.pop(sym, None)
             elif old_sh * new_sh < 0.0:
@@ -602,15 +912,24 @@ def simulate_segment(
                 closing_cost = abs(old_sh) * price * perp_cost_rate
                 pnl = perp_pnl_accum.get(sym, 0.0) - closing_cost
                 realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True, "leg": "perp"})
-                trades_closed.append(
-                    {
-                        "symbol": sym,
-                        "open_date": perp_open_date.get(sym, date),
-                        "close_date": date,
-                        "pnl": pnl,
-                        "leg": "perp",
-                    }
-                )
+                # Anti-gaming (spec §4.1/§4.3), même logique que la fermeture par ordre ci-dessus
+                # -- la NOUVELLE ligne ouverte juste après (sens opposé) repart intégralement à
+                # zéro (`carried_windows`/`entry_ts`/coût informatif jamais réutilisés d'une
+                # ligne économiquement différente, même si le symbole est identique).
+                _carried_w = _carry_windows_count.pop(sym, 0)
+                _entry_ts_orig = _carry_entry_ts.pop(sym, perp_open_date.get(sym, date))
+                _carry_cost_accum.pop(sym, None)
+                _trade_rec = {
+                    "symbol": sym,
+                    "open_date": perp_open_date.get(sym, date),
+                    "close_date": date,
+                    "pnl": pnl,
+                    "leg": "perp",
+                }
+                if _carried_w > 0:
+                    _trade_rec["carried_windows"] = _carried_w
+                    _trade_rec["entry_ts"] = _entry_ts_orig
+                trades_closed.append(_trade_rec)
                 perp_open_date[sym] = date
                 opening_cost = abs(new_sh) * price * perp_cost_rate
                 perp_pnl_accum[sym] = -opening_cost
@@ -696,15 +1015,23 @@ def simulate_segment(
                 cash = cash + applied_debit
                 pnl = perp_pnl_accum.get(sym, 0.0) + applied_debit
                 realized_events.append({"date": date, "symbol": sym, "pnl": pnl, "closes_line": True, "leg": "perp"})
-                trades_closed.append(
-                    {
-                        "symbol": sym,
-                        "open_date": perp_open_date.get(sym, date),
-                        "close_date": date,
-                        "pnl": pnl,
-                        "leg": "perp",
-                    }
-                )
+                # Anti-gaming (spec §4.1/§4.3) : la liquidation est une VRAIE sortie -- une ligne
+                # portée qui se fait liquider compte comme SA sortie réelle (jamais gonflé par le
+                # découpage en fenêtres), champs additifs mêmes règles que les fermetures ci-dessus.
+                _carried_w = _carry_windows_count.pop(sym, 0)
+                _entry_ts_orig = _carry_entry_ts.pop(sym, perp_open_date.get(sym, date))
+                _carry_cost_accum.pop(sym, None)  # ligne fermée (liquidée) -- rien à porter
+                _trade_rec = {
+                    "symbol": sym,
+                    "open_date": perp_open_date.get(sym, date),
+                    "close_date": date,
+                    "pnl": pnl,
+                    "leg": "perp",
+                }
+                if _carried_w > 0:
+                    _trade_rec["carried_windows"] = _carried_w
+                    _trade_rec["entry_ts"] = _entry_ts_orig
+                trades_closed.append(_trade_rec)
                 liquidations.append(
                     {
                         "date": date,
@@ -802,6 +1129,86 @@ def simulate_segment(
         returns = returns.fillna(0.0)
     exposure_series = pd.Series(exposure, index=dates)
 
+    # --- Publication de `carry_out` (CARRY-EXTENSION-SPEC.md §2) : TOUJOURS calculée (même
+    # sans `carry_in`, spec §2), `None` uniquement si aucune position n'est ouverte en fin de
+    # segment (ou après ruine, où `shares` est explicitement remis à 0 ci-dessus). N'affecte
+    # JAMAIS `equity`/`returns`/`trades_closed` déjà construits -- purement une LECTURE de
+    # l'état final `shares`/`avg_cost`/`perp_pnl_accum`/... pour packager l'état à porter.
+    carry_out: Optional[CarryState] = None
+    _final_close = closes.iloc[end_idx]
+    _equity_final = float(equity[-1])
+    if _equity_final > 0.0:
+        _open_syms = [s for s in universe if abs(float(shares[s])) > 1e-9]
+        if _open_syms:
+            # Correctif audit F3 (MAJEUR) : un `close` final NaN (mark-to-zero historique,
+            # trou de données) sur un symbole ENCORE EN POSITION empoisonnerait silencieusement
+            # `CarryState` (poids/`last_close` NaN) -- détecté seulement une fenêtre plus tard,
+            # au moment où `carry_in` échouerait sur `_price is None or pd.isna(_price)` (spec
+            # §3.4) SANS pointer la bonne fenêtre. Symétrique de ce garde de reconstruction :
+            # refus bruyant IMMÉDIAT, ICI, au packaging, avec la fenêtre fautive dans le message.
+            _nan_close_syms = [s for s in _open_syms if pd.isna(_final_close[s])]
+            if _nan_close_syms:
+                raise ValueError(
+                    f"Packaging de carry_out impossible : close final NaN à {dates[-1]} "
+                    f"(fenêtre [{start_idx}, {end_idx}]) pour {_nan_close_syms} alors que "
+                    "le symbole est encore en position en fin de segment -- jamais de "
+                    "CarryState empoisonné (poids/last_close NaN) transmis silencieusement à la "
+                    "fenêtre suivante (CARRY-EXTENSION-SPEC.md §3.4, symétrique du garde de "
+                    "reconstruction 'carry_in.last_close manquant/NaN'). Restreindre le "
+                    "calendrier/l'univers ou mettre la candidate flat AVANT le trou de données."
+                )
+            _weights_out: Dict[str, float] = {}
+            _last_close_out: Dict[str, float] = {}
+            _open_lines_out: List[CarryLine] = []
+            for _s in _open_syms:
+                _fc = float(_final_close[_s])
+                _sh_final = float(shares[_s])
+                _weights_out[_s] = _sh_final * _fc / _equity_final
+                _last_close_out[_s] = _fc
+                _is_p = _s in perp_set
+                _leg2 = "perp" if _is_p else "spot"
+                if _is_p:
+                    # `perp_pnl_accum` porte déjà le net cumulé (fenêtres précédentes + celle-ci,
+                    # cf. reconstruction ci-dessus qui le pré-amorce directement) -- rien à
+                    # recalculer, spec §4.2 gratuit.
+                    _pnl_dollars = float(perp_pnl_accum.get(_s, 0.0))
+                    _entry_ts_s = perp_open_date.get(_s, dates[-1])
+                else:
+                    # PnL non réalisé de la portion encore ouverte (base de coût `avg_cost`,
+                    # qui isole la contribution PROPRE à cette fenêtre) + PnL des fenêtres
+                    # PRÉCÉDENTES pas encore réalisé (`_spot_prior_pnl`, 0.0 si jamais porté).
+                    _pnl_dollars = _sh_final * (_fc - float(avg_cost[_s])) + _spot_prior_pnl.get(_s, 0.0)
+                    _entry_ts_s = open_date.get(_s, dates[-1])
+                _cost_dollars = float(_carry_cost_accum.get(_s, 0.0))
+                # +1 : cette ligne s'apprête à traverser SA PROCHAINE frontière (celle qui suit
+                # la fin de CE segment) -- jamais incrémenté à la reconstruction (spec §4.3,
+                # cf. docstring `CarryLine`).
+                _windows_out = int(_carry_windows_count.get(_s, 0)) + 1
+                _open_lines_out.append(
+                    CarryLine(
+                        symbol=_s,
+                        leg=_leg2,
+                        line_id=f"{_s}:{_leg2}",
+                        # Correctif audit F1 (CRITIQUE, cf. docstring `CarryLine`) : normalisé par
+                        # `_equity_final` (PAS `initial_capital`, l'ancienne convention qui
+                        # gonflait/dégonflait le profit factor porté dès que le segment ne rendait
+                        # pas exactement 0%) -- MÊME base que `weights_at_last_close` ci-dessus
+                        # (`_sh_final*_fc/_equity_final`), condition nécessaire et suffisante pour
+                        # que la reconstruction du segment suivant applique le MÊME facteur
+                        # d'échelle au PnL porté qu'aux `shares` reconstruites.
+                        pnl_accum=_pnl_dollars / _equity_final,
+                        cost_accum=_cost_dollars / _equity_final,
+                        entry_ts=_entry_ts_s,
+                        carried_windows=_windows_out,
+                    )
+                )
+            carry_out = CarryState(
+                last_idx=int(end_idx),
+                weights_at_last_close=pd.Series(_weights_out),
+                last_close=pd.Series(_last_close_out),
+                open_lines=_open_lines_out,
+            )
+
     return SegmentResult(
         dates=dates,
         equity=equity_series,
@@ -811,6 +1218,7 @@ def simulate_segment(
         realized_events=realized_events,
         liquidations=liquidations,
         pnl_breakdown=pnl_breakdown,
+        carry_out=carry_out,
     )
 
 

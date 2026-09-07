@@ -138,4 +138,61 @@ ici pour ne pas élargir le périmètre pré-enregistré.
 
 ## 7. Amendements issus de l'audit (append-only, AVANT tout backtest de candidate)
 
-*(vide à la pré-inscription)*
+### Audit adversarial du 2026-09-07 (isSound:false) — 4 findings, tous traités ci-dessous
+
+**F1 (CRITIQUE, correctif appliqué)** — le télescopage du PnL porté (`CarryLine.pnl_accum`/
+`cost_accum`) était normalisé par `initial_capital` du segment qui package, alors que les
+`shares` reconstruites au segment suivant sont DÉJÀ implicitement mises à l'échelle par
+`initial_capital_suivant / equity_final_précédente` (via `weights_at_last_close`). Ces deux bases
+ne coïncident que si le segment rend exactement 0 %. Correctif : `pnl_accum`/`cost_accum`
+normalisés par `equity.iloc[-1]` (l'équity de CLÔTURE du segment qui package), PAS
+`initial_capital` — même base que `weights_at_last_close`, condition nécessaire et suffisante
+pour que le facteur d'échelle appliqué aux `shares` et au PnL porté coïncide à la reconstruction,
+ce qui rend `_frac = sold/old_shares` (réduction partielle) exact. Appliqué IDENTIQUEMENT aux
+deux jambes (spot ET perp, même formule de packaging). Validé par
+`backtest/tests/test_carry.py::test_anti_gaming_profit_factor_matches_continuous_simulation_
+across_seeds` (spot, 20 seeds de marche aléatoire de poids, bande active, coûts non nuls) et son
+pendant perp : le signe de l'écart `profit_factor` (carry vs continu) devient ÉQUILIBRÉ (ni
+systématiquement favorable ni défavorable), contre une majorité systématiquement favorable avant
+correctif (quantifié dans le test). Un résidu non nul, non systématique, borné et documenté
+subsiste — artefact du principe non négociable "renormalisation du capital à `initial_capital`
+par fenêtre" (spec §3 préambule), assumé dès la pré-inscription de cette spec, jamais éliminé
+par ce correctif (qui corrige une INCOHÉRENCE d'échelle interne, pas l'approximation de
+renormalisation elle-même, hors périmètre de F1).
+
+**F3 (MAJEUR, correctif appliqué)** — `close` final `NaN` (mark-to-zero historique) sur un
+symbole ENCORE en position au packaging de `carry_out` empoisonnait silencieusement `CarryState`
+(poids/`last_close` NaN), détecté seulement une fenêtre plus tard sans pointer la bonne fenêtre.
+Correctif : `ValueError` immédiate AU PACKAGING (symétrique du garde déjà existant à la
+reconstruction sur `carry_in.last_close` NaN), message pointant la fenêtre `[start_idx, end_idx]`
+et les symboles fautifs. Testé (`test_packaging_nan_final_close_on_open_position_raises_value_
+error` ou équivalent dans `backtest/tests/test_carry.py`).
+
+**Finding MINEUR (correctif appliqué)** — un poids porté retombé sous `1e-12` au moment de la
+reconstruction (`shares` du segment précédent restées `> 1e-9`, mais `weight =
+shares*last_close/equity_final` retombé sous `1e-12` — atteignable avec un prix faible ou une
+équity élevée) était simplement OMIS : la ligne `open_lines` correspondante, et TOUT son PnL
+accumulé potentiellement non nul, disparaissait sans jamais alimenter `trades_closed`/
+`realized_events`. Correctif retenu (le plus simple et honnête) : si la ligne omise portait un
+PnL/coût accumulé non nul, elle est CLOSE explicitement à la frontière (même segment que la
+reconstruction, `close_date` = dernière bougie du segment précédent) avec les champs additifs
+`carried_windows`/`entry_ts` habituels — jamais de PnL qui s'évapore silencieusement. Aucune
+validation (univers/NaN) n'est appliquée à cette branche, comportement historique inchangé pour
+un poids réellement nul sans ligne substantielle associée.
+
+**F2 (CRITIQUE, PAS un correctif de code — clause d'arrêt spec §5 appliquée)** — l'équivalence
+"bande poche = bande wallet" revendiquée en §5 est RÉFUTÉE en présence de compounding : la
+relation poche→wallet est AFFINE (`equity_wallet = 1 + capital_alloc_pct × (equity_poche − 1)`),
+pas homothétique, dès que l'équity de poche s'écarte de `initial_capital` — cas normal sur un
+horizon réel. Les décisions hold/trade (bande comparée au poids COURANT, dérivé de l'équity)
+divergent alors. Conformément à la clause d'arrêt de la spec §5 ("si le test RÉFUTE
+l'équivalence, l'implémentation s'arrête et le désaccord est documenté pour la session suivante
+— jamais de correctif improvisé hors spec") : AUCUN changement de comportement de la bande.
+Traité uniquement par (a) reformulation de `backtest/README.md` section "Portage inter-fenêtres"
+(statut NON RÉSOLU, renvoyé au backlog pour analyse dédiée) ; (b) docstring de
+`test_no_trade_band_pocket_wallet_homothety` explicité (ne prouve PAS l'équivalence générale,
+seulement le cas particulier rendement-poche-nul/court-terme) ; (c) nouveau test
+`test_no_trade_band_pocket_wallet_homothety_refuted_under_compounding` qui DÉMONTRE la
+non-équivalence sous compounding, garde contre une re-revendication future de l'équivalence
+générale. **§5 reste donc un point ouvert — aucune candidate ne doit s'appuyer sur l'équivalence
+poche/wallet hors du cas rendement-poche-nul tant que ce point n'est pas instruit séparément.**
