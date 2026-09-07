@@ -173,26 +173,104 @@ except Exception:  # pragma: no cover -- défensif, jamais attendu
     reason="_data/ absent -- reproduction bit-exacte de vol_breakout_6majors/results.json ignorée "
     "(même convention que test_perp.py pour les tests d'intégration données réelles)",
 )
-def test_reproduces_vol_breakout_results_json_bit_exact_extension_disabled(monkeypatch):
+def test_reproduces_vol_breakout_results_json_bit_exact_extension_disabled(monkeypatch, tmp_path):
     """Preuve §1.1a : re-jouer intégralement `run_vol_breakout.main()` (extension de portage
-    JAMAIS invoquée par ce runner) doit reproduire `results.json` existant à l'identique sur les
-    champs numériques déterministes -- si ce test s'exécute (données réelles présentes) et
-    échoue, c'est une régression de rétro-compatibilité du moteur commun, pas de cette extension
-    spécifiquement (`run_vol_breakout.py` n'a reçu AUCUNE modification par cette extension)."""
+    JAMAIS invoquée par ce runner) doit reproduire, fenêtre par fenêtre, `results.json` existant
+    (l'archive COMMITTÉE) -- si ce test s'exécute (données réelles présentes) et échoue, c'est une
+    régression de rétro-compatibilité du moteur commun, pas de cette extension spécifiquement
+    (`run_vol_breakout.py` n'a reçu AUCUNE modification par cette extension).
+
+    Correctif (défaut signalé par le coordinateur, 2026-09-07) sur une version antérieure de ce
+    test qui était TAUTOLOGIQUE ET DESTRUCTRICE : `main()` écrit `results.json` dans `OUTPUT_DIR`
+    (l'archive du dépôt) AVANT de retourner -- l'ancienne version lisait ensuite CE MÊME fichier
+    fraîchement écrit et le comparait au résultat en mémoire (comparaison d'une chose avec
+    elle-même, toujours vraie) tout en ÉCRASANT l'archive committée. Corrigé ainsi :
+      1. L'archive EXISTANTE est chargée AVANT tout appel à `main()`.
+      2. `rvb.OUTPUT_DIR` est monkeypatché vers `tmp_path` -- repris par `build_parser()` comme
+         défaut de `--output-dir` à CHAQUE appel de `main()` (lu à jour, pas figé à l'import) --
+         ce test n'écrit donc JAMAIS dans `backtest/results/`.
+      3. Les données `_data/` actuelles s'étendent au-delà de celles du run original ayant produit
+         l'archive (14 fenêtres) -- `main()` en génère désormais 15. Comparaison fenêtre par
+         fenêtre des 14 fenêtres COMMUNES (mêmes bornes IS/OOS, vérifiées explicitement) en
+         égalité EXACTE (`==`, NaN traité comme égal à NaN) sur `sharpe`/`profit_factor`/
+         `max_drawdown`/`n_trades_closed` -- précédent : l'audit de la session #5 a reproduit ces
+         fenêtres bit-à-bit sur ces mêmes données. Le CONCATÉNÉ n'est PAS comparé (période
+         différente entre les deux runs). La 15e fenêtre (nouvelle, strictement postérieure) est
+         vérifiée séparément et n'entre dans aucune comparaison avec l'archive.
+      4. Garde défensive anti-régression : échoue si `OUTPUT_DIR` pointe encore vers l'archive
+         committée au moment du run, et re-vérifie après coup que le fichier archive sur disque
+         est resté BYTE POUR BYTE identique."""
+    import hashlib
     import json
+    import math
 
     from backtest import run_vol_breakout as rvb
 
+    archive_path = rvb.OUTPUT_DIR / "results.json"
+    original_output_dir = rvb.OUTPUT_DIR
+    # 1. Archive EXISTANTE chargée AVANT tout appel à `main()`.
+    with open(archive_path, "rb") as f:
+        archive_bytes_before = f.read()
+    existing = json.loads(archive_bytes_before)
+    existing_pw = existing["candidate_vol_breakout"]["per_window"]
+    assert len(existing_pw) == 14  # archive committée connue -- sanity check sur ce précondition
+
+    # 2. Redirection OBLIGATOIRE vers tmp_path -- jamais vers l'archive réelle.
+    monkeypatch.setattr(rvb, "OUTPUT_DIR", tmp_path)
     # `main()` lit `sys.argv` via `argparse` (aucun paramètre explicite) -- neutralise les
-    # arguments propres à pytest pour retomber sur les défauts du script (mêmes que le run
-    # original ayant produit `results.json`).
+    # arguments propres à pytest pour retomber sur les défauts du script (`--output-dir` défaut
+    # = `rvb.OUTPUT_DIR` au moment de l'appel à `build_parser()`, donc `tmp_path` ci-dessus).
     monkeypatch.setattr("sys.argv", ["run_vol_breakout.py"])
-    results, _ = rvb.main()
-    with open(rvb.OUTPUT_DIR / "results.json") as f:
-        existing = json.load(f)
-    assert results["candidate_vol_breakout"]["concatenated"]["sharpe"] == pytest.approx(
-        existing["candidate_vol_breakout"]["concatenated"]["sharpe"], rel=1e-9
+    # 4a. Garde défensive AVANT le run : `OUTPUT_DIR` ne doit PLUS pointer vers l'archive.
+    assert rvb.OUTPUT_DIR == tmp_path
+    assert rvb.OUTPUT_DIR != original_output_dir, (
+        "OUTPUT_DIR pointe encore vers l'archive committée au moment du run -- risque "
+        "d'écrasement destructeur (défaut corrigé, ne JAMAIS régresser)."
     )
+
+    results, output_dir = rvb.main()
+
+    # 4b. Garde défensive APRÈS le run : le run a bien écrit dans tmp_path, jamais dans l'archive.
+    assert output_dir == tmp_path
+    assert output_dir != original_output_dir
+    assert (tmp_path / "results.json").exists()
+    with open(archive_path, "rb") as f:
+        archive_bytes_after = f.read()
+    assert hashlib.sha256(archive_bytes_after).hexdigest() == hashlib.sha256(archive_bytes_before).hexdigest(), (
+        "l'archive backtest/results/vol_breakout_6majors/results.json a été MODIFIÉE par ce "
+        "test -- régression du défaut destructeur signalé par le coordinateur."
+    )
+
+    new_pw = results["candidate_vol_breakout"]["per_window"]
+    assert len(new_pw) == 15  # données _data/ actuelles plus longues -> 1 fenêtre de plus (point 3)
+
+    def _eq(a, b):
+        if isinstance(a, float) and isinstance(b, float) and math.isnan(a) and math.isnan(b):
+            return True
+        return a == b
+
+    fields = ["sharpe", "profit_factor", "max_drawdown", "n_trades_closed"]
+    for i in range(14):
+        old_w = existing_pw[i]
+        new_w = new_pw[i]
+        # Mêmes bornes IS/OOS -- condition nécessaire pour que la comparaison fenêtre par
+        # fenêtre soit valide (sinon on comparerait deux fenêtres économiquement différentes).
+        for bound in ("is_start", "is_end", "oos_start", "oos_end"):
+            assert old_w[bound] == new_w[bound], f"fenêtre {i} : bornes {bound} divergentes"
+        for field in fields:
+            assert _eq(old_w[field], new_w[field]), (
+                f"fenêtre {i} : {field} divergent -- archive={old_w[field]!r} "
+                f"nouveau_run={new_w[field]!r}"
+            )
+
+    # La 15e fenêtre est bien NOUVELLE (strictement postérieure, données étendues) et n'a modifié
+    # aucune des 14 premières (déjà vérifié ci-dessus, boucle bornée à `range(14)`).
+    assert new_pw[14]["window_index"] == 14
+    # OOS de la 15e fenêtre strictement postérieure à celui de la 14e (dernière commune) --
+    # valeur exacte confirmée par un run réel sur les données `_data/` au 2026-09-07
+    # (`calendar_end` 2026-07-31 23:00 -> pas assez de calendrier pour une 16e fenêtre complète).
+    assert new_pw[14]["oos_start"] == "2026-04-01 00:00:00"
+    assert new_pw[14]["oos_start"] > existing_pw[13]["oos_start"]
 
 
 # ============================================================================================
