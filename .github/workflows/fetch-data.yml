@@ -1,6 +1,14 @@
 name: Fetch market data
 
 # Déclencheurs :
+#   - schedule : samedi 05h UTC (ajout session hebdomadaire #6, 2026-09-07) — la branche
+#     `market-data` n'était jusqu'ici régénérée QUE par dispatch manuel ou par un push
+#     touchant ce pipeline (constat de la session #6 : dernière régénération le 2026-08-24,
+#     2 semaines de staleness pour les sessions de recherche). Samedi 05h : avant la
+#     maintenance hebdo du dimanche 22h, hors de la fenêtre du daily-data-cache (21h30).
+#     NOTE : en tout début de mois, l'archive mensuelle Binance Vision du mois précédent
+#     peut ne pas encore être publiée — les symboles crypto sont alors exclus par la règle
+#     de complétude et la branche n'est pas mise à jour pour eux ; le run suivant rattrape.
 #   - workflow_dispatch : lancement manuel depuis l'onglet Actions.
 #   - push sur les chemins qui définissent ce pipeline lui-même (tools/fetch_data.py ou ce
 #     fichier yml) : c'est le SEUL moyen de déclencher le tout premier run depuis un
@@ -8,6 +16,8 @@ name: Fetch market data
 #     via `gh`/API à ce moment-là) — le push final de la mission déclenche donc
 #     automatiquement ce workflow.
 on:
+  schedule:
+    - cron: "0 5 * * 6"
   workflow_dispatch: {}
   push:
     branches:
