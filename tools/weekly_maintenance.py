@@ -129,6 +129,39 @@ STRATEGIES_ANTECEDENT_HORS_PROMOTION_RULES = {
     "quasi_passif_crypto",
 }
 
+# --- Redirection de la référence dérive pour `quasi_passif_crypto` (backlog #15, session #6) ---
+#
+# `docs/RESEARCH-REGISTRY.json` est APPEND-ONLY : l'entrée d'origine `quasi_passif_crypto`
+# (Sharpe non audité 1.24/1.47/1.49, MaxDD 8.0/16.4/33.4 -- champs `sharpe_backtest_non_audite`
+# / `max_drawdown_pct_backtest`) ne peut JAMAIS être réécrite, même si ces chiffres sont
+# explicitement discrédités depuis : le retest walk-forward audité du 2026-08-10 (entrée
+# `quasi_passif_crypto_wf_retest`, protocole Porte 1 complet, audit adversarial indépendant
+# `audit_adversarial_isSound=true`, cf. `docs/RESEARCH-LOG.md` et le champ
+# `note_retest_2026-08-10` de l'entrée d'origine) ne reproduit PAS ces Sharpe/MaxDD sur le
+# moteur commun audité (0.808/0.283/0.069 ; MaxDD 8.4/27.3/56.4). La résolution se fait donc ICI,
+# dans le code du moniteur, plutôt que dans le registre.
+#
+# Choix délibéré d'une table de redirection EXPLICITE (nommée par id de registre) plutôt qu'une
+# heuristique générique ("dernier retest audité de la même famille") : une seule stratégie est
+# concernée aujourd'hui, une redirection nommée est plus simple à lire et plus facile à auditer
+# qu'une inférence implicite -- si un second cas apparaît un jour, généraliser alors seulement.
+#
+# L'entrée de retest stocke ses métriques PAR VARIANTE (`sharpe_oos_variantes` /
+# `max_drawdown_oos_pct_variantes`, dicts), pas par wallet -- `variante_par_wallet` fait la
+# jointure (les noms de variante diffèrent légèrement de `QUASI_PASSIF_WALLET_VARIANT`
+# ci-dessus, ex. `agressif_11diversifie` au lieu de `agressif_12diversifie` : l'univers agressif
+# a changé entre les deux backtests, cf. le registre).
+DRIFT_REFERENCE_OVERRIDES: Dict[str, Dict[str, Any]] = {
+    "quasi_passif_crypto": {
+        "registry_id": "quasi_passif_crypto_wf_retest",
+        "variante_par_wallet": {
+            "prudent": "prudent_btc_eth",
+            "equilibre": "equilibre_6majors",
+            "agressif": "agressif_11diversifie",
+        },
+    },
+}
+
 
 def _escalate(current: str, candidate: str) -> str:
     """Retourne le plus sévère de `current`/`candidate` (OK < SURVEILLER < ALERTE)."""
@@ -182,15 +215,42 @@ def registry_entry(registry: dict, strategy_id: str) -> Optional[dict]:
     return None
 
 
-def reference_metrics_for(strategy_id: str, wallet_id: str, entry: Optional[dict]) -> Dict[str, Any]:
+def reference_metrics_for(
+    strategy_id: str,
+    wallet_id: str,
+    entry: Optional[dict],
+    registry: Optional[dict] = None,
+) -> Dict[str, Any]:
     """Retourne `{"sharpe_ref": float|None, "dd_ref_pct": float|None, "source": str}` -- les
     métriques OOS de référence pour `strategy_id` dans `wallet_id`, extraites de l'entrée du
     registre (`docs/RESEARCH-REGISTRY.json`, elle-même dérivée de `results.json`).
 
-    `quasi_passif_crypto` est un cas particulier : son backtest non audité expose une
-    référence PAR VARIANTE (une par wallet), pas une valeur unique -- cf.
-    `QUASI_PASSIF_WALLET_VARIANT`.
+    `quasi_passif_crypto` est un cas particulier à deux niveaux :
+      1. Redirection (backlog #15, session #6, cf. `DRIFT_REFERENCE_OVERRIDES`) : si `registry`
+         est fourni et contient l'entrée de retest auditée référencée, ses métriques priment
+         TOUJOURS sur celles de l'entrée d'origine -- jamais l'inverse. Si l'entrée de retest est
+         absente du registre fourni, ou pas (encore) marquée `audit_adversarial_isSound=true`,
+         on retombe sans planter sur le comportement historique ci-dessous (posture pessimiste
+         habituelle du projet : jamais promouvoir implicitement une référence non vérifiée).
+      2. Son backtest non audité (comme son retest) expose une référence PAR VARIANTE (une par
+         wallet), pas une valeur unique -- cf. `QUASI_PASSIF_WALLET_VARIANT`.
     """
+    override = DRIFT_REFERENCE_OVERRIDES.get(strategy_id)
+    if override is not None and registry is not None:
+        retest_entry = registry_entry(registry, override["registry_id"])
+        if retest_entry is not None and retest_entry.get("audit_adversarial_isSound") is True:
+            variant = override["variante_par_wallet"].get(wallet_id)
+            return {
+                "sharpe_ref": (retest_entry.get("sharpe_oos_variantes") or {}).get(variant),
+                "dd_ref_pct": (retest_entry.get("max_drawdown_oos_pct_variantes") or {}).get(variant),
+                "source": (
+                    f"retest walk-forward AUDITÉ du {retest_entry.get('date_test', '?')} "
+                    f"({override['registry_id']}, variante {variant or '?'}) -- référence "
+                    "d'origine non auditée discréditée, cf. note_retest_2026-08-10 "
+                    "(backlog #15, session #6)"
+                ),
+            }
+
     if entry is None:
         return {"sharpe_ref": None, "dd_ref_pct": None, "source": "introuvable dans le registre"}
 
@@ -551,7 +611,7 @@ def build_drift_rows(repo_dir: str, registry: dict, now: datetime) -> List[Dict[
         journaux = load_wallet_journals(repo_dir, wallet_id)
         live = compute_live_return_stats(journaux, strategy_id)
         entry = registry_entry(registry, strategy_id)
-        ref = reference_metrics_for(strategy_id, wallet_id, entry)
+        ref = reference_metrics_for(strategy_id, wallet_id, entry, registry)
         verdict = classify_active_strategy_drift(
             sharpe_live=live["sharpe_live"],
             dd_live_pct=live["dd_live_pct"],
@@ -578,7 +638,7 @@ def build_drift_rows(repo_dir: str, registry: dict, now: datetime) -> List[Dict[
         journaux = load_wallet_journals(repo_dir, wallet_id)
         live = compute_live_return_stats(journaux, strategy_id)
         entry = registry_entry(registry, strategy_id)
-        ref = reference_metrics_for(strategy_id, wallet_id, entry)
+        ref = reference_metrics_for(strategy_id, wallet_id, entry, registry)
         age_days = _age_days(candidate.get("entered_at"), now)
         # F8 : `max_incubation_days` optionnel par entrée (défaut 56j, cf. bot/config.py
         # bandeau schéma INCUBATING_STRATEGIES) — 28j pour une candidate RÉTROGRADÉE (§3.1).
@@ -1060,6 +1120,17 @@ def render_drift_report(
         "sont un antécédent explicitement HORS du cadre formel §3 de `PROMOTION-RULES.md` "
         "(cf. §5) — leur verdict ci-dessus reste informatif (« si cette règle s'appliquait ») "
         "et ne déclenche aucune rétrogradation automatique.*"
+    )
+    lines.append("")
+    lines.append(
+        "*Référence `quasi_passif_crypto` = retest walk-forward AUDITÉ du 2026-08-10 "
+        "(`quasi_passif_crypto_wf_retest`, audit adversarial indépendant "
+        "`isSound=true`) : Sharpe attendu 0.808 (prudent BTC+ETH) / 0.283 (équilibré 6 majors) "
+        "/ 0.069 (agressif 11 diversifié) ; DD attendu 8.4% / 27.3% / 56.4%. Les chiffres "
+        "d'origine NON AUDITÉS du registre (Sharpe 1.24/1.47/1.49, MaxDD 8.0/16.4/33.4) sont "
+        "explicitement discrédités par ce retest et ne servent PLUS de référence ci-dessus "
+        "(backlog #15, session #6 — cf. `docs/RESEARCH-LOG.md` et "
+        "`DRIFT_REFERENCE_OVERRIDES` dans `tools/weekly_maintenance.py`).*"
     )
     lines.append("")
     lines.append("## 2. Recalibrage encadré — quasi-passif crypto")

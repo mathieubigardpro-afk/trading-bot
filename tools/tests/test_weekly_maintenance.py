@@ -298,6 +298,118 @@ def test_registry_entry_lookup_real_registry_file():
 
 
 # ============================================================================================
+# --- Redirection dérive quasi_passif_crypto -> retest audité (backlog #15, session #6) ---
+# ============================================================================================
+
+
+def _registry_with_audited_retest(**overrides):
+    entry_retest = {
+        "id": "quasi_passif_crypto_wf_retest",
+        "date_test": "2026-08-10",
+        "audit_adversarial_isSound": True,
+        "sharpe_oos_variantes": {
+            "prudent_btc_eth": 0.808,
+            "equilibre_6majors": 0.283,
+            "agressif_11diversifie": 0.069,
+        },
+        "max_drawdown_oos_pct_variantes": {
+            "prudent_btc_eth": 8.4,
+            "equilibre_6majors": 27.3,
+            "agressif_11diversifie": 56.4,
+        },
+    }
+    entry_retest.update(overrides)
+    entry_original = {
+        "id": "quasi_passif_crypto",
+        "sharpe_backtest_non_audite": {
+            "prudent_btc_eth": 1.24, "equilibre_6majors": 1.47, "agressif_12diversifie": 1.49,
+        },
+        "max_drawdown_pct_backtest": {
+            "prudent_btc_eth": 8.0, "equilibre_6majors": 16.4, "agressif_12diversifie": 33.4,
+        },
+    }
+    return {"strategies": [entry_original, entry_retest]}
+
+
+@pytest.mark.parametrize(
+    "wallet_id,expected_sharpe,expected_dd",
+    [
+        ("prudent", 0.808, 8.4),
+        ("equilibre", 0.283, 27.3),
+        ("agressif", 0.069, 56.4),
+    ],
+)
+def test_reference_metrics_for_quasi_passif_prefers_audited_retest_by_wallet(
+    wallet_id, expected_sharpe, expected_dd
+):
+    registry = _registry_with_audited_retest()
+    entry = wm.registry_entry(registry, "quasi_passif_crypto")
+    ref = wm.reference_metrics_for("quasi_passif_crypto", wallet_id, entry, registry)
+    assert ref["sharpe_ref"] == expected_sharpe
+    assert ref["dd_ref_pct"] == expected_dd
+    assert "audité" in ref["source"]
+    # les chiffres non audités d'origine ne doivent JAMAIS être retournés une fois le retest
+    # audité disponible dans le registre.
+    assert ref["sharpe_ref"] not in (1.24, 1.47, 1.49)
+
+
+def test_reference_metrics_for_quasi_passif_falls_back_without_registry_arg():
+    """`registry` non fourni (rétrocompatibilité de l'appelant) -> comportement historique."""
+    entry = {
+        "id": "quasi_passif_crypto",
+        "sharpe_backtest_non_audite": {"prudent_btc_eth": 1.24},
+        "max_drawdown_pct_backtest": {"prudent_btc_eth": 8.0},
+    }
+    ref = wm.reference_metrics_for("quasi_passif_crypto", "prudent", entry)
+    assert ref["sharpe_ref"] == 1.24
+    assert ref["dd_ref_pct"] == 8.0
+
+
+def test_reference_metrics_for_quasi_passif_falls_back_when_retest_entry_absent():
+    """Retest absent du registre fourni -> jamais de crash, comportement historique (backtest
+    non audité) conservé comme filet de sécurité."""
+    registry = {
+        "strategies": [
+            {
+                "id": "quasi_passif_crypto",
+                "sharpe_backtest_non_audite": {"prudent_btc_eth": 1.24},
+                "max_drawdown_pct_backtest": {"prudent_btc_eth": 8.0},
+            }
+        ]
+    }
+    entry = wm.registry_entry(registry, "quasi_passif_crypto")
+    ref = wm.reference_metrics_for("quasi_passif_crypto", "prudent", entry, registry)
+    assert ref["sharpe_ref"] == 1.24
+    assert ref["dd_ref_pct"] == 8.0
+    assert "NON AUDITÉ" in ref["source"]
+
+
+def test_reference_metrics_for_quasi_passif_falls_back_when_retest_not_marked_sound():
+    """Entrée de retest présente mais `audit_adversarial_isSound` absent/faux -> pas encore
+    digne de confiance, on ne redirige pas dessus (comportement historique conservé)."""
+    registry = _registry_with_audited_retest(audit_adversarial_isSound=False)
+    entry = wm.registry_entry(registry, "quasi_passif_crypto")
+    ref = wm.reference_metrics_for("quasi_passif_crypto", "prudent", entry, registry)
+    assert ref["sharpe_ref"] == 1.24
+
+
+def test_reference_metrics_for_real_registry_file_uses_audited_retest():
+    """Contre le VRAI `docs/RESEARCH-REGISTRY.json` du dépôt : la redirection doit être active
+    dès aujourd'hui (le retest audité du 2026-08-10 y est déjà append-only)."""
+    registry = wm.load_registry(wm._REPO_ROOT)
+    entry = wm.registry_entry(registry, "quasi_passif_crypto")
+    ref_prudent = wm.reference_metrics_for("quasi_passif_crypto", "prudent", entry, registry)
+    assert ref_prudent["sharpe_ref"] == pytest.approx(0.808)
+    assert ref_prudent["dd_ref_pct"] == pytest.approx(8.4)
+    ref_equilibre = wm.reference_metrics_for("quasi_passif_crypto", "equilibre", entry, registry)
+    assert ref_equilibre["sharpe_ref"] == pytest.approx(0.283)
+    assert ref_equilibre["dd_ref_pct"] == pytest.approx(27.3)
+    ref_agressif = wm.reference_metrics_for("quasi_passif_crypto", "agressif", entry, registry)
+    assert ref_agressif["sharpe_ref"] == pytest.approx(0.069)
+    assert ref_agressif["dd_ref_pct"] == pytest.approx(56.4)
+
+
+# ============================================================================================
 # --- Recalibrage : refus hors-grille, seuil 10% ---
 # ============================================================================================
 
@@ -525,6 +637,13 @@ def test_render_drift_report_smoke():
     assert "SURVEILLER" in report
     assert "PROMOTION-RULES.md" in report
     assert "Recalibrage non exécuté" in report
+    # backlog #15 / session #6 : la nouvelle référence doit être visible dans le rapport, avec
+    # les chiffres du retest audité ET une mention explicite que l'ancienne référence non
+    # auditée ne sert plus.
+    assert "0.808" in report and "0.283" in report and "0.069" in report
+    assert "8.4%" in report and "27.3%" in report and "56.4%" in report
+    assert "NON AUDITÉS" in report
+    assert "quasi_passif_crypto_wf_retest" in report
 
 
 def test_render_drift_report_empty_rows():
@@ -732,6 +851,42 @@ def test_classify_incubating_watch_threshold_scales_with_custom_max_incubation_d
     )
     assert v["verdict"] == "SURVEILLER"
     assert any("14j" in r for r in v["reasons"])
+
+
+def test_build_drift_rows_quasi_passif_crypto_uses_audited_retest_reference(tmp_path, monkeypatch):
+    """Test d'intégration bout-en-bout (backlog #15, session #6) : pour les 3 wallets réels,
+    `build_drift_rows()` doit reporter la référence du retest audité pour `quasi_passif_crypto`
+    -- pas le backtest non audité d'origine -- une fois l'entrée de retest présente et auditée
+    dans le registre chargé."""
+    import bot.config as config
+
+    monkeypatch.setattr(config, "INCUBATING_STRATEGIES", [])  # isole le cas "active" du test
+
+    repo_dir = tmp_path / "repo"
+    for wallet_id in config.PRODUCTION_WALLET_IDS:
+        d = repo_dir / "state" / "wallets" / wallet_id
+        d.mkdir(parents=True)
+        for name in ("decisions.jsonl", "trades.jsonl", "equity.jsonl"):
+            (d / name).write_text("", encoding="utf-8")
+
+    registry = _registry_with_audited_retest()
+    now = datetime(2026, 8, 20, tzinfo=timezone.utc)
+    rows = wm.build_drift_rows(str(repo_dir), registry, now)
+
+    expected_by_wallet = {
+        "prudent": (0.808, 8.4),
+        "equilibre": (0.283, 27.3),
+        "agressif": (0.069, 56.4),
+    }
+    seen_wallets = set()
+    for row in rows:
+        if row["strategy_id"] != "quasi_passif_crypto":
+            continue
+        expected_sharpe, expected_dd = expected_by_wallet[row["wallet_id"]]
+        assert row["sharpe_ref"] == expected_sharpe
+        assert row["dd_ref_pct"] == expected_dd
+        seen_wallets.add(row["wallet_id"])
+    assert seen_wallets == set(expected_by_wallet)  # les 3 wallets couverts, aucun oublié
 
 
 def test_build_drift_rows_honors_per_candidate_max_incubation_days_override(tmp_path, monkeypatch):
