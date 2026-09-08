@@ -1,15 +1,11 @@
 {
-  "cash_usd": 318.0840709637849,
+  "cash_usd": 294.4484740488549,
   "circuit_breakers": {
     "consecutive_losses": 1,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1177.4485532091037,
-        "ts": "2026-09-07T01:06:53.855601+00:00"
-      },
       {
         "equity": 1177.9425537091035,
         "ts": "2026-09-07T06:04:26.839004+00:00"
@@ -29,6 +25,10 @@
       {
         "equity": 1174.7476090091036,
         "ts": "2026-09-07T23:35:47.399982+00:00"
+      },
+      {
+        "equity": 1175.7997109091034,
+        "ts": "2026-09-08T01:23:53.829155+00:00"
       }
     ],
     "flatten_mode": false,
@@ -41,15 +41,19 @@
     "last_rate": 1.1622,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-09-07T23:36:09.986235+00:00"
+    "last_rate_ts": "2026-09-08T01:24:09.685895+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-09-07T23:35:47.399982+00:00",
-  "last_run_id": "2026-09-07T23",
+  "last_run_completed_at": "2026-09-08T01:23:53.829155+00:00",
+  "last_run_id": "2026-09-08T01",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
       "qty": 0.0787
+    },
+    "AVAX": {
+      "prix_moyen": 8.166158,
+      "qty": 2.89
     },
     "BTC": {
       "prix_moyen": 69393.4794,
@@ -122,7 +126,7 @@
   },
   "realized_pnl_cumulative_usd": 10.288241967244472,
   "schema_version": 1,
-  "state_hash_prev": "e322e7d67747d3ea3f95b6e554bb711d20eb515cf48cde45df715d315d2bc29e",
+  "state_hash_prev": "22090331f90eba8e3c82004500be4407450477899b3881f5fbecae121540dc8e",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
