@@ -1,15 +1,11 @@
 {
-  "cash_usd": 417.61030247980693,
+  "cash_usd": 450.434505016553,
   "circuit_breakers": {
-    "consecutive_losses": 1,
+    "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1197.7905769834874,
-        "ts": "2026-09-09T16:05:36.836055+00:00"
-      },
       {
         "equity": 1197.6671818873997,
         "ts": "2026-09-09T19:16:36.770199+00:00"
@@ -37,6 +33,10 @@
       {
         "equity": 1193.6353357459752,
         "ts": "2026-09-10T15:15:42.853177+00:00"
+      },
+      {
+        "equity": 1192.5448065921116,
+        "ts": "2026-09-10T18:33:50.276035+00:00"
       }
     ],
     "flatten_mode": false,
@@ -49,11 +49,11 @@
     "last_rate": 1.1616,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-09-10T15:16:01.993339+00:00"
+    "last_rate_ts": "2026-09-10T18:34:10.356611+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-09-10T15:15:42.853177+00:00",
-  "last_run_id": "2026-09-10T15",
+  "last_run_completed_at": "2026-09-10T18:33:50.276035+00:00",
+  "last_run_id": "2026-09-10T18",
   "positions": {
     "BTC": {
       "prix_moyen": 74754.53655508473,
@@ -61,7 +61,7 @@
     },
     "DBC": {
       "prix_moyen": 28.412715647660065,
-      "qty": 7.5058
+      "qty": 6.5245
     },
     "EEM": {
       "prix_moyen": 63.81602095391006,
@@ -76,9 +76,9 @@
       "qty": 0.5325
     }
   },
-  "realized_pnl_cumulative_usd": 8.034200687187493,
+  "realized_pnl_cumulative_usd": 12.97700535888473,
   "schema_version": 1,
-  "state_hash_prev": "4454f9a2a731a8371d6e3064cf883383df80ba1bc5483eb9569706f5dc886f8f",
+  "state_hash_prev": "209227706494141e39d75dd97fa127701f9250aef40286388cbf761b28cf6554",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -109,6 +109,11 @@
       "realized_pnl_usd": -0.5720289855431284,
       "symbol": "IWM",
       "ts": "2026-09-03T13:56:21.391412+00:00"
+    },
+    {
+      "realized_pnl_usd": 4.942804671697237,
+      "symbol": "DBC",
+      "ts": "2026-09-10T18:33:50.276035+00:00"
     }
   ],
   "wallet_id": "prudent"
