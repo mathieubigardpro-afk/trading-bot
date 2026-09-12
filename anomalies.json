@@ -1,0 +1,147 @@
+{
+  "anomalies": [
+    {
+      "date": "2000-09-29",
+      "detail": "rendement close-to-close -51.9% (0.8001 -> 0.3851, veille 2000-09-28)",
+      "symbol": "AAPL",
+      "type": "return_spike",
+      "valeur": -0.5186920604903809
+    },
+    {
+      "date": "2008-09-15",
+      "detail": "rendement close-to-close -60.8% (150.7139 -> 59.0937, veille 2008-09-12)",
+      "symbol": "AIG",
+      "type": "return_spike",
+      "valeur": -0.6079077836541703
+    },
+    {
+      "date": "2008-09-17",
+      "detail": "rendement close-to-close -45.3% (46.5549 -> 25.4500, veille 2008-09-16)",
+      "symbol": "AIG",
+      "type": "return_spike",
+      "valeur": -0.4533331716389996
+    },
+    {
+      "date": "2008-09-19",
+      "detail": "rendement close-to-close +43.1% (33.3954 -> 47.7964, veille 2008-09-18)",
+      "symbol": "AIG",
+      "type": "return_spike",
+      "valeur": 0.4312272014800319
+    },
+    {
+      "date": "2009-03-16",
+      "detail": "rendement close-to-close +66.0% (6.2073 -> 10.3042, veille 2009-03-13)",
+      "symbol": "AIG",
+      "type": "return_spike",
+      "valeur": 0.6599997710809656
+    },
+    {
+      "date": "2009-03-18",
+      "detail": "rendement close-to-close +43.8% (11.9181 -> 17.1322, veille 2009-03-17)",
+      "symbol": "AIG",
+      "type": "return_spike",
+      "valeur": 0.43750006501561955
+    },
+    {
+      "date": "2009-08-05",
+      "detail": "rendement close-to-close +62.7% (8.3923 -> 13.6561, veille 2009-08-04)",
+      "symbol": "AIG",
+      "type": "return_spike",
+      "valeur": 0.6272195111640759
+    },
+    {
+      "date": "2016-04-22",
+      "detail": "rendement close-to-close +52.3% (2.6200 -> 3.9900, veille 2016-04-21)",
+      "symbol": "AMD",
+      "type": "return_spike",
+      "valeur": 0.5229008335186689
+    },
+    {
+      "date": "2000-09-27",
+      "detail": "rendement close-to-close -42.3% (4.3701 -> 2.5202, veille 2000-09-26)",
+      "symbol": "BKNG",
+      "type": "return_spike",
+      "valeur": -0.4233026181552343
+    },
+    {
+      "date": "2008-11-24",
+      "detail": "rendement close-to-close +57.8% (27.4919 -> 43.3890, veille 2008-11-21)",
+      "symbol": "C",
+      "type": "return_spike",
+      "valeur": 0.5782492950956166
+    },
+    {
+      "date": "2016-07-05",
+      "detail": "rendement close-to-close +61.2% (42.0097 -> 67.7273, veille 2016-07-01)",
+      "symbol": "DHR",
+      "type": "return_spike",
+      "valeur": 0.6121835507118852
+    },
+    {
+      "date": "1983-04-29",
+      "detail": "rendement close-to-close -41.3% (0.7154 -> 0.4199, veille 1983-04-28)",
+      "symbol": "LOW",
+      "type": "return_spike",
+      "valeur": -0.4130436394686262
+    },
+    {
+      "date": "1968-05-21",
+      "detail": "rendement close-to-close -50.7% (0.3518 -> 0.1733, veille 1968-05-20)",
+      "symbol": "MCD",
+      "type": "return_spike",
+      "valeur": -0.507194117212971
+    },
+    {
+      "date": "1969-06-13",
+      "detail": "rendement close-to-close -50.1% (0.2203 -> 0.1100, veille 1969-06-12)",
+      "symbol": "MCD",
+      "type": "return_spike",
+      "valeur": -0.5009587094559532
+    },
+    {
+      "date": "2008-10-13",
+      "detail": "rendement close-to-close +87.0% (6.5199 -> 12.1912, veille 2008-10-10)",
+      "symbol": "MS",
+      "type": "return_spike",
+      "valeur": 0.869834680220325
+    },
+    {
+      "date": "2004-10-15",
+      "detail": "rendement close-to-close -40.9% (0.2490 -> 0.1471, veille 2004-10-14)",
+      "symbol": "NFLX",
+      "type": "return_spike",
+      "valeur": -0.4090642268179372
+    },
+    {
+      "date": "2013-01-24",
+      "detail": "rendement close-to-close +42.2% (1.4751 -> 2.0980, veille 2013-01-23)",
+      "symbol": "NFLX",
+      "type": "return_spike",
+      "valeur": 0.422235073130034
+    },
+    {
+      "date": "2000-03-07",
+      "detail": "rendement close-to-close +42.4% (0.1115 -> 0.1588, veille 2000-03-06)",
+      "symbol": "NVDA",
+      "type": "return_spike",
+      "valeur": 0.4241476450589055
+    },
+    {
+      "date": "1992-12-23",
+      "detail": "rendement close-to-close +43.9% (0.3798 -> 0.5465, veille 1992-12-22)",
+      "symbol": "ORCL",
+      "type": "return_spike",
+      "valeur": 0.43871105324628945
+    }
+  ],
+  "n_files_scanned": 121,
+  "params": {
+    "data_dir": "/tmp/fetch_data_staging_9qudau4q/data",
+    "max_gap_days": 10,
+    "subdirs": [
+      "equities",
+      "etf"
+    ],
+    "threshold": 0.4
+  }
+}
