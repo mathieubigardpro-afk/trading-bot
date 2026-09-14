@@ -952,3 +952,66 @@ breakers intouchés. Suite de tests complète verte au push final.
   durable qu'un incident transitoire ; ajouté au backlog (#20) pour investigation dédiée.
 - Wallets au cycle 2026-09-14T05 : 🛡️ 998 € | ⚖️ 1 007 € | 🔥 995 € | 🧪 983 € (labo 100 %
   cash, état attendu).
+
+---
+
+## 2026-09-14 — Session hebdomadaire #7 (b) : Porte 1 de `protective_vol_gate_6majors` (backlog P1#6, « protective put synthétique ») — ÉCHEC 3/5, ÉCARTÉE ; audit `isSound: true`
+
+**Protocole.** SPEC intégralement PRÉ-ENREGISTRÉE et committée AVANT exécution (commit c0b4177) :
+panier équipondéré des 6 majors V1, coupure à 0 quand le rang percentile (fenêtre 4 320 h, min
+2 160 obs) de la vol réalisée du panier (V h glissantes) franchit p_in, redéploiement linéaire en
+72 h une fois revenu sous p_out = 0,80, re-coupure immédiate possible. Grille pré-enregistrée
+4 combos (V ∈ {24, 72} × p_in ∈ {0,95, 0,98}), signal calculé sur les SEULS prix (garde
+structurelle anti « equity curve trading », vérifiée par test d'introspection). 15 fenêtres
+9m IS / 3m OOS horaires (OOS 2022-10 → 2026-08, 32 855 h), coûts 25 bps/côté pessimistes,
+overlay production standard (la candidate n'a AUCUN sizing interne — chemin overlay vérifié
+correct par l'audit, à l'inverse du précédent quasi-passif), portage inter-fenêtres actif,
+**contrôle apparié pré-enregistré** (poids constants 1/6 sans gate, même pipeline) compté dans
+K_total : **K_total = 14 + 15×4 + 15×1 = 89**. Attendu honnête écrit AVANT le run : échec
+probable sur le Sharpe, valeur attendue = l'analyse whipsaw/MaxDD comme intrant de gouvernance.
+
+**Résultats (OOS concaténé, net de coûts).**
+
+| | Candidate | Contrôle sans gate | Benchmark B&H 6 majors |
+|---|---|---|---|
+| Sharpe | **0,075** | 0,442 | 0,548 |
+| Sortino | 0,103 | 0,608 | 0,757 |
+| Profit factor | 1,064 | 3,61 | — |
+| MaxDD | **38,0 %** | 42,4 % | 72,0 % |
+| Trades clos | 139 | 0 | — |
+| DSR (K=89) | 0,0095 | — | — |
+
+Porte 1 §1.2 : **3/5 seuils manqués** (Sharpe, PF, DSR ; trades et MaxDD relatif 0,53× passent).
+**Le verdict de fond tient en deux chiffres** : (a) whipsaw — sur 35 épisodes de protection OOS
+distincts, 16 pertes évitées contre 19 hausses ratées, somme nette **+100 % de rendement B&H
+raté** (le risque n°1 pré-identifié par la fiche backlog s'est matérialisé tel quel) ; (b)
+redondance — la réduction de MaxDD vs B&H brut (38 % vs 72 %) vient pour l'essentiel de
+l'overlay de vol targeting DÉJÀ en production (contrôle sans gate : 42,4 %) ; la valeur
+marginale de la gate est ~4,5 points de MaxDD payés ~0,37 point de Sharpe (IR −0,99, corr 0,93
+au contrôle). Rupture temporelle habituelle : Sharpe 0,96 avant 2024, −0,36 depuis.
+
+**Audit adversarial indépendant (copie isolée, remote neutralisé) : `isSound: true`.**
+Reproduction from scratch (sans importer le module candidat) **bit-exacte 15/15 fenêtres**
+(Sharpe à 1e-14, choix IS et portage identiques) ; zéro look-ahead (perturbation des données
+futures à 4 dates : signal/états/poids bit-identiques avant t) ; DSR réimplémenté from scratch
+identique au 10e chiffre, K_total=89 revérifié ligne à ligne, échec robuste aux conventions
+alternatives de K ; 35 épisodes recomptés indépendamment, classification vérifiée épisode par
+épisode ; grille code == SPEC == results ; chronologie git propre (aucune retouche post-OOS).
+**1 finding MAJEUR (méthode, moteur commun)** : la bande de non-négociation plate 0,05 avale
+~99 % de l'exécution de la rampe 72 h et 95 % des coupures immédiates (poids cible médian
+post-overlay 0,064, tout près de la bande) — la « rampe linéaire » de la SPEC ne s'exécute
+quasiment jamais comme un lissage réel. Testé BIDIRECTIONNELLEMENT par l'auditeur : forcer
+l'exécution immédiate des coupures DÉGRADE encore le Sharpe (−0,067 → −0,138, turnover) — pas
+un biais pénalisant, et le comportement serait le même en production (le flatten forcé de
+`bot/risk/manager.py` est spécifique aux circuit breakers, pas aux signaux ordinaires). Versé
+au dossier backlog #19 (bande). 1 MINEUR : PF de stress de coûts non monotone (le re-run de
+stress ne reproduit pas le portage — limitation auto-documentée, sans impact sur le seuil).
+
+**Décision (conforme à la sémantique pré-enregistrée SPEC §8).** Sharpe positif, PF > 1,
+`isSound: true`, mais 3/5 seuils manqués ⇒ statut **`ecartee`** (entrée n°15 du registre),
+pas d'incubation. Conclusion transférable consignée : une gate de vol percentile PAR-DESSUS un
+vol targeting continu déjà actif est structurellement redondante et son coût de whipsaw domine
+sur ce marché — ne pas retester de variante (autres seuils/rampe) sans mécanisme
+structurellement neuf (§3.3). Scripts d'attaque de l'audit archivés dans
+`backtest/results/protective_vol_gate_6majors/audit/`. Labo toujours vide (0/3). Prochaine
+candidate → K_total = 15 lignes + sa grille.

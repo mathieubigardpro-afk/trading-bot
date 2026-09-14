@@ -266,9 +266,23 @@ pur, indépendant du bêta crypto directionnel).
 
 ---
 
-### 6. Protective put synthétique (couverture de queue pour les wallets réels)
+### 6. Protective put synthétique (couverture de queue pour les wallets réels) — ✅ TRAITÉE 2026-09-14 : ÉCARTÉE (Porte 1, 3/5 seuils)
 
-**Hypothèse** : plutôt qu'une nouvelle source d'edge, une brique de **réduction de risque**
+**VERDICT (session hebdomadaire #7, cf. `RESEARCH-LOG.md` 2026-09-14 (b) et
+`RESEARCH-REGISTRY.json:protective_vol_gate_6majors`)** : SPEC pré-enregistrée (gate percentile
+de vol du panier, grille 4 combos, contrôle apparié sans gate compté dans K_total = 89),
+15 fenêtres 9m/3m horaires. Sharpe OOS **0,075**, PF 1,064, DSR 0,0095 — 3/5 seuils manqués ;
+audit adversarial `isSound: true` (reproduction bit-exacte 15/15 fenêtres). Les deux risques
+pré-identifiés par cette fiche se sont matérialisés tels quels : **whipsaw dominant** (35
+épisodes de protection OOS : 16 pertes évitées vs 19 hausses ratées, somme nette +100 % de
+rendement B&H raté) et **redondance avec le vol targeting de production** (contrôle sans gate :
+MaxDD 42,4 % vs 38,0 % pour la candidate — la gate n'ajoute que ~4,5 points de MaxDD évités,
+payés ~0,37 point de Sharpe, IR −0,99, corr 0,93). Conclusion transférable : une gate de vol
+discrète PAR-DESSUS un vol targeting continu actif est structurellement redondante sur ce
+marché — ne pas retester de variante (seuils/rampe) sans mécanisme structurellement neuf
+(§3.3, compterait dans K_total).
+
+**Hypothèse (historique)** : plutôt qu'une nouvelle source d'edge, une brique de **réduction de risque**
 -- répliquer synthétiquement l'effet d'un put protecteur (limiter la queue gauche du
 drawdown) via une règle mécanique de désengagement accéléré en cas de move directionnel
 violent (ex. stop-loss dynamique déclenché par un franchissement rapide de percentile de
@@ -517,7 +531,17 @@ Pré-requis pour incuber TOUTE candidate perp (statut pré-enregistré
 en P2 : aucune candidate perp n'a passé la Porte 1 ; ne pas investir avant qu'une idée perp ait
 une valeur démontrée sur le moteur commun amendé (#16).
 
-### 18. [P2 — infrastructure données, AJOUTÉE 2026-09-07] Robustesse début-de-mois du rafraîchissement crypto de la maintenance
+### 18. [P2 — infrastructure données, AJOUTÉE 2026-09-07] Robustesse début-de-mois du rafraîchissement crypto de la maintenance — ⚙️ ÉTAPE DIAGNOSTIC LIVRÉE 2026-09-14
+
+**AVANCEMENT (session #7)** : (a) le recalibrage du 2026-09-13 s'est exécuté normalement (15
+fenêtres, aucun changement) — l'incident ne se reproduit qu'en tout début de mois, comme
+diagnostiqué ; (b) l'instrumentation demandée est livrée : `tools/weekly_maintenance.py` remonte
+désormais `missing_symbols_reasons` (raison d'exclusion PAR SYMBOLE, lue du MANIFEST.json de
+`fetch_data.py`) dans DRIFT-REPORT.json et une ligne compacte dans le rendu markdown quand le
+recalibrage est sauté — purement additif, aucune règle de décision touchée, tests offline verts.
+La prochaine occurrence début-de-mois sera diagnosticable sur run réel. **Reste à faire** (après
+confirmation par une vraie occurrence) : le correctif du complément API étendu aux mois d'archive
+manquants EN QUEUE d'historique (jamais aux trous anciens).
 
 Incident du 2026-09-06 : recalibrage sauté (`DONNEES_INSUFFISANTES`, 0/6 symboles) alors que le
 rafraîchissement rapportait « OK ». Cause la plus probable : maintenance exécutée un 6 du mois ⇒
@@ -544,7 +568,46 @@ dérive au lieu de sortir). Les deux écarts sont à instruire ensemble (analyse
 l'impact sur les candidates passées et futures), en session dédiée, AVANT de re-revendiquer la
 fidélité de la bande dans une spec.
 
-**Priorité de la prochaine session (revue 2026-09-07, session #6)** :
+**Pièce versée au dossier (session #7, audit de `protective_vol_gate_6majors`)** : quantification
+sur données réelles d'une candidate à poids cible médian 0,064 (tout près de la bande 0,05) —
+la bande avale ~99 % de l'exécution d'une rampe de redéploiement 72 h (12 ordres sur 1 630 h) et
+95 % des coupures immédiates (21/22 sans ordre à l'heure du signal). Testé BIDIRECTIONNELLEMENT
+par l'auditeur : forcer l'exécution immédiate DÉGRADE le Sharpe (turnover) — l'effet n'est pas
+un biais directionnel simple, mais la « texture » réellement exécutée peut différer radicalement
+de la sémantique écrite d'une SPEC. Toute future SPEC de candidate à faible poids nominal ou à
+rampe DOIT documenter ce comportement dans ses analyses d'honnêteté.
+
+### 20. [P2 — infrastructure données, AJOUTÉE 2026-09-14] Ticker BK : 3 échecs consécutifs de récupération (yfinance ET stooq)
+
+Échecs aux régénérations du 2026-08-24, 2026-09-12 (et absence constatée entre les deux). Trois
+échecs consécutifs sur les deux sources = vraisemblablement un problème durable de mapping/
+symbole (renommage, migration d'API) plutôt qu'un rate-limiting transitoire. Sans incidence sur
+les poches actives (BK absent des positions), mais BK fait partie de l'univers S&P100 de
+`xs_momentum_sp100` : son absence du panel réduit silencieusement l'univers effectif de 103 à
+102 titres pour tout futur backtest actions. À investiguer (mapping alternatif, source de repli
+supplémentaire, ou exclusion documentée de l'univers avec note au registre).
+
+**Priorité de la prochaine session (revue 2026-09-14, session #7)** :
+
+1. **#14 (gouvernance, décision HUMAINE — Mathieu)** : toujours en attente depuis le
+   2026-08-24. Fenêtre utile : le Sharpe roulant 60 j devient calculable ~fin septembre (les
+   verdicts du DRIFT-REPORT deviendront réellement informatifs) et le critère vécu de
+   `SELECTION-FINALE.md` §5 tranche de lui-même vers fin octobre. Peut absorber #12a/#12b et
+   le palier de coûts perp — questions de règle, jamais dans une session de jugement.
+2. **P1#5 (pairs ETH/BTC, version dégradée long-only)** : prochaine candidate de jugement
+   recommandée — rotation d'allocation BTC/ETH sur signal de ratio, sans extension short
+   (la version complète attend #17/P2). Pré-requis de SPEC : test de
+   cointégration/stationnarité du ratio AVANT tout signal (documenté dans la fiche), grille
+   minimale, attention au faible nombre d'épisodes de divergence indépendants sur 2022-2026.
+3. **#19 (bande de non-négociation, session d'analyse dédiée)** : le dossier s'épaissit
+   (F2 carry + flatten + quantification session #7) — instruire les deux écarts
+   moteur/production ensemble, hors de toute session de jugement.
+4. Revue : premier DRIFT-REPORT avec Sharpe roulant 60 j calculable attendu vers le
+   2026-09-20/27 — première revue où les verdicts SURVEILLER peuvent basculer en signaux
+   réels ; y consacrer du temps de lecture.
+5. #20 ci-dessus (BK) et, si occurrence début-de-mois d'ici là, boucler le correctif #18.
+
+**Priorité de la session #7 (2026-09-07, conservée pour mémoire)** :
 
 1. **#14 (gouvernance, décision HUMAINE)** : toujours en attente depuis le 2026-08-24 — à
    défaut, le critère vécu de `SELECTION-FINALE.md` §5 tranche de lui-même vers fin octobre

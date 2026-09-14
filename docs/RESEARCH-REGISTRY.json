@@ -465,6 +465,61 @@
       "moteur": "Premier backtest de candidate exécuté avec le portage inter-fenêtres ACTIVÉ (CARRY-EXTENSION-SPEC.md, audité isSound=true le même jour AVANT ce backtest) — vérifié structurellement neutre pour cette candidate (0 position à cheval sur une frontière, positions tenues 2 h).",
       "raison": "ÉCHEC Porte 1 §1.2 : 4/5 seuils manqués (Sharpe OOS -6.68 < 0.70 ; PF 0.328 <= 1.15 ; MaxDD relatif 1.67x > 1.5x ; DSR ~0 ; seul le seuil de trades passe, 1369 >= 80). L'effet de saisonnalité BRUT existe pourtant dans les données (+6.4 bps/jour OOS, +3.6 avant 2024, +7.8 depuis — il ne s'est PAS éteint avec l'institutionnalisation) mais reste ~4.7x SOUS le hurdle de coûts du projet (2 côtés x 15 bps = 30 bps/jour pour une détention de 2 h/jour) : perte nette de -23.6 bps/jour. C'est un échec de STRUCTURE DE COÛTS, pas un artefact — audit adversarial indépendant isSound=true (reproduction from scratch convergente à 0.0005 de Sharpe, zéro look-ahead par perturbation bit-exacte, DSR/K_total/benchmark recalculés identiques, vol-targeting jamais sous la bande — min scalar 0.178, 0 entrée bloquée, contrairement au précédent funding_carry). Conclusion transférable consignée : AUCUNE stratégie à détention ~2 h/jour sur ce périmètre de coûts ne peut être viable sans un edge brut >= ~5x celui-ci — ne pas retester de variante calendaire horaire sans changement structurel du régime de coûts (§3.3, compterait dans K_total). Backlog P1#4 soldé.",
       "source": "backtest/results/btc_seasonality_2123utc/results.json"
+    },
+    {
+      "id": "protective_vol_gate_6majors",
+      "famille": "crypto_tail_protection_vol_percentile_gate",
+      "date_test": "2026-09-14",
+      "statut": "ecartee",
+      "sharpe_oos": 0.0752,
+      "sortino_oos": 0.1026,
+      "profit_factor_oos": 1.0644,
+      "max_drawdown_oos_pct": 37.97,
+      "n_trades_oos_closed": 139,
+      "benchmark_sharpe_oos_aligned": 0.548,
+      "benchmark_maxdd_oos_aligned_pct": 71.99,
+      "walkforward": "9m IS / 3m OOS, pas 3m, 15 fenêtres (2022-01 -> 2026-08, horaire, OOS 2022-10-01 -> 2026-08-31, 32855 h), grille pré-enregistrée 4 combos (V in {24,72} h x p_in in {0.95,0.98} ; p_out=0.80, rampe 72 h, fenêtre percentile 4320 h FIXÉS), SPEC committée AVANT exécution (commit c0b4177)",
+      "univers": [
+        "BTC",
+        "ETH",
+        "SOL",
+        "DOGE",
+        "LINK",
+        "AVAX"
+      ],
+      "k_total": 89,
+      "dsr": 0.0095,
+      "dsr_methode": "K_total = 14 (lignes du registre au 2026-09-14) + 15 fenêtres x 4 combos (candidate) + 15 fenêtres x 1 combo (contrôle apparié, compté comme essais à part entière — option conservatrice pré-enregistrée) = 89 (PROMOTION-RULES.md §1.3). Bailey & López de Prado 2014 sur rendements horaires OOS concaténés (n=32855, skew -0.92, kurtosis excess 27.6), recalculé from scratch par l'audit (identique au 10e chiffre) ; robuste aux conventions alternatives de K (DSR 0.010-0.011 à K=74/84).",
+      "audit_adversarial_isSound": true,
+      "cost_stress_profit_factor": {
+        "25bps": 1.0644,
+        "75bps_3x": 1.2788,
+        "125bps_5x": 1.1256,
+        "_note": "PF de stress NON monotone : le re-run de stress ne reproduit pas le portage inter-fenêtres et la bande dépend de la trajectoire d'équity (finding MINEUR de l'audit, auto-documenté dans le runner, sans impact sur le PF nominal du seuil). Sharpe de stress monotone : 0.075 / -0.038 / -0.203."
+      },
+      "sous_periodes_sharpe": {
+        "avant_2024": 0.961,
+        "depuis_2024": -0.361
+      },
+      "correlation_oos_vs_controle": 0.926,
+      "correlation_oos_vs_proxy_quasi_passif_sma200": 0.6,
+      "comparaison_controle_apparie_sans_gate": {
+        "sharpe_controle": 0.442,
+        "sortino_controle": 0.608,
+        "maxdd_controle_pct": 42.42,
+        "information_ratio_candidate_vs_controle": -0.986,
+        "candidate_dominee": false,
+        "_note": "Contrôle = poids constants 1/6 SANS gate, même moteur/overlay/coûts/fenêtres (SPEC §5). Non dominée uniquement grâce au MaxDD (37.97% vs 42.42%) ; Sharpe et Sortino nettement pires."
+      },
+      "whipsaw_episodes_protection_oos": {
+        "n_episodes_distincts": 35,
+        "evites_bh_negatif": 16,
+        "rates_bh_positif": 19,
+        "somme_nette_rendement_bh_sur_episodes": 1.001,
+        "_note": "Somme nette POSITIVE = la gate a raté cumulativement ~+100% de rendement B&H du panier sur ses épisodes de protection, plus qu'elle n'a évité de pertes — le coût de whipsaw domine, exactement le risque n°1 pré-identifié par la fiche backlog P1#6."
+      },
+      "raison": "ÉCARTÉE : ÉCHEC Porte 1 §1.2, 3/5 seuils manqués (Sharpe OOS 0.075 < 0.70 ; PF 1.064 <= 1.15 ; DSR 0.0095 < 0.50 — trades 139 et MaxDD relatif 0.53x passent). Statut 'ecartee' (pas 'rejetee') conformément à la sémantique pré-enregistrée de la SPEC §8 : Sharpe positif, PF > 1, isSound true. La promesse de la brique (réduction de MaxDD) est réelle vs B&H brut (38.0% vs 72.0%) mais l'essentiel vient de l'OVERLAY de production déjà en place (contrôle sans gate : 42.4%) — la valeur marginale de la gate est de ~4.5 points de MaxDD payés ~0.37 point de Sharpe (IR -0.99). Rupture temporelle habituelle (tout l'edge avant 2024, négatif depuis — même famille que vol_breakout/quasi-passif). Audit adversarial indépendant isSound=true : reproduction from scratch bit-exacte 15/15 fenêtres, zéro look-ahead, DSR/K_total recalculés identiques, classification des 35 épisodes vérifiée épisode par épisode ; 1 finding MAJEUR de méthode (bande plate 0.05 du moteur avale ~99% de l'exécution de la rampe 72h et 95% des coupures immédiates — texture exécutée très différente de la SPEC §3.4 ; testé BIDIRECTIONNELLEMENT : forcer l'exécution dégrade encore le Sharpe, donc pas un biais pénalisant ; versé au dossier backlog #19). CONCLUSION TRANSFÉRABLE : une gate de vol percentile au-dessus d'un vol targeting continu déjà actif est structurellement redondante (corr 0.93 au contrôle) et son coût de whipsaw domine sur ce marché — ne pas retester de variante (seuils/rampe différents) sans mécanisme structurellement neuf (§3.3, compterait dans K_total).",
+      "source": "backtest/results/protective_vol_gate_6majors/results.json"
     }
   ]
 }
