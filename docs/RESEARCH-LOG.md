@@ -916,3 +916,39 @@ référence avant d'exécuter quoi que ce soit qui puisse l'écrire.
 **Bilan de session** : registre à 14 entrées (K_total prochaine candidate = 14 + grille),
 labo toujours vide (0/3), aucune stratégie active modifiée, framework de risque et circuit
 breakers intouchés. Suite de tests complète verte au push final.
+
+---
+
+## 2026-09-14 — Session hebdomadaire #7 (a) : REVUE des stratégies actives et candidates + vérifications pré-enregistrées
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56j. **Zéro action requise, zéro action prise.**
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-09-13 : 7 lignes, toutes **SURVEILLER**
+  pour la même raison mécanique (53j vécus < 60j — Sharpe roulant 60j non calculable ; il
+  deviendra calculable dans ~1 semaine, et le critère vécu de `SELECTION-FINALE.md` §5
+  arrivera à maturité vers fin octobre). Le rapport calcule désormais bien la dérive contre
+  les références AUDITÉES du retest (#15 soldé en #6 — vérifié effectif sur le rapport réel :
+  Sharpe attendu 0,81/0,28/0,07, note explicite au pied du tableau). Sharpe vécus toujours du
+  bruit d'échantillon court (xs_momentum équilibré +3,14 vs agressif +0,36 — mêmes signaux,
+  divergence d'échantillon) ; DD vécus ≤ 1,7 % partout. **Aucune règle de mort déclenchée,
+  aucune action.**
+- **Gouvernance #14** : toujours aucune décision humaine enregistrée
+  (`GOVERNANCE-DOSSIER-2026-08-24-quasi-passif.md`). Rappel : à défaut, le critère vécu de
+  `SELECTION-FINALE.md` §5 tranche de lui-même vers fin octobre 2026. Priorité haute maintenue.
+- **Recalibrage du 2026-09-13 : exécuté normalement** (rafraîchissement OK, 15 fenêtres,
+  175 vs 200 : +3,0 % < seuil 10 % ⇒ aucun changement — 7e recalibrage consécutif sans
+  changement). L'incident « début de mois » du 2026-09-06 (#18) ne s'est pas reproduit,
+  conformément au diagnostic (le 13, l'archive mensuelle d'août était disponible). Le
+  diagnostic précis reste NON CONFIRMÉ sur run réel (les `reason` d'exclusion par symbole ne
+  sont toujours pas journalisés) — instrumentation prévue cette session si le budget le permet.
+- **Premier run PLANIFIÉ du cron `fetch-data` (samedi 2026-09-12 05h UTC + dispatch) : OK.**
+  Branche `market-data` régénérée le 2026-09-12 en 512 s : 30 paires crypto (2022-01 →
+  2026-08 + mois courant), 30 funding, 30 perp, 103 actions, 18 ETF. `DATA_ANOMALIES.md` :
+  19 sauts de rendement, tous des crises connues + DHR/Fortive (fondateur) — **les 2
+  incohérences OHLC ABT/MS du 2026-07-24 ont bien disparu** (confirmé une 2e fois). Ticker
+  **BK** : 3e échec consécutif (yfinance ET stooq) — toujours sans incidence sur les poches
+  actives (BK absent), mais 3 échecs = plus vraisemblablement un problème de mapping/source
+  durable qu'un incident transitoire ; ajouté au backlog (#20) pour investigation dédiée.
+- Wallets au cycle 2026-09-14T05 : 🛡️ 998 € | ⚖️ 1 007 € | 🔥 995 € | 🧪 983 € (labo 100 %
+  cash, état attendu).
