@@ -1,6 +1,6 @@
 # DRIFT-REPORT.md — Moniteur de dérive (backtest vs vécu)
 
-*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-09-13T23:59:35.973563+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
+*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-09-14T09:40:21.131813+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
 
 ## 1. Moniteur de dérive par stratégie
 
@@ -8,13 +8,13 @@ Compare les métriques VÉCUES (journaux `state/wallets/*/`) aux métriques OOS 
 
 | Stratégie | Wallet | Statut | Jours observés | Sharpe vécu | Sharpe attendu | DD vécu | DD attendu | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| dual_momentum_etf | prudent | active | 53 | 0.66 | n/d | 1.6% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | prudent | active | 53 | 0.85 | 0.81 | 0.1% | 8.4% | **SURVEILLER** |
-| xs_momentum_sp100 | equilibre | active | 53 | 3.14 | 0.82 | 0.3% | 50.3% | **SURVEILLER** |
-| dual_momentum_etf | equilibre | active | 53 | 1.93 | n/d | 0.3% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | equilibre | active | 53 | 2.91 | 0.28 | 0.1% | 27.3% | **SURVEILLER** |
-| xs_momentum_sp100 | agressif | active | 53 | 0.36 | 0.82 | 1.7% | 50.3% | **SURVEILLER** |
-| quasi_passif_crypto | agressif | active | 53 | 0.67 | 0.07 | 1.2% | 56.4% | **SURVEILLER** |
+| dual_momentum_etf | prudent | active | 54 | 0.69 | n/d | 1.6% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | prudent | active | 54 | 0.91 | 0.81 | 0.1% | 8.4% | **SURVEILLER** |
+| xs_momentum_sp100 | equilibre | active | 54 | 3.23 | 0.82 | 0.3% | 50.3% | **SURVEILLER** |
+| dual_momentum_etf | equilibre | active | 54 | 2.02 | n/d | 0.3% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | equilibre | active | 54 | 3.04 | 0.28 | 0.1% | 27.3% | **SURVEILLER** |
+| xs_momentum_sp100 | agressif | active | 54 | 0.61 | 0.82 | 1.7% | 50.3% | **SURVEILLER** |
+| quasi_passif_crypto | agressif | active | 54 | 1.04 | 0.07 | 1.2% | 56.4% | **SURVEILLER** |
 
 ### Détail des raisons
 
