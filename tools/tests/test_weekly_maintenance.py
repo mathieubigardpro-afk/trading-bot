@@ -1005,3 +1005,184 @@ def test_recalibration_grids_matches_recalibration_spec_markdown_table():
     documented_grid = _parse_regime_sma_days_grid_from_spec(spec_text)
     assert documented_grid == [150, 175, 200, 225, 250]  # valeur attendue (mission)
     assert wm.RECALIBRATION_GRIDS["quasi_passif_crypto"]["regime_sma_days"] == documented_grid
+
+
+# ============================================================================================
+# --- Backlog #18 (diagnostic début-de-mois) : la RAISON d'exclusion par symbole connue de
+# --- `tools/fetch_data.py` (via MANIFEST.json) doit remonter jusqu'à DRIFT-REPORT.json/.md
+# --- quand le recalibrage est sauté pour DONNEES_INSUFFISANTES -- purement additif, aucune
+# --- décision (règle de complétude, seuils du recalibrage) n'est modifiée par ces tests.
+# ============================================================================================
+
+
+def _write_manifest(staging_dir, excluded=None, included=None):
+    manifest = {
+        "crypto": {
+            "archive_from": "2022-01", "archive_to": "2026-08",
+            "included": included or {}, "excluded": excluded or {},
+        }
+    }
+    with open(os.path.join(staging_dir, "MANIFEST.json"), "w", encoding="utf-8") as f:
+        json.dump(manifest, f)
+
+
+def test_load_crypto_exclusion_reasons_reads_manifest_when_present(tmp_path):
+    _write_manifest(
+        str(tmp_path),
+        excluded={
+            "AVAX": {
+                "pair": "AVAXUSDT",
+                "reason": (
+                    "historique incomplet sur la fenêtre de complétude requise "
+                    "(2023-07 → 2026-08) : mois manquant 2026-08 — exclu (trace du biais du "
+                    "survivant)"
+                ),
+            }
+        },
+    )
+    reasons = wm.load_crypto_exclusion_reasons(str(tmp_path))
+    assert reasons == {
+        "AVAX": (
+            "historique incomplet sur la fenêtre de complétude requise "
+            "(2023-07 → 2026-08) : mois manquant 2026-08 — exclu (trace du biais du survivant)"
+        )
+    }
+
+
+def test_load_crypto_exclusion_reasons_empty_dict_when_no_exclusion(tmp_path):
+    _write_manifest(str(tmp_path), excluded={}, included={"BTC": {"pair": "BTCUSDT"}})
+    assert wm.load_crypto_exclusion_reasons(str(tmp_path)) == {}
+
+
+def test_load_crypto_exclusion_reasons_returns_empty_when_manifest_absent(tmp_path):
+    assert wm.load_crypto_exclusion_reasons(str(tmp_path)) == {}
+
+
+def test_load_crypto_exclusion_reasons_returns_empty_on_malformed_json(tmp_path):
+    with open(os.path.join(tmp_path, "MANIFEST.json"), "w", encoding="utf-8") as f:
+        f.write("{ceci n'est pas du JSON valide")
+    assert wm.load_crypto_exclusion_reasons(str(tmp_path)) == {}
+
+
+def _write_crypto_history_csv(staging_dir, symbol, n_days=5):
+    crypto_dir = os.path.join(staging_dir, "data", "crypto")
+    os.makedirs(crypto_dir, exist_ok=True)
+    df = pd.DataFrame(
+        {
+            "timestamp": pd.date_range("2026-01-01", periods=n_days * 24, freq="h", tz="UTC"),
+            "open": 100.0, "high": 101.0, "low": 99.0, "close": 100.5, "volume": 1.0,
+        }
+    )
+    df.to_csv(os.path.join(crypto_dir, f"{symbol}.csv.gz"), index=False, compression="gzip")
+
+
+def test_run_recalibration_donnees_insuffisantes_includes_per_symbol_reason(tmp_path):
+    """(a) Exclusion simulée d'un symbole (AVAX) pour archive mensuelle manquante -- la raison
+    connue de `fetch_data.py` (via MANIFEST.json écrit dans le même `staging_dir`) doit
+    apparaître dans le dict retourné par `run_recalibration`, et donc dans le JSON du rapport
+    une fois sérialisée par `render_drift_report_json` (le recalibrage reste bien SAUTÉ --
+    aucun changement de décision)."""
+    staging_dir = str(tmp_path)
+    reason = (
+        "historique incomplet sur la fenêtre de complétude requise (2023-07 → 2026-08) : "
+        "mois manquant 2026-08 — exclu (trace du biais du survivant)"
+    )
+    # Univers "equilibre" = BTC, ETH, SOL, DOGE, LINK, AVAX -- AVAX seul exclu.
+    for sym in ("BTC", "ETH", "SOL", "DOGE", "LINK"):
+        _write_crypto_history_csv(staging_dir, sym)
+    _write_manifest(staging_dir, excluded={"AVAX": {"pair": "AVAXUSDT", "reason": reason}})
+
+    result = wm.run_recalibration("repo_dir_non_utilise", staging_dir)
+
+    assert result["status"] == "DONNEES_INSUFFISANTES"
+    assert result["missing_symbols"] == ["AVAX"]
+    assert result["missing_symbols_reasons"] == {"AVAX": reason}
+
+    now = datetime(2026, 9, 6, tzinfo=timezone.utc)
+    raw_json = wm.render_drift_report_json([], now, result, "OK")
+    payload = json.loads(raw_json)
+    assert payload["recalibration"]["missing_symbols_reasons"] == {"AVAX": reason}
+
+
+def test_run_recalibration_missing_symbol_without_manifest_omits_reasons_key(tmp_path):
+    """Si le manifeste de `fetch_data.py` est indisponible pour ce cycle (ex. exécuté avec
+    `--skip-data-refresh`, ou manifeste non trouvé), `run_recalibration` ne doit PAS fabriquer
+    de raison -- la clé `missing_symbols_reasons` doit être absente plutôt que peuplée de
+    'raison non renseignée' pour tout le monde (le champ `missing_symbols` reste, lui,
+    inchangé -- comportement historique préservé)."""
+    staging_dir = str(tmp_path)
+    for sym in ("BTC", "ETH", "SOL", "DOGE", "LINK"):
+        _write_crypto_history_csv(staging_dir, sym)
+    # Pas de MANIFEST.json écrit ici.
+
+    result = wm.run_recalibration("repo_dir_non_utilise", staging_dir)
+
+    assert result["status"] == "DONNEES_INSUFFISANTES"
+    assert result["missing_symbols"] == ["AVAX"]
+    assert "missing_symbols_reasons" not in result
+
+
+def test_run_recalibration_nominal_case_no_missing_symbols_key_absent(monkeypatch):
+    """(b) Cas nominal : aucun symbole exclu -- `missing_symbols_reasons` doit rester absent
+    (le recalibrage suit alors son chemin normal, walk-forward inclus, sans aucune trace de
+    raison d'exclusion puisqu'il n'y a rien à exclure)."""
+    universe = list(wm.SPEC_UNIVERSE_BY_WALLET[wm.RECAL_WALLET_ID])
+    synthetic = _synthetic_hourly_history(universe, n_days=400, seed=7)
+
+    def fake_loader(staging_dir, symbol):
+        return synthetic.get(symbol)
+
+    monkeypatch.setattr(wm, "load_hourly_history_from_staging", fake_loader)
+
+    result = wm.run_recalibration("repo_dir_non_utilise", "staging_dir_non_utilise")
+
+    assert "missing_symbols" not in result
+    assert "missing_symbols_reasons" not in result
+    # Rendu inchangé : ni la ligne "SAUTÉ", ni la nouvelle ligne de raisons par symbole.
+    now = datetime(2026, 9, 6, tzinfo=timezone.utc)
+    report = wm.render_drift_report([], now, result, "OK")
+    assert "SAUTÉ" not in report
+    assert "Raison d'exclusion par symbole" not in report
+
+
+def test_render_drift_report_donnees_insuffisantes_shows_compact_reasons_line():
+    """(c) Le rendu markdown contient la ligne compacte de raisons par symbole quand
+    `missing_symbols_reasons` est renseigné."""
+    now = datetime(2026, 9, 6, tzinfo=timezone.utc)
+    recalibration = {
+        "status": "DONNEES_INSUFFISANTES",
+        "missing_symbols": ["AVAX"],
+        "missing_symbols_reasons": {
+            "AVAX": "historique incomplet sur la fenêtre de complétude requise — exclu"
+        },
+    }
+    report = wm.render_drift_report([], now, recalibration, "OK")
+    assert "Raison d'exclusion par symbole" in report
+    assert "AVAX" in report
+    assert "historique incomplet sur la fenêtre de complétude requise" in report
+
+
+def test_render_drift_report_donnees_insuffisantes_without_reasons_key_unchanged():
+    """(b, variante rendu) : sans `missing_symbols_reasons` (ex. manifeste indisponible), le
+    rendu markdown ne doit PAS afficher la nouvelle ligne -- comportement historique préservé
+    à l'identique."""
+    now = datetime(2026, 9, 6, tzinfo=timezone.utc)
+    recalibration = {"status": "DONNEES_INSUFFISANTES", "missing_symbols": ["AVAX", "BTC"]}
+    report = wm.render_drift_report([], now, recalibration, "OK")
+    assert "Raison d'exclusion par symbole" not in report
+    assert "AVAX" in report and "BTC" in report  # la liste brute reste affichée comme avant
+
+
+def test_render_drift_report_json_roundtrips_missing_symbols_reasons():
+    """`render_drift_report_json` sérialise `recalibration` tel quel -- vérifie explicitement
+    que `missing_symbols_reasons` survit au roundtrip JSON (c'est la voie consommée par
+    `dashboard/index.html`, cf. docstring de `render_drift_report_json`)."""
+    now = datetime(2026, 9, 6, tzinfo=timezone.utc)
+    recalibration = {
+        "status": "DONNEES_INSUFFISANTES",
+        "missing_symbols": ["AVAX"],
+        "missing_symbols_reasons": {"AVAX": "archive mensuelle 2026-08 absente"},
+    }
+    raw = wm.render_drift_report_json([], now, recalibration, "OK")
+    payload = json.loads(raw)
+    assert payload["recalibration"]["missing_symbols_reasons"] == {"AVAX": "archive mensuelle 2026-08 absente"}

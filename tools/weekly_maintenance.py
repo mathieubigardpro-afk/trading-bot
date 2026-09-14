@@ -937,6 +937,35 @@ def load_hourly_history_from_staging(staging_dir: str, symbol: str) -> Optional[
     return df[["open", "high", "low", "close", "volume"]]
 
 
+def load_crypto_exclusion_reasons(staging_dir: str) -> Dict[str, str]:
+    """Lit `MANIFEST.json` écrit par `tools/fetch_data.py` (`refresh_backtest_data`, même
+    `staging_dir`) et retourne `{symbole: raison}` pour les paires crypto EXCLUES par la règle
+    de complétude (backlog #18 -- diagnostic début-de-mois : avant ceci, seule la LISTE des
+    symboles manquants remontait dans DRIFT-REPORT, jamais la raison connue de `fetch_data.py`
+    au point d'exclusion, ex. "historique incomplet sur la fenêtre de complétude requise").
+    PUREMENT journalisation additive -- ne change aucune décision : en cas d'absence/erreur du
+    fichier (ex. `--skip-data-refresh`, run isolé sans écriture de manifeste), retourne `{}`
+    sans jamais lever d'exception, comme le reste de cette chaîne (posture pessimiste)."""
+    manifest_path = os.path.join(staging_dir, "MANIFEST.json")
+    try:
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+    except (OSError, ValueError) as exc:
+        logger.warning(
+            "load_crypto_exclusion_reasons: manifeste illisible (%s) -- raisons d'exclusion "
+            "par symbole indisponibles pour ce cycle (n'affecte aucune décision)", exc,
+        )
+        return {}
+    excluded = manifest.get("crypto", {}).get("excluded", {})
+    if not isinstance(excluded, dict):
+        return {}
+    return {
+        sym: info.get("reason", "raison non renseignée")
+        for sym, info in excluded.items()
+        if isinstance(info, dict)
+    }
+
+
 def refresh_backtest_data(repo_dir: str, staging_dir: str) -> str:
     """Rafraîchit les données crypto locales en réutilisant `tools/fetch_data.py`
     (`--only crypto --skip-git` : la publication sur la branche `market-data` reste la
@@ -982,8 +1011,20 @@ def run_recalibration(repo_dir: str, staging_dir: str) -> Dict[str, Any]:
 
     missing = sorted(set(universe) - set(history))
     if missing:
-        logger.warning("run_recalibration: données manquantes pour %s — recalibrage sauté", missing)
-        return {"status": "DONNEES_INSUFFISANTES", "missing_symbols": missing}
+        # Backlog #18 (diagnostic début-de-mois) : en plus de la LISTE des symboles manquants,
+        # journaliser la RAISON connue de `fetch_data.py` par symbole quand elle est disponible
+        # (ex. exclusion par la règle de complétude vs. échec de téléchargement) -- purement
+        # additif, ne change ni la règle de complétude ni la décision de sauter le recalibrage.
+        exclusion_reasons = load_crypto_exclusion_reasons(staging_dir)
+        missing_reasons = {sym: exclusion_reasons[sym] for sym in missing if sym in exclusion_reasons}
+        logger.warning(
+            "run_recalibration: données manquantes pour %s — recalibrage sauté (raisons connues : %s)",
+            missing, missing_reasons or "aucune (manifeste indisponible ou symbole absent du rapport)",
+        )
+        result: Dict[str, Any] = {"status": "DONNEES_INSUFFISANTES", "missing_symbols": missing}
+        if missing_reasons:
+            result["missing_symbols_reasons"] = missing_reasons
+        return result
 
     fee_slippage_bps = {
         sym: (
@@ -1154,6 +1195,13 @@ def render_drift_report(
             "_Recalibrage SAUTÉ : données insuffisantes ou indisponibles ce cycle "
             f"({recalibration.get('missing_symbols') or recalibration.get('detail') or 'historique trop court'})._"
         )
+        missing_reasons = recalibration.get("missing_symbols_reasons")
+        if missing_reasons:
+            # Backlog #18 (diagnostic début-de-mois) : ligne compacte, une entrée par symbole
+            # exclu -- la raison vient telle quelle de `tools/fetch_data.py` (aucune décision
+            # recalculée ici).
+            reasons_str = "; ".join(f"{sym} : {reason}" for sym, reason in sorted(missing_reasons.items()))
+            lines.append(f"_Raison d'exclusion par symbole (`tools/fetch_data.py`) : {reasons_str}._")
     elif recalibration.get("status") == "ERREUR":
         lines.append(f"_Recalibrage SAUTÉ suite à une erreur : {recalibration.get('detail')}._")
     else:
