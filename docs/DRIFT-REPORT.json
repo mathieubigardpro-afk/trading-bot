@@ -1,6 +1,6 @@
 {
   "data_refresh_status": "OK",
-  "generated_at": "2026-09-07T12:04:17.582311+00:00",
+  "generated_at": "2026-09-13T23:59:35.973563+00:00",
   "recalibration": {
     "best_oos_sharpe": 0.5227648190046261,
     "best_value": 175,
@@ -26,15 +26,15 @@
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 1.5049770354844059,
+      "dd_live_pct": 1.6062312389235494,
       "dd_ref_pct": null,
-      "n_days_observed": 47,
+      "n_days_observed": 53,
       "negative_rolling_streak_days": null,
       "reasons": [
         "DD de référence indisponible dans le registre — comparaison impossible",
         "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 0.5438768029194354,
+      "sharpe_live": 0.6567342654002634,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -46,12 +46,12 @@
       "categorie": "active",
       "dd_live_pct": 0.12741396302544755,
       "dd_ref_pct": 8.4,
-      "n_days_observed": 47,
+      "n_days_observed": 53,
       "negative_rolling_streak_days": null,
       "reasons": [
         "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": -0.30423138373954006,
+      "sharpe_live": 0.8534215680099569,
       "sharpe_ref": 0.808,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante prudent_btc_eth) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
@@ -61,14 +61,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.29473164376324784,
+      "dd_live_pct": 0.3046968000312094,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 47,
+      "n_days_observed": 53,
       "negative_rolling_streak_days": null,
       "reasons": [
         "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 4.452791634863321,
+      "sharpe_live": 3.1422156476376535,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -80,13 +80,13 @@
       "categorie": "active",
       "dd_live_pct": 0.33968788984052745,
       "dd_ref_pct": null,
-      "n_days_observed": 47,
+      "n_days_observed": 53,
       "negative_rolling_streak_days": null,
       "reasons": [
         "DD de référence indisponible dans le registre — comparaison impossible",
         "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 3.507576758745881,
+      "sharpe_live": 1.9273479017243713,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -96,14 +96,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.07985990596319896,
+      "dd_live_pct": 0.11721155568642949,
       "dd_ref_pct": 27.3,
-      "n_days_observed": 47,
+      "n_days_observed": 53,
       "negative_rolling_streak_days": null,
       "reasons": [
         "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 4.990549355690915,
+      "sharpe_live": 2.9101769789925513,
       "sharpe_ref": 0.283,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante equilibre_6majors) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
@@ -115,12 +115,12 @@
       "categorie": "active",
       "dd_live_pct": 1.7172972706377627,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 47,
+      "n_days_observed": 53,
       "negative_rolling_streak_days": null,
       "reasons": [
         "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 1.1784060261004383,
+      "sharpe_live": 0.36475549426206494,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -132,12 +132,12 @@
       "categorie": "active",
       "dd_live_pct": 1.2099240721239761,
       "dd_ref_pct": 56.4,
-      "n_days_observed": 47,
+      "n_days_observed": 53,
       "negative_rolling_streak_days": null,
       "reasons": [
         "Sharpe roulant 60j non calculable (historique < 60j)"
       ],
-      "sharpe_live": 1.5314954353149053,
+      "sharpe_live": 0.6674922534516428,
       "sharpe_ref": 0.069,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante agressif_11diversifie) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
