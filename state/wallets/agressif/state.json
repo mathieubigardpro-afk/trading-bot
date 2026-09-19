@@ -1,15 +1,11 @@
 {
-  "cash_usd": 317.58344815131426,
+  "cash_usd": 430.8825517519294,
   "circuit_breakers": {
-    "consecutive_losses": 2,
+    "consecutive_losses": 1,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1143.9054199337245,
-        "ts": "2026-09-17T21:57:49.066826+00:00"
-      },
       {
         "equity": 1146.2461877337244,
         "ts": "2026-09-18T00:01:21.735944+00:00"
@@ -37,6 +33,10 @@
       {
         "equity": 1190.7073355337245,
         "ts": "2026-09-18T21:57:38.186925+00:00"
+      },
+      {
+        "equity": 1187.8390471337245,
+        "ts": "2026-09-18T23:59:55.648007+00:00"
       }
     ],
     "flatten_mode": false,
@@ -49,11 +49,11 @@
     "last_rate": 1.146,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-09-18T21:57:57.507092+00:00"
+    "last_rate_ts": "2026-09-19T00:00:16.827511+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-09-18T21:57:38.186925+00:00",
-  "last_run_id": "2026-09-18T21",
+  "last_run_completed_at": "2026-09-18T23:59:55.648007+00:00",
+  "last_run_id": "2026-09-18T23",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -61,7 +61,7 @@
     },
     "BTC": {
       "prix_moyen": 73337.28715515307,
-      "qty": 0.00098
+      "qty": 0.00052
     },
     "CSCO": {
       "prix_moyen": 114.27419220577238,
@@ -73,7 +73,11 @@
     },
     "ETH": {
       "prix_moyen": 2362.0916244155837,
-      "qty": 0.0308
+      "qty": 0.0159
+    },
+    "FIL": {
+      "prix_moyen": 0.9455874,
+      "qty": 43.9
     },
     "ICP": {
       "prix_moyen": 2.487966,
@@ -87,9 +91,13 @@
       "prix_moyen": 96.70163251154135,
       "qty": 0.3499
     },
+    "OP": {
+      "prix_moyen": 0.12094140000000002,
+      "qty": 343.7
+    },
     "SOL": {
       "prix_moyen": 92.08087307086613,
-      "qty": 0.7619999999999999
+      "qty": 0.3679999999999999
     },
     "SPG": {
       "prix_moyen": 210.77061019615172,
@@ -109,7 +117,7 @@
     },
     "UNI": {
       "prix_moyen": 3.6628591999999993,
-      "qty": 8.8
+      "qty": 4.700000000000001
     },
     "UNP": {
       "prix_moyen": 290.790572625,
@@ -121,17 +129,17 @@
     },
     "XRP": {
       "prix_moyen": 1.411025502051282,
-      "qty": 58.5
+      "qty": 29.8
     }
   },
-  "realized_pnl_cumulative_usd": -37.368531566818014,
+  "realized_pnl_cumulative_usd": -1.5072207250585663,
   "schema_version": 1,
-  "state_hash_prev": "de6dca94287230f1dcc31b82e84c4c3433d48bf9aedc3ef80192dbd6a6feac1a",
+  "state_hash_prev": "91bd4daffa548494391d385fa3acb54069b4bff51d02eb623a3c2327131e798e",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "BNB": 9
+        "BNB": 10
       }
     },
     "xs_momentum_sp100": {
@@ -140,31 +148,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": -5.468753436201146,
-      "symbol": "QCOM",
-      "ts": "2026-08-03T13:46:15.865189+00:00"
-    },
-    {
-      "realized_pnl_usd": -29.746068520059996,
-      "symbol": "UNI",
-      "ts": "2026-08-15T00:25:13.794440+00:00"
-    },
-    {
-      "realized_pnl_usd": 3.979562026926601,
-      "symbol": "BTC",
-      "ts": "2026-08-21T09:04:03.616124+00:00"
-    },
-    {
-      "realized_pnl_usd": 2.0390119130790074,
-      "symbol": "ETH",
-      "ts": "2026-08-21T10:17:16.928372+00:00"
-    },
-    {
-      "realized_pnl_usd": 2.494983849060002,
-      "symbol": "SOL",
-      "ts": "2026-08-21T10:17:16.928372+00:00"
-    },
     {
       "realized_pnl_usd": 2.516093806050008,
       "symbol": "UNI",
@@ -239,6 +222,31 @@
       "realized_pnl_usd": -9.172708497450005,
       "symbol": "FIL",
       "ts": "2026-09-16T01:15:10.847720+00:00"
+    },
+    {
+      "realized_pnl_usd": 3.411571946084195,
+      "symbol": "BTC",
+      "ts": "2026-09-18T23:59:55.648007+00:00"
+    },
+    {
+      "realized_pnl_usd": 3.6576884503083043,
+      "symbol": "ETH",
+      "ts": "2026-09-18T23:59:55.648007+00:00"
+    },
+    {
+      "realized_pnl_usd": 8.04948432803875,
+      "symbol": "SOL",
+      "ts": "2026-09-18T23:59:55.648007+00:00"
+    },
+    {
+      "realized_pnl_usd": 21.233875793599996,
+      "symbol": "UNI",
+      "ts": "2026-09-18T23:59:55.648007+00:00"
+    },
+    {
+      "realized_pnl_usd": -0.49130967627179434,
+      "symbol": "XRP",
+      "ts": "2026-09-18T23:59:55.648007+00:00"
     }
   ],
   "wallet_id": "agressif"
