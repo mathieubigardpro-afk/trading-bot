@@ -233,9 +233,24 @@ pas de nouvel indicateur technique. La difficulté est méthodologique, pas d'im
 
 ---
 
-### 5. Pairs trading ETH/BTC (spread trading, marché-neutre relatif)
+### 5. Pairs trading ETH/BTC (spread trading, marché-neutre relatif) — ✅ TRAITÉE 2026-09-21 : REJETÉE (version dégradée long-only, Porte 1 3/5 + dominée)
 
-**Hypothèse** : ETH et BTC partagent un bêta crypto commun élevé (corrélation 0,89 rapportée
+**VERDICT (session hebdomadaire #8, cf. `RESEARCH-LOG.md` 2026-09-21 (b) et
+`RESEARCH-REGISTRY.json:pairs_ethbtc_ratio_rotation`)** : version dégradée long-only
+(rotation 50/50 → 100/0 sur z-score du log-ratio, grille 4 combos, contrôle apparié 50/50,
+K_total = 90). Le pré-requis de cette fiche (test de cointégration/stationnarité AVANT tout
+signal) a été exécuté et est DÉFAVORABLE : ratio NON stationnaire (ADF p = 0,34 pré-OOS,
+3/15 fenêtres IS stationnaires à 10 %), log-prix NON cointégrés (Engle-Granger p = 0,65) —
+le risque n°1 de la fiche (« la stationnarité ne doit pas être supposée ») s'est matérialisé
+tel quel. Sharpe OOS 0,331, 38 trades, DSR 0,032 — 3/5 seuils manqués ET **dominée par le
+contrôle 50/50 sur Sharpe/Sortino/MaxDD** (IR −1,14) : la rotation détruit de la valeur vs ne
+rien faire. Audit adversarial `isSound: false` (chiffres reproduits bit-exact 15/15 fenêtres ;
+le finding CRITIQUE porte sur l'infrastructure de sizing, cf. #21 — le rejet survit dans
+toutes les lectures). **La non-stationnarité condamne l'hypothèse dans ses DEUX versions : ne
+pas poursuivre la version marché-neutre complète (#17) sans raison structurellement neuve
+(§3.3, compterait dans K_total).**
+
+**Hypothèse (historique)** : ETH et BTC partagent un bêta crypto commun élevé (corrélation 0,89 rapportée
 par `rapport-recherche.md` §3E) mais leur ratio ETH/BTC a historiquement des phases de
 rotation (BTC dominance montante/descendante) qui pourraient être exploitables par un
 signal de retour à la moyenne sur le **ratio** plutôt que sur le prix absolu de l'un ou
@@ -529,7 +544,39 @@ quantifier l'effet. Complexité : faible à modérée. Risque : introduire une f
 Pré-requis pour incuber TOUTE candidate perp (statut pré-enregistré
 `validee_porte1_en_attente_infra` prévu dans la SPEC du funding carry, non utilisé). Déclassée
 en P2 : aucune candidate perp n'a passé la Porte 1 ; ne pas investir avant qu'une idée perp ait
-une valeur démontrée sur le moteur commun amendé (#16).
+une valeur démontrée sur le moteur commun amendé (#16). **Note 2026-09-21 (session #8)** : la
+motivation « pairs ETH/BTC marché-neutre » est tombée — le ratio est non stationnaire et la
+version long-only est rejetée dominée (cf. P1#5) ; seule la voie funding carry justifierait
+encore cette extension, et elle attend elle-même une décision de gouvernance sur le palier de
+coûts perp.
+
+### 21. [P0 — infrastructure sizing, session DÉDIÉE, AJOUTÉE 2026-09-21] Fidélité backtest/production du sizing pour les candidates SANS sizing interne
+
+Finding F1 (CRITIQUE) de l'audit de `pairs_ethbtc_ratio_rotation` (session #8), démontré par
+exécution : `bot/runner.py:_risk_manager_for_wallet` construit le RiskManager portefeuille
+avec `vol_target_annualized=50.0` EN DUR pour TOUS les wallets, **labo 🧪 compris** — design
+documenté (correctif session #3) pour ne pas doubler le vol-targeting INTERNE de
+`quasi_passif_crypto`, mais jamais réévalué pour le cas opposé. Conséquence : une candidate
+labo SANS sizing interne ne recevrait en production AUCUN vol-targeting réel
+(`compute_vol_scalar` = 1,0 à cible 50 pour toute vol réaliste 35-120 %), alors que le moteur
+commun de backtest lui applique l'overlay production (scalar réel 0,23-0,79, exposition
+moyenne réalisée 0,57 vs cible brute 1,0 sur la candidate #8). Le backtest est donc PLUS
+PROTECTEUR que ce que l'incubation livrerait — le « sizing fictif plus généreux que la
+production » que PROMOTION-RULES.md §1.4 interdit, dans le sens inverse du précédent
+quasi-passif (session #3). Portée rétroactive documentée : la prémisse « overlay standard =
+chemin correct pour une candidate sans sizing interne » utilisée par les SPEC des sessions #7
+et #8 est réfutée (notes datées au registre ; aucun verdict passé ne change — les deux
+candidates échouaient indépendamment, et candidate/contrôle subissaient la même distorsion).
+**À trancher en session dédiée (options identifiées par l'audit)** : (a) champ explicite
+« sizing_interne: oui/non » dans le schéma `INCUBATING_STRATEGIES` + RiskManager labo
+conditionnel (attention : toucher `bot/runner.py` = code de production, audit adversarial
+obligatoire, et le cadre de risque §4.3 reste hors de portée — il s'agit de FIDÉLITÉ, pas de
+desserrer quoi que ce soit) ; (b) exiger un vol-targeting interne de toute candidate avant
+incubation (zéro changement production, contrainte de conception par SPEC) ; (c) convention
+backtest `apply_vol_targeting=False` pour les candidates sans sizing interne (fidèle à la
+production ACTUELLE — mais expose les candidates au régime de vol brut). **BLOQUANT : aucune
+future Porte 1 de candidate sans sizing interne avant que ce point soit tranché** — sinon ses
+chiffres seraient produits sous une hypothèse de sizing connue pour être infidèle.
 
 ### 18. [P2 — infrastructure données, AJOUTÉE 2026-09-07] Robustesse début-de-mois du rafraîchissement crypto de la maintenance — ⚙️ ÉTAPE DIAGNOSTIC LIVRÉE 2026-09-14
 
@@ -587,7 +634,41 @@ les poches actives (BK absent des positions), mais BK fait partie de l'univers S
 102 titres pour tout futur backtest actions. À investiguer (mapping alternatif, source de repli
 supplémentaire, ou exclusion documentée de l'univers avec note au registre).
 
-**Priorité de la prochaine session (revue 2026-09-14, session #7)** :
+### 22. [P3 — hygiène monitoring, AJOUTÉE 2026-09-21] Référence MaxDD manquante pour `dual_momentum_multiclasse_etf` dans le DRIFT-REPORT
+
+Depuis que le Sharpe roulant 60 j est calculable (rapport du 2026-09-21), les 2 lignes
+`dual_momentum_etf` restent « SURVEILLER » pour une raison purement mécanique : l'entrée
+d'origine de la vague 1 au registre n'a pas de MaxDD OOS consigné (registre append-only —
+ne pas réécrire l'entrée). Même mécanisme de solution que #15 : table de redirection/complément
+explicite dans `tools/weekly_maintenance.py` (le MaxDD OOS de la vague 1 existe dans les
+rapports d'origine : ~19,9 % — à re-sourcer proprement avant de l'inscrire), avec note au
+rendu. Purement informatif, aucune règle de décision en jeu.
+
+**Priorité de la prochaine session (revue 2026-09-21, session #8)** :
+
+1. **#21 (P0 infrastructure sizing, session dédiée)** : trancher la fidélité
+   backtest/production du sizing des candidates sans sizing interne (options (a)/(b)/(c) de
+   la fiche) — BLOQUANT pour toute future Porte 1 de candidate sans sizing interne. Si
+   l'option retenue touche `bot/runner.py` : SPEC pré-enregistrée + audit adversarial
+   obligatoires, et jamais dans une session qui juge une candidate (§0).
+2. **#14 (gouvernance, décision HUMAINE — Mathieu)** : en attente depuis le 2026-08-24.
+   Le Sharpe roulant 60 j est désormais calculable (rapport du 2026-09-21 : tout est OK,
+   vécus au-dessus des références auditées) ; le critère vécu de `SELECTION-FINALE.md` §5
+   tranche de lui-même vers fin octobre. Peut absorber #12a/#12b et le palier de coûts perp.
+3. **Prochaine candidate de jugement** : le backlog technique s'épuise (P0/P1 : 6 traitées,
+   toutes écartées/rejetées). Restent P2#7 (mid-caps momentum — biais du survivant amplifié,
+   coûts à revoir) et P2#8 (régime cross-asset — nécessite une brique d'allocation
+   inter-poches, grosse infra). Aucune des deux n'est incubable sans travail préalable ;
+   si #21 retient l'option (b), toute nouvelle candidate devra em porter un sizing interne.
+   Alternative recommandée : consacrer la session de jugement suivante à #19 (bande de
+   non-négociation, analyse dédiée) plutôt qu'à une candidate faible — le dossier est mûr
+   (3 pièces) et conditionne la fidélité de toutes les futures SPEC.
+4. #20 (ticker BK, 4 échecs consécutifs au 2026-09-19) : investigation mapping/source de
+   repli ou exclusion documentée de l'univers.
+5. Revue : DRIFT-REPORT à re-suivre (premières semaines de verdicts 60 j réels) ; #18
+   (début de mois) : prochaine occurrence possible le dimanche 2026-10-04.
+
+**Priorité de la session #8 (2026-09-14, conservée pour mémoire — libellé d'origine « prochaine session » de la revue #7)** :
 
 1. **#14 (gouvernance, décision HUMAINE — Mathieu)** : toujours en attente depuis le
    2026-08-24. Fenêtre utile : le Sharpe roulant 60 j devient calculable ~fin septembre (les

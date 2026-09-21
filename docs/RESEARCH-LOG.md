@@ -1015,3 +1015,116 @@ sur ce marché — ne pas retester de variante (autres seuils/rampe) sans mécan
 structurellement neuf (§3.3). Scripts d'attaque de l'audit archivés dans
 `backtest/results/protective_vol_gate_6majors/audit/`. Labo toujours vide (0/3). Prochaine
 candidate → K_total = 15 lignes + sa grille.
+
+---
+
+## 2026-09-21 — Session hebdomadaire #8 (a) : REVUE des stratégies actives et candidates
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56j. **Zéro action requise, zéro action prise.**
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-09-21 : **premier rapport avec Sharpe
+  roulant 60 j réellement calculable** (60 j vécus). 5 lignes **OK** (aucun signal de dérive :
+  quasi_passif 1,72/4,92/1,61 vécus vs 0,81/0,28/0,07 attendus — au-dessus des attentes ;
+  xs_momentum 4,70/1,37 vs 0,82 ; DD vécus ≤ 1,7 % partout, très loin des 2× attendus) ;
+  2 lignes **SURVEILLER** pour `dual_momentum_etf` : raison purement mécanique « DD de
+  référence indisponible dans le registre » (l'entrée d'origine de la vague 1 n'a pas de
+  MaxDD OOS consigné — hygiène de monitoring inscrite au backlog, pas un signal de marché).
+  Aucune règle de mort ne serait déclenchée même si §3 s'appliquait. **Aucune action.**
+- **Gouvernance #14** : toujours aucune décision humaine enregistrée
+  (`GOVERNANCE-DOSSIER-2026-08-24-quasi-passif.md`, en attente depuis 4 semaines). Le critère
+  vécu de `SELECTION-FINALE.md` §5 tranche de lui-même vers fin octobre 2026. Les vécus 60 j
+  actuels du quasi-passif sont au-dessus des références auditées — aucune pression à la
+  bascule à ce jour, mais la décision reste ouverte. Rappel priorité haute maintenu.
+- Recalibrage du 2026-09-21 : exécuté normalement (15 fenêtres), `REGIME_SMA_DAYS` inchangé
+  (175 vs 200 : +3,0 % < seuil 10 %) — 8e recalibrage consécutif sans changement, conforme.
+- Cron `fetch-data` du samedi 2026-09-19 : OK (468 s), 30 crypto + 30 funding + 30 perp +
+  103 actions + 18 ETF régénérés. Ticker **BK** : **4e échec consécutif** (yfinance ET stooq)
+  — confirme le diagnostic « problème durable de mapping/source » (#20, toujours sans
+  incidence sur les poches actives).
+- Wallets au cycle 2026-09-21T04 : 🛡️ 1 014 € | ⚖️ 1 040 € | 🔥 1 041 € | 🧪 994 € (labo
+  100 % cash, état attendu).
+
+---
+
+## 2026-09-21 — Session hebdomadaire #8 (b) : Porte 1 de `pairs_ethbtc_ratio_rotation` (backlog P1#5, version dégradée long-only) — ÉCHEC 3/5 + dominée par le contrôle, REJETÉE ; audit `isSound: false` (finding CRITIQUE d'INFRASTRUCTURE, sans effet sur ce verdict)
+
+**Protocole.** SPEC intégralement PRÉ-ENREGISTRÉE et committée AVANT exécution (commit
+4c4182e) : rotation long-only BTC/ETH sur z-score du log-ratio ETH/BTC (base 50/50, tilt
+100/0, hystérésis θ/2 fixée), grille figée 4 combos (L ∈ {720, 2160} h × θ ∈ {1,5, 2,0}),
+coûts majors 15 bps/côté importés de `bot/config.py`, overlay production standard, portage
+inter-fenêtres actif, contrôle apparié 50/50 constant compté dans K_total. 15 fenêtres
+9m IS / 3m OOS (OOS 32 855 h, 2022-10 → 2026-08), **K_total = 15 + 15×4 + 15×1 = 90**.
+Pré-requis de la fiche backlog exécuté AVANT le walk-forward, rôle diagnostic pré-enregistré
+(SPEC §5) : **ratio NON stationnaire** (ADF p = 0,344 pré-OOS ; 3/15 fenêtres IS
+stationnaires à 10 %), **log-prix NON cointégrés** (Engle-Granger p = 0,650), demi-vie
+714 h. Attendu honnête écrit AVANT le run : échec probable, ratio tendanciel baissier.
+
+**Résultats (OOS concaténé, net de coûts).**
+
+| | Candidate | Contrôle 50/50 | Benchmark B&H |
+|---|---|---|---|
+| Sharpe | **0,331** | 0,590 | 0,616 |
+| Sortino | 0,464 | 0,825 | 0,861 |
+| Profit factor | 1,261 | 1,795 | — |
+| MaxDD | 48,7 % | 39,7 % | 60,9 % |
+| Trades clos | 38 | 0 | — |
+| DSR (K=90) | 0,032 | — | — |
+
+Porte 1 §1.2 : **3/5 seuils manqués** (Sharpe, trades, DSR ; PF et MaxDD relatif 0,80×
+passent). **Dominée par le contrôle 50/50 sur les 3 axes** (Sharpe ET Sortino ET MaxDD,
+IR −1,14, corr 0,976) — la rotation détruit de la valeur par rapport à ne rien faire.
+43 épisodes de tilt distincts (médiane 229 h), PnL relatif net **−28,8 %** vs contrôle.
+Rupture temporelle habituelle, 5e candidate crypto de suite : Sharpe 1,44 avant 2024,
+**−0,22 depuis**. Stress de coûts : PF 1,14 à 3×, 0,98 à 5×. Corrélation 0,72 au proxy
+quasi-passif (redondance en prime).
+
+**Audit adversarial indépendant (copie isolée, remote neutralisé) : `isSound: false`.**
+Reproduction PARFAITE d'abord : signal from scratch bit-identique (4 combos), **15/15
+fenêtres reproduites bit-exact** (sélection IS comprise), DSR from scratch identique
+(0,03196944), K_total recompté, stationnarité/épisodes/corrélations exacts, zéro
+look-ahead (perturbation), chronologie git propre. **MAIS finding F1 (CRITIQUE,
+INFRASTRUCTURE production, démontré par exécution)** : `bot/runner.py:_risk_manager_for_wallet`
+construit le RiskManager portefeuille avec `vol_target_annualized=50.0` EN DUR pour TOUS les
+wallets, labo compris (design documenté pour ne pas doubler le vol-targeting INTERNE de
+`quasi_passif_crypto`, correctif session #3). Conséquence : une candidate **sans sizing
+interne** incubée ne recevrait AUCUN vol-targeting réel en production (scalar 1,0 à cible
+50), alors que le moteur de backtest lui applique l'overlay production (scalar réel
+0,23-0,79, exposition moyenne 0,57 vs cible brute 1,0) — le backtest est PLUS protecteur que
+la production, exactement le « sizing fictif plus généreux » que §1.4 interdit. La prémisse
+« chemin overlay standard correct pour une candidate sans sizing interne » (SPEC §2, héritée
+de la session #7) n'était pas étayée par le code. Portée rétroactive : même prémisse sous le
+`isSound: true` de `protective_vol_gate_6majors` — sans effet sur son verdict (écartée de
+toute façon) ; note datée ajoutée au registre. 1 MINEUR (réserve biais du survivant non
+écrite explicitement — portée quasi nulle sur BTC/ETH), 1 INFO (Sharpe IS d'affichage à √252,
+déjà relevé en session #2, argmax invariant).
+
+**Décision (conforme à la sémantique pré-enregistrée SPEC §9 et §1.4).** `isSound: false` ⇒
+rejet automatique : statut **`rejetee`** (entrée n°16 du registre). Finding sur
+l'INFRASTRUCTURE commune ⇒ AUCUN re-run dans cette session (amender l'infra après avoir vu un
+résultat = interdit §0) — l'audit établit par ailleurs que le rejet (« dominée par le
+contrôle, 3/5 seuils à larges marges ») survivrait dans toutes les lectures. Le correctif
+d'infrastructure est inscrit au backlog comme **P0 (#21)**, à traiter en session dédiée AVANT
+toute future candidate sans sizing interne. Conclusion transférable consignée : la
+non-stationnarité du ratio ETH/BTC (ADF p=0,34, coint p=0,65 ; 3/15 fenêtres IS
+stationnaires) condamne l'hypothèse « retour à la moyenne du ratio » dans ses DEUX versions —
+la version marché-neutre complète (#17) ne doit pas être poursuivie sans raison
+structurellement neuve (§3.3). Backlog P1#5 soldé. Prochaine candidate → K_total = 16 lignes
++ sa grille. Labo toujours vide (0/3).
+
+---
+
+## 2026-09-21 — Session hebdomadaire #8 (c) : hygiène
+
+- Scripts d'attaque de l'audit archivés dans
+  `backtest/results/pairs_ethbtc_ratio_rotation/audit/` (8 scripts + VERDICT.md).
+- Registre : entrée n°16 ajoutée (`pairs_ethbtc_ratio_rotation`, rejetee) + note datée sur
+  `protective_vol_gate_6majors` (portée rétroactive du finding sizing — append-only
+  respecté, aucune ligne réécrite). `tools/verify_research.py --check` : OK, 16 entrées.
+- Backlog : P1#5 soldé (verdict consigné), **#21 ajouté (P0 infrastructure : fidélité du
+  sizing backtest/production pour les candidates sans sizing interne)**, #17 re-noté
+  (version marché-neutre déconseillée par la non-stationnarité), priorités de la prochaine
+  session mises à jour.
+- Suite de tests complète verte au push final (les 2 échecs rencontrés en cours de session
+  étaient dus aux données absentes de l'environnement — résolus en stageant les fichiers
+  `market-data` requis, aucun code modifié).
