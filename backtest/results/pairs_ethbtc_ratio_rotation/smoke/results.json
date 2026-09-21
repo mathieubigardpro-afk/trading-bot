@@ -1,0 +1,623 @@
+{
+  "meta": {
+    "candidate_id": "pairs_ethbtc_ratio_rotation",
+    "backlog_ref": "backtest/results/pairs_ethbtc_ratio_rotation/SPEC.md (P1#5, pré-enregistrée 2026-09-21, session hebdo #8)",
+    "engine": "backtest/engine.py (docs/PROMOTION-RULES.md §1.1), carry_across_windows=True (CARRY-EXTENSION-SPEC.md, standard depuis session #6)",
+    "data_dir": "/home/claude/repo/_data/crypto",
+    "smoke_run": true,
+    "univers": [
+      "BTC",
+      "ETH"
+    ],
+    "calendar_start": "2022-01-01 00:00:00",
+    "calendar_end": "2023-07-01 00:00:00",
+    "n_calendar_hours": 13104,
+    "real_data_gaps_by_symbol": {
+      "BTC": 0,
+      "ETH": 0
+    },
+    "n_nan_after_align": 0,
+    "n_windows": 3,
+    "walkforward": "9m IS / 3m OOS / pas 3m",
+    "param_grid_candidate": [
+      {
+        "l_hours": 720,
+        "theta": 1.5
+      },
+      {
+        "l_hours": 720,
+        "theta": 2.0
+      },
+      {
+        "l_hours": 2160,
+        "theta": 1.5
+      },
+      {
+        "l_hours": 2160,
+        "theta": 2.0
+      }
+    ],
+    "param_grid_control": [
+      {}
+    ],
+    "cost_bps_nominal_per_side": 15.0,
+    "cost_bps_source": "bot.config.COST_TIER_FEE_TAKER_BPS['majors'] + bot.config.COST_TIER_SLIPPAGE_PENALTY_BPS['majors'] (SPEC.md §2)",
+    "sim_kwargs_hourly": {
+      "vol_ewma_halflife_days": 60.0,
+      "vol_periods_per_year": 8760.0
+    },
+    "periods_per_year_metrics": 8760.0,
+    "k_total": 30,
+    "k_total_detail": {
+      "registry_rows": 15,
+      "n_windows": 3,
+      "n_grid_combos_candidate": 4,
+      "n_grid_combos_control": 1,
+      "formula": "K_total = registry_rows + n_windows*n_grid_combos_candidate + n_windows*n_grid_combos_control (SPEC.md §7)"
+    },
+    "runtime_seconds": 355.5
+  },
+  "stationarity": {
+    "status": "SKIPPED_SMOKE_RUN"
+  },
+  "candidate_pairs_ratio": {
+    "cost_bps": 15.0,
+    "carry_across_windows": true,
+    "per_window": [
+      {
+        "sharpe": 0.08797726865051711,
+        "sortino": 0.12980558452236626,
+        "profit_factor": 2.1666856494180395,
+        "max_drawdown": 0.12262458341776106,
+        "cagr": -0.010947571220805807,
+        "average_exposure": 0.5814519711064718,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 0,
+        "is_start": "2022-01-01 00:00:00",
+        "is_end": "2022-09-30 23:00:00",
+        "oos_start": "2022-10-01 00:00:00",
+        "oos_end": "2022-12-31 23:00:00",
+        "chosen_params": {
+          "l_hours": 2160,
+          "theta": 2.0
+        },
+        "is_sharpe_chosen": -0.3018308217667159,
+        "is_candidates": [
+          {
+            "params": {
+              "l_hours": 720,
+              "theta": 1.5
+            },
+            "is_sharpe": -0.38150545702260846
+          },
+          {
+            "params": {
+              "l_hours": 720,
+              "theta": 2.0
+            },
+            "is_sharpe": -0.33593559924723204
+          },
+          {
+            "params": {
+              "l_hours": 2160,
+              "theta": 1.5
+            },
+            "is_sharpe": -0.32585809935554094
+          },
+          {
+            "params": {
+              "l_hours": 2160,
+              "theta": 2.0
+            },
+            "is_sharpe": -0.3018308217667159
+          }
+        ],
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 3.655870589551389,
+        "sortino": 5.399555035686774,
+        "profit_factor": 3.5094646696908396,
+        "max_drawdown": 0.13324137844884487,
+        "cagr": 1.7227882225255873,
+        "average_exposure": 0.5547709148317813,
+        "n_trades_closed": 3,
+        "n_periods": 2159,
+        "window_index": 1,
+        "is_start": "2022-04-01 00:00:00",
+        "is_end": "2022-12-31 23:00:00",
+        "oos_start": "2023-01-01 00:00:00",
+        "oos_end": "2023-03-31 23:00:00",
+        "chosen_params": {
+          "l_hours": 2160,
+          "theta": 2.0
+        },
+        "is_sharpe_chosen": -0.27254972780064346,
+        "is_candidates": [
+          {
+            "params": {
+              "l_hours": 720,
+              "theta": 1.5
+            },
+            "is_sharpe": -0.35500013434947697
+          },
+          {
+            "params": {
+              "l_hours": 720,
+              "theta": 2.0
+            },
+            "is_sharpe": -0.3090461474705103
+          },
+          {
+            "params": {
+              "l_hours": 2160,
+              "theta": 1.5
+            },
+            "is_sharpe": -0.2849928693124595
+          },
+          {
+            "params": {
+              "l_hours": 2160,
+              "theta": 2.0
+            },
+            "is_sharpe": -0.27254972780064346
+          }
+        ],
+        "carry_in_used": true
+      },
+      {
+        "sharpe": 0.9831141381790002,
+        "sortino": 1.3220041961571696,
+        "profit_factor": 2.1666136340543285,
+        "max_drawdown": 0.15018043613433651,
+        "cagr": 0.2650715031660933,
+        "average_exposure": 0.6603600841412242,
+        "n_trades_closed": 2,
+        "n_periods": 2184,
+        "window_index": 2,
+        "is_start": "2022-07-01 00:00:00",
+        "is_end": "2023-03-31 23:00:00",
+        "oos_start": "2023-04-01 00:00:00",
+        "oos_end": "2023-06-30 23:00:00",
+        "chosen_params": {
+          "l_hours": 2160,
+          "theta": 2.0
+        },
+        "is_sharpe_chosen": 0.25066273810857814,
+        "is_candidates": [
+          {
+            "params": {
+              "l_hours": 720,
+              "theta": 1.5
+            },
+            "is_sharpe": 0.1863765003646569
+          },
+          {
+            "params": {
+              "l_hours": 720,
+              "theta": 2.0
+            },
+            "is_sharpe": 0.22539494791499323
+          },
+          {
+            "params": {
+              "l_hours": 2160,
+              "theta": 1.5
+            },
+            "is_sharpe": 0.23906622863334606
+          },
+          {
+            "params": {
+              "l_hours": 2160,
+              "theta": 2.0
+            },
+            "is_sharpe": 0.25066273810857814
+          }
+        ],
+        "carry_in_used": true
+      }
+    ],
+    "concatenated": {
+      "sharpe": 1.6093917894332428,
+      "sortino": 2.296486119129333,
+      "profit_factor": 2.778369628477261,
+      "max_drawdown": 0.15018043613433318,
+      "cagr": 0.498990515421907,
+      "average_exposure": 0.5989654680337871,
+      "n_trades_closed": 5,
+      "n_periods": 6551
+    },
+    "carry_boundary_events": []
+  },
+  "control_constant_weights_50_50": {
+    "cost_bps": 15.0,
+    "carry_across_windows": true,
+    "description": "Poids constants {BTC:0.5, ETH:0.5}, aucun signal -- même moteur/overlay/coûts/fenêtres que la candidate (SPEC.md §6).",
+    "per_window": [
+      {
+        "sharpe": 0.08797726865051711,
+        "sortino": 0.12980558452236626,
+        "profit_factor": 2.1666856494180395,
+        "max_drawdown": 0.12262458341776106,
+        "cagr": -0.010947571220805807,
+        "average_exposure": 0.5814519711064718,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 0,
+        "is_start": "2022-01-01 00:00:00",
+        "is_end": "2022-09-30 23:00:00",
+        "oos_start": "2022-10-01 00:00:00",
+        "oos_end": "2022-12-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 3.7216634233313974,
+        "sortino": 5.481857158211367,
+        "profit_factor": 8.088656135430087,
+        "max_drawdown": 0.13757478481066376,
+        "cagr": 1.745246880066357,
+        "average_exposure": 0.5539536825259815,
+        "n_trades_closed": 0,
+        "n_periods": 2159,
+        "window_index": 1,
+        "is_start": "2022-04-01 00:00:00",
+        "is_end": "2022-12-31 23:00:00",
+        "oos_start": "2023-01-01 00:00:00",
+        "oos_end": "2023-03-31 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": true
+      },
+      {
+        "sharpe": 0.815401811722984,
+        "sortino": 1.0875526516817713,
+        "profit_factor": 3.1096247372849177,
+        "max_drawdown": 0.15018085998057484,
+        "cagr": 0.20336081175583498,
+        "average_exposure": 0.6601058203953276,
+        "n_trades_closed": 0,
+        "n_periods": 2184,
+        "window_index": 2,
+        "is_start": "2022-07-01 00:00:00",
+        "is_end": "2023-03-31 23:00:00",
+        "oos_start": "2023-04-01 00:00:00",
+        "oos_end": "2023-06-30 23:00:00",
+        "chosen_params": {},
+        "is_sharpe_chosen": NaN,
+        "is_candidates": [
+          {
+            "params": {},
+            "is_sharpe": NaN
+          }
+        ],
+        "carry_in_used": true
+      }
+    ],
+    "concatenated": {
+      "sharpe": 1.5731182440920448,
+      "sortino": 2.237318211943644,
+      "profit_factor": 4.126572039892607,
+      "max_drawdown": 0.15018085998057418,
+      "cagr": 0.47820202093595987,
+      "average_exposure": 0.5986113668936163,
+      "n_trades_closed": 0,
+      "n_periods": 6551
+    },
+    "carry_boundary_events": []
+  },
+  "benchmark_equal_weight_buy_hold": {
+    "cost_bps": 0.0,
+    "overlay": "désactivé (apply_vol_targeting=False, no_trade_band=0.0)",
+    "per_window": [
+      {
+        "sharpe": -0.6629789691635931,
+        "sortino": -0.9417239406766985,
+        "profit_factor": 0.4282961704754742,
+        "max_drawdown": 0.3081148955370907,
+        "cagr": -0.40194220756554544,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 0,
+        "oos_start": "2022-10-01 00:00:00",
+        "oos_end": "2022-12-31 23:00:00"
+      },
+      {
+        "sharpe": 3.940316399984885,
+        "sortino": 5.8635516328192665,
+        "profit_factor": 296876.84671830595,
+        "max_drawdown": 0.20845452674789366,
+        "cagr": 6.117814468563516,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2159,
+        "window_index": 1,
+        "oos_start": "2023-01-01 00:00:00",
+        "oos_end": "2023-03-31 23:00:00"
+      },
+      {
+        "sharpe": 0.8341711269794263,
+        "sortino": 1.1174505318183348,
+        "profit_factor": 1.3180155262294877,
+        "max_drawdown": 0.2107423639621525,
+        "cagr": 0.3000881053367257,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2184,
+        "window_index": 2,
+        "oos_start": "2023-04-01 00:00:00",
+        "oos_end": "2023-06-30 23:00:00"
+      }
+    ],
+    "concatenated": {
+      "sharpe": 1.3639257901951947,
+      "sortino": 1.9413052914710076,
+      "profit_factor": 3.720122187951251,
+      "max_drawdown": 0.3081148955370907,
+      "cagr": 0.7524865465390638,
+      "average_exposure": 1.0,
+      "n_trades_closed": 0,
+      "n_periods": 6551
+    }
+  },
+  "quasi_passive_proxy_sma200_long_flat": {
+    "cost_bps": 0.0,
+    "overlay": "désactivé (apply_vol_targeting=False, no_trade_band=0.0)",
+    "definition": "Poids 1/2 par symbole quand close(t) > SMA(close, 4800h)(t) pour CE symbole, 0.0 sinon (panier long/flat PAR SYMBOLE) -- SPEC.md §8.3, même construction que run_protective_vol_gate.py, univers à 2 actifs ici.",
+    "per_window": [
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_periods": 2208,
+        "window_index": 0,
+        "oos_start": "2022-10-01 00:00:00",
+        "oos_end": "2022-12-31 23:00:00"
+      },
+      {
+        "sharpe": 2.4044299796191204,
+        "sortino": 3.5004243779424034,
+        "profit_factor": 1.4526096063303364,
+        "max_drawdown": 0.20513212541067327,
+        "cagr": 2.0059665012407066,
+        "average_exposure": 0.8605855359437039,
+        "n_trades_closed": 7,
+        "n_periods": 2159,
+        "window_index": 1,
+        "oos_start": "2023-01-01 00:00:00",
+        "oos_end": "2023-03-31 23:00:00"
+      },
+      {
+        "sharpe": 0.8341711269794263,
+        "sortino": 1.1174505318183348,
+        "profit_factor": 1.3180155262294877,
+        "max_drawdown": 0.2107423639621525,
+        "cagr": 0.3000881053367257,
+        "average_exposure": 1.0,
+        "n_trades_closed": 0,
+        "n_periods": 2184,
+        "window_index": 2,
+        "oos_start": "2023-04-01 00:00:00",
+        "oos_end": "2023-06-30 23:00:00"
+      }
+    ],
+    "concatenated": {
+      "sharpe": 1.3704113809359346,
+      "sortino": 1.9253389081640906,
+      "profit_factor": 1.4327832300357064,
+      "max_drawdown": 0.21074236396215495,
+      "cagr": 0.568646214473465,
+      "average_exposure": 0.6170056742638462,
+      "n_trades_closed": 7,
+      "n_periods": 6551
+    }
+  },
+  "dsr_candidate": {
+    "sharpe_hat_period": 0.0171952988554359,
+    "n_obs": 6551,
+    "skew": -0.28491295699825725,
+    "kurtosis_excess": 21.677493077326027,
+    "trials_k": 30,
+    "sr0_benchmark_expected_max_sharpe": 0.0257039549376208,
+    "dsr": 0.24624777547186572
+  },
+  "cost_stress_test": {
+    "profit_factor_at_15bps_nominal": 2.778369628477261,
+    "profit_factor_at_45bps_3x": 2.2417683633103476,
+    "profit_factor_at_75bps_5x": 1.901952660657212,
+    "sharpe_at_15bps_nominal": 1.6093917894332428,
+    "sharpe_at_45bps_3x": 1.3559101291995113,
+    "sharpe_at_75bps_5x": 1.1073520561113686
+  },
+  "honesty_analyses": {
+    "tilt_episodes": {
+      "episodes": [
+        {
+          "window_index": 1,
+          "start": "2023-01-24 21:00:00",
+          "end": "2023-02-03 18:00:00",
+          "n_hours": 238,
+          "candidate_return_over_episode": 0.02029617787706428,
+          "control_return_over_episode": 0.013493511105816536,
+          "relative_pnl_candidate_minus_control": 0.006802666771247745
+        },
+        {
+          "window_index": 1,
+          "start": "2023-02-13 13:00:00",
+          "end": "2023-02-26 20:00:00",
+          "n_hours": 320,
+          "candidate_return_over_episode": 0.05169630286512383,
+          "control_return_over_episode": 0.06200615613887539,
+          "relative_pnl_candidate_minus_control": -0.010309853273751557
+        },
+        {
+          "window_index": 1,
+          "start": "2023-03-15 14:00:00",
+          "end": "2023-03-31 23:00:00",
+          "n_hours": 393,
+          "candidate_return_over_episode": 0.040255013340793955,
+          "control_return_over_episode": 0.042842163125370814,
+          "relative_pnl_candidate_minus_control": -0.0025871497845768587
+        },
+        {
+          "window_index": 2,
+          "start": "2023-04-01 00:00:00",
+          "end": "2023-04-04 11:00:00",
+          "n_hours": 84,
+          "candidate_return_over_episode": 0.010961149215038546,
+          "control_return_over_episode": 0.006258427300714464,
+          "relative_pnl_candidate_minus_control": 0.004702721914324082
+        },
+        {
+          "window_index": 2,
+          "start": "2023-04-11 22:00:00",
+          "end": "2023-04-13 08:00:00",
+          "n_hours": 35,
+          "candidate_return_over_episode": 0.02722381139478136,
+          "control_return_over_episode": 0.013248705138488415,
+          "relative_pnl_candidate_minus_control": 0.013975106256292946
+        },
+        {
+          "window_index": 2,
+          "start": "2023-06-21 01:00:00",
+          "end": "2023-06-30 23:00:00",
+          "n_hours": 239,
+          "candidate_return_over_episode": 0.04617508686916083,
+          "control_return_over_episode": 0.05085687748099632,
+          "relative_pnl_candidate_minus_control": -0.00468179061183549
+        }
+      ],
+      "n_episodes_distinct": 6,
+      "median_duration_hours": 238.5,
+      "median_duration_days": 9.9375,
+      "n_episodes_relative_pnl_positive": 3,
+      "n_episodes_relative_pnl_negative_or_zero": 3,
+      "sum_relative_pnl_over_all_episodes": 0.007901701271700867,
+      "note": "Un épisode = run contigu de state != NEUTRE, restreint à chaque fenêtre OOS avec les params choisis par SA PROPRE sélection IS -- jamais stitché entre deux fenêtres (approximation documentée, ne sous-compte jamais le nombre d'épisodes réel, SPEC.md §8.1). relative_pnl_candidate_minus_control = rendement composé de la candidate moins celui du contrôle apparié, calculés sur EXACTEMENT les mêmes heures (celles où state != NEUTRAL). 'Beaucoup de trades issus de peu d'épisodes != observations indépendantes' (risque n°2 de la fiche backlog) -- n_episodes_distinct est le compte pertinent pour juger l'indépendance statistique, pas n_trades_closed."
+    },
+    "subperiods_before_after_2024_01_01": {
+      "period_before": "< 2024-01-01",
+      "sharpe_before": 1.6093917894332428,
+      "n_periods_before": 6551,
+      "period_after": ">= 2024-01-01",
+      "sharpe_after": NaN,
+      "n_periods_after": 0
+    },
+    "correlation_vs_control": {
+      "value": 0.9924417684541692,
+      "note": "Corrélation des rendements horaires OOS candidate vs contrôle apparié (mêmes fenêtres, index intersecté)."
+    },
+    "correlation_vs_quasi_passive_proxy": {
+      "value": 0.7698825962280706,
+      "note": "Corrélation des rendements horaires OOS candidate vs proxy quasi-passif SMA200 long/flat 50/50 (SPEC.md §8.3). > 0.7-0.8 = intérêt marginal faible (redondance avec une brique de trend-following déjà en production)."
+    },
+    "paired_comparison_candidate_vs_control": {
+      "n_periods_aligned": 6551,
+      "candidate": {
+        "sharpe": 1.6093917894332428,
+        "sortino": 2.296486119129333,
+        "max_drawdown": 0.15018043613433318
+      },
+      "control": {
+        "sharpe": 1.5731182440920448,
+        "sortino": 2.237318211943644,
+        "max_drawdown": 0.15018085998057418
+      },
+      "information_ratio_candidate_vs_control": 0.4382833630613907,
+      "candidate_dominated_by_control": false,
+      "note": "Dominée (SPEC.md §6/§9) = Sharpe ET Sortino ET MaxDD TOUS moins bons pour la candidate que pour le contrôle sur cette série OOS appariée -- critère de décision explicite : une candidate dominée n'est PAS incubée quels que soient ses seuils Porte 1."
+    },
+    "maxdd_comparison": {
+      "candidate": 0.15018043613433318,
+      "control": 0.15018085998057418,
+      "benchmark_buy_hold": 0.3081148955370907
+    },
+    "stationarity_summary": {
+      "status": "SKIPPED_SMOKE_RUN"
+    }
+  },
+  "promotion_rules_1_2_thresholds_verdict": {
+    "sharpe_oos": {
+      "value": 1.6093917894332428,
+      "threshold": 0.7,
+      "rule": ">= seuil",
+      "pass": true
+    },
+    "profit_factor_oos": {
+      "value": 2.778369628477261,
+      "threshold": 1.15,
+      "rule": "> seuil",
+      "pass": true
+    },
+    "n_trades_oos_closed": {
+      "value": 5,
+      "threshold": 80,
+      "rule": ">= seuil",
+      "pass": false,
+      "honesty_note": {
+        "n_trades_closed_oos": 5,
+        "n_tilt_episodes_distincts": 6
+      }
+    },
+    "maxdd_relative_to_benchmark": {
+      "value": 0.48741699382156145,
+      "threshold": 1.5,
+      "rule": "<= seuil (maxdd_candidate / maxdd_benchmark_OOS_aligné)",
+      "pass": true
+    },
+    "dsr": {
+      "value": 0.24624777547186572,
+      "threshold": 0.5,
+      "rule": ">= seuil",
+      "k_total": 30,
+      "pass": false
+    }
+  },
+  "promotion_rules_1_2_all_pass": false,
+  "candidate_dominated_by_control": false,
+  "most_frequently_selected_is_combo": {
+    "chosen": {
+      "l_hours": 2160,
+      "theta": 2.0
+    },
+    "n_windows_selected": 3,
+    "n_windows_total": 3,
+    "all_counts": [
+      {
+        "params": {
+          "l_hours": 2160,
+          "theta": 2.0
+        },
+        "n_windows": 3
+      }
+    ],
+    "tie_break_rule": "égalité tranchée par theta le plus HAUT puis L (l_hours) le plus LONG (SPEC.md §9)."
+  },
+  "gate1_verdict_automatic": {
+    "value": "ecartee_seuil_manque",
+    "note": "Verdict AUTOMATIQUE (SPEC.md §9) basé UNIQUEMENT sur les 5 seuils §1.2 et la non-domination par le contrôle. NE remplace PAS l'audit adversarial indépendant obligatoire (isSound) -- 'incubation_proposee_sous_reserve_audit_adversarial' signifie explicitement 'sous réserve', jamais une incubation actée. isSound non exécuté par ce script (hors périmètre de la mission d'implémentation du backtest, cf. `run_protective_vol_gate.py` même convention)."
+  },
+  "adversarial_audit_1_4": {
+    "isSound": null,
+    "note": "SPEC.md exige un audit adversarial indépendant obligatoire avant toute décision de statut dans RESEARCH-REGISTRY.json (`isSound: false` = rejet quel que soit le chiffre). Non exécuté ici (hors périmètre de ce script)."
+  }
+}
