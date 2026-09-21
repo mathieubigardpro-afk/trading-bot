@@ -1,6 +1,6 @@
 {
   "data_refresh_status": "OK",
-  "generated_at": "2026-09-14T09:40:21.131813+00:00",
+  "generated_at": "2026-09-21T00:00:04.233506+00:00",
   "recalibration": {
     "best_oos_sharpe": 0.5227648190046261,
     "best_value": 175,
@@ -28,13 +28,12 @@
       "categorie": "active",
       "dd_live_pct": 1.6062312389235494,
       "dd_ref_pct": null,
-      "n_days_observed": 54,
-      "negative_rolling_streak_days": null,
+      "n_days_observed": 60,
+      "negative_rolling_streak_days": 0,
       "reasons": [
-        "DD de référence indisponible dans le registre — comparaison impossible",
-        "Sharpe roulant 60j non calculable (historique < 60j)"
+        "DD de référence indisponible dans le registre — comparaison impossible"
       ],
-      "sharpe_live": 0.6913676094077458,
+      "sharpe_live": 0.7839339558791623,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -46,16 +45,16 @@
       "categorie": "active",
       "dd_live_pct": 0.12741396302544755,
       "dd_ref_pct": 8.4,
-      "n_days_observed": 54,
-      "negative_rolling_streak_days": null,
+      "n_days_observed": 60,
+      "negative_rolling_streak_days": 0,
       "reasons": [
-        "Sharpe roulant 60j non calculable (historique < 60j)"
+        "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 0.9101935532735779,
+      "sharpe_live": 1.7223214417912152,
       "sharpe_ref": 0.808,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante prudent_btc_eth) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
-      "verdict": "SURVEILLER",
+      "verdict": "OK",
       "wallet_id": "prudent"
     },
     {
@@ -63,30 +62,29 @@
       "categorie": "active",
       "dd_live_pct": 0.3046968000312094,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 54,
-      "negative_rolling_streak_days": null,
+      "n_days_observed": 60,
+      "negative_rolling_streak_days": 0,
       "reasons": [
-        "Sharpe roulant 60j non calculable (historique < 60j)"
+        "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 3.2329238032557415,
+      "sharpe_live": 4.695406525891222,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
-      "verdict": "SURVEILLER",
+      "verdict": "OK",
       "wallet_id": "equilibre"
     },
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 0.33968788984052745,
+      "dd_live_pct": 0.3474867049900787,
       "dd_ref_pct": null,
-      "n_days_observed": 54,
-      "negative_rolling_streak_days": null,
+      "n_days_observed": 60,
+      "negative_rolling_streak_days": 0,
       "reasons": [
-        "DD de référence indisponible dans le registre — comparaison impossible",
-        "Sharpe roulant 60j non calculable (historique < 60j)"
+        "DD de référence indisponible dans le registre — comparaison impossible"
       ],
-      "sharpe_live": 2.0157155219899097,
+      "sharpe_live": 3.2633099283004396,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -96,18 +94,18 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.11721155568642949,
+      "dd_live_pct": 0.11791582587990308,
       "dd_ref_pct": 27.3,
-      "n_days_observed": 54,
-      "negative_rolling_streak_days": null,
+      "n_days_observed": 60,
+      "negative_rolling_streak_days": 0,
       "reasons": [
-        "Sharpe roulant 60j non calculable (historique < 60j)"
+        "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 3.0369287081319123,
+      "sharpe_live": 4.917138788135975,
       "sharpe_ref": 0.283,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante equilibre_6majors) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
-      "verdict": "SURVEILLER",
+      "verdict": "OK",
       "wallet_id": "equilibre"
     },
     {
@@ -115,33 +113,33 @@
       "categorie": "active",
       "dd_live_pct": 1.7172972706377627,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 54,
-      "negative_rolling_streak_days": null,
+      "n_days_observed": 60,
+      "negative_rolling_streak_days": 0,
       "reasons": [
-        "Sharpe roulant 60j non calculable (historique < 60j)"
+        "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 0.6055559731592932,
+      "sharpe_live": 1.3723077023576684,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
-      "verdict": "SURVEILLER",
+      "verdict": "OK",
       "wallet_id": "agressif"
     },
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 1.2099240721239761,
+      "dd_live_pct": 1.5602431755309139,
       "dd_ref_pct": 56.4,
-      "n_days_observed": 54,
-      "negative_rolling_streak_days": null,
+      "n_days_observed": 60,
+      "negative_rolling_streak_days": 0,
       "reasons": [
-        "Sharpe roulant 60j non calculable (historique < 60j)"
+        "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 1.0386534958116993,
+      "sharpe_live": 1.6078464422830774,
       "sharpe_ref": 0.069,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante agressif_11diversifie) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
-      "verdict": "SURVEILLER",
+      "verdict": "OK",
       "wallet_id": "agressif"
     }
   ],

@@ -1,6 +1,6 @@
 # DRIFT-REPORT.md — Moniteur de dérive (backtest vs vécu)
 
-*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-09-14T09:40:21.131813+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
+*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-09-21T00:00:04.233506+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
 
 ## 1. Moniteur de dérive par stratégie
 
@@ -8,32 +8,30 @@ Compare les métriques VÉCUES (journaux `state/wallets/*/`) aux métriques OOS 
 
 | Stratégie | Wallet | Statut | Jours observés | Sharpe vécu | Sharpe attendu | DD vécu | DD attendu | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| dual_momentum_etf | prudent | active | 54 | 0.69 | n/d | 1.6% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | prudent | active | 54 | 0.91 | 0.81 | 0.1% | 8.4% | **SURVEILLER** |
-| xs_momentum_sp100 | equilibre | active | 54 | 3.23 | 0.82 | 0.3% | 50.3% | **SURVEILLER** |
-| dual_momentum_etf | equilibre | active | 54 | 2.02 | n/d | 0.3% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | equilibre | active | 54 | 3.04 | 0.28 | 0.1% | 27.3% | **SURVEILLER** |
-| xs_momentum_sp100 | agressif | active | 54 | 0.61 | 0.82 | 1.7% | 50.3% | **SURVEILLER** |
-| quasi_passif_crypto | agressif | active | 54 | 1.04 | 0.07 | 1.2% | 56.4% | **SURVEILLER** |
+| dual_momentum_etf | prudent | active | 60 | 0.78 | n/d | 1.6% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | prudent | active | 60 | 1.72 | 0.81 | 0.1% | 8.4% | **OK** |
+| xs_momentum_sp100 | equilibre | active | 60 | 4.70 | 0.82 | 0.3% | 50.3% | **OK** |
+| dual_momentum_etf | equilibre | active | 60 | 3.26 | n/d | 0.3% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | equilibre | active | 60 | 4.92 | 0.28 | 0.1% | 27.3% | **OK** |
+| xs_momentum_sp100 | agressif | active | 60 | 1.37 | 0.82 | 1.7% | 50.3% | **OK** |
+| quasi_passif_crypto | agressif | active | 60 | 1.61 | 0.07 | 1.6% | 56.4% | **OK** |
 
 ### Détail des raisons
 
 - **dual_momentum_etf** (prudent, active) — **SURVEILLER**
   - DD de référence indisponible dans le registre — comparaison impossible
-  - Sharpe roulant 60j non calculable (historique < 60j)
-- **quasi_passif_crypto** (prudent, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - Sharpe roulant 60j non calculable (historique < 60j)
-- **xs_momentum_sp100** (equilibre, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - Sharpe roulant 60j non calculable (historique < 60j)
+- **quasi_passif_crypto** (prudent, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
+  - aucun signal de dérive détecté
+- **xs_momentum_sp100** (equilibre, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
+  - aucun signal de dérive détecté
 - **dual_momentum_etf** (equilibre, active) — **SURVEILLER**
   - DD de référence indisponible dans le registre — comparaison impossible
-  - Sharpe roulant 60j non calculable (historique < 60j)
-- **quasi_passif_crypto** (equilibre, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - Sharpe roulant 60j non calculable (historique < 60j)
-- **xs_momentum_sp100** (agressif, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - Sharpe roulant 60j non calculable (historique < 60j)
-- **quasi_passif_crypto** (agressif, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - Sharpe roulant 60j non calculable (historique < 60j)
+- **quasi_passif_crypto** (equilibre, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
+  - aucun signal de dérive détecté
+- **xs_momentum_sp100** (agressif, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
+  - aucun signal de dérive détecté
+- **quasi_passif_crypto** (agressif, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
+  - aucun signal de dérive détecté
 
 *Note : `xs_momentum_sp100`, `dual_momentum_multiclasse_etf` et `quasi_passif_crypto` sont un antécédent explicitement HORS du cadre formel §3 de `PROMOTION-RULES.md` (cf. §5) — leur verdict ci-dessus reste informatif (« si cette règle s'appliquait ») et ne déclenche aucune rétrogradation automatique.*
 
