@@ -519,7 +519,62 @@
         "_note": "Somme nette POSITIVE = la gate a raté cumulativement ~+100% de rendement B&H du panier sur ses épisodes de protection, plus qu'elle n'a évité de pertes — le coût de whipsaw domine, exactement le risque n°1 pré-identifié par la fiche backlog P1#6."
       },
       "raison": "ÉCARTÉE : ÉCHEC Porte 1 §1.2, 3/5 seuils manqués (Sharpe OOS 0.075 < 0.70 ; PF 1.064 <= 1.15 ; DSR 0.0095 < 0.50 — trades 139 et MaxDD relatif 0.53x passent). Statut 'ecartee' (pas 'rejetee') conformément à la sémantique pré-enregistrée de la SPEC §8 : Sharpe positif, PF > 1, isSound true. La promesse de la brique (réduction de MaxDD) est réelle vs B&H brut (38.0% vs 72.0%) mais l'essentiel vient de l'OVERLAY de production déjà en place (contrôle sans gate : 42.4%) — la valeur marginale de la gate est de ~4.5 points de MaxDD payés ~0.37 point de Sharpe (IR -0.99). Rupture temporelle habituelle (tout l'edge avant 2024, négatif depuis — même famille que vol_breakout/quasi-passif). Audit adversarial indépendant isSound=true : reproduction from scratch bit-exacte 15/15 fenêtres, zéro look-ahead, DSR/K_total recalculés identiques, classification des 35 épisodes vérifiée épisode par épisode ; 1 finding MAJEUR de méthode (bande plate 0.05 du moteur avale ~99% de l'exécution de la rampe 72h et 95% des coupures immédiates — texture exécutée très différente de la SPEC §3.4 ; testé BIDIRECTIONNELLEMENT : forcer l'exécution dégrade encore le Sharpe, donc pas un biais pénalisant ; versé au dossier backlog #19). CONCLUSION TRANSFÉRABLE : une gate de vol percentile au-dessus d'un vol targeting continu déjà actif est structurellement redondante (corr 0.93 au contrôle) et son coût de whipsaw domine sur ce marché — ne pas retester de variante (seuils/rampe différents) sans mécanisme structurellement neuf (§3.3, compterait dans K_total).",
-      "source": "backtest/results/protective_vol_gate_6majors/results.json"
+      "source": "backtest/results/protective_vol_gate_6majors/results.json",
+      "note_2026_09_21": "Audit session #8 (pairs_ethbtc_ratio_rotation) : la prémisse « chemin overlay standard correct pour une candidate sans sizing interne » utilisée par cette candidate est réfutée par bot/runner.py:_risk_manager_for_wallet (vol-targeting portefeuille neutralisé pour tous les wallets — backlog #21). Sans effet sur le verdict 'ecartee' (échec 3/5 seuils, indépendant de ce point) ; le isSound=true de l'audit #7 reste valide pour la reproduction/causalité, sa clause de fidélité overlay est invalidée rétroactivement."
+    },
+    {
+      "id": "pairs_ethbtc_ratio_rotation",
+      "famille": "crypto_pairs_ratio_meanrev_longonly_rotation",
+      "date_test": "2026-09-21",
+      "statut": "rejetee",
+      "sharpe_oos": 0.3309,
+      "sortino_oos": 0.4642,
+      "profit_factor_oos": 1.2611,
+      "max_drawdown_oos_pct": 48.66,
+      "n_trades_oos_closed": 38,
+      "benchmark_sharpe_oos_aligned": 0.6165,
+      "benchmark_maxdd_oos_aligned_pct": 60.87,
+      "walkforward": "9m IS / 3m OOS, pas 3m, 15 fenêtres (2022-01 -> 2026-08, horaire, OOS 32855 h), grille pré-enregistrée 4 combos (L in {720,2160} h x theta in {1.5,2.0} ; hystérésis theta/2, tilt 100/0, base 50/50 FIXÉS), SPEC committée AVANT exécution (commit 4c4182e)",
+      "univers": [
+        "BTC",
+        "ETH"
+      ],
+      "k_total": 90,
+      "dsr": 0.032,
+      "dsr_methode": "K_total = 15 (lignes du registre au 2026-09-21) + 15 fenêtres x 4 combos (candidate) + 15 fenêtres x 1 combo (contrôle apparié, compté — option conservatrice pré-enregistrée) = 90 (PROMOTION-RULES.md §1.3). Bailey & López de Prado 2014 sur rendements horaires OOS concaténés (n=32855, kurtosis excess 23.7), recalculé from scratch par l'audit (identique : 0.03196944).",
+      "audit_adversarial_isSound": false,
+      "cost_stress_profit_factor": {
+        "15bps": 1.2611,
+        "45bps_3x": 1.1445,
+        "75bps_5x": 0.9807
+      },
+      "sous_periodes_sharpe": {
+        "avant_2024": 1.4434,
+        "depuis_2024": -0.2163
+      },
+      "correlation_oos_vs_controle": 0.9765,
+      "correlation_oos_vs_proxy_quasi_passif_sma200": 0.7211,
+      "comparaison_controle_apparie_50_50": {
+        "sharpe_controle": 0.5901,
+        "sortino_controle": 0.825,
+        "maxdd_controle_pct": 39.73,
+        "information_ratio_candidate_vs_controle": -1.136,
+        "candidate_dominee": true,
+        "_note": "Contrôle = poids constants 50/50 SANS signal, même moteur/overlay/coûts/fenêtres/portage (SPEC §6). Dominée sur les 3 axes (Sharpe ET Sortino ET MaxDD)."
+      },
+      "stationnarite_pre_oos": {
+        "adf_log_ratio_pvalue": 0.3437,
+        "engle_granger_pvalue": 0.6504,
+        "demi_vie_heures": 714.4,
+        "adf_fenetres_is_stationnaires": "3/15 au seuil 10%",
+        "_note": "Pré-requis de la fiche backlog P1#5, rôle diagnostic pré-enregistré (SPEC §5) : ratio NON stationnaire, log-prix NON cointégrés sur la période pré-OOS — l'hypothèse de fond (retour à la moyenne du ratio) n'est pas soutenue par les données 2022-2026."
+      },
+      "episodes_tilt_oos": {
+        "n_episodes_distincts": 43,
+        "duree_mediane_heures": 229.0,
+        "somme_pnl_relatif_vs_controle": -0.2876
+      },
+      "raison": "REJETÉE (Porte 1). 3/5 seuils §1.2 manqués : Sharpe OOS 0.331 < 0.70 ; 38 trades clos < 80 ; DSR 0.032 < 0.50 (PF 1.261 et MaxDD relatif 0.80x passent). Dominée par le contrôle apparié 50/50 sur Sharpe ET Sortino ET MaxDD (IR -1.14, corr 0.976) — la rotation détruit de la valeur vs ne rien faire. Tout l'edge apparent vient d'avant 2024 (Sharpe 1.44 avant / -0.22 depuis — 5e candidate crypto de suite sur ce motif). Hypothèse de fond non soutenue : ratio ETH/BTC non stationnaire (ADF p=0.34), non cointégré (p=0.65). Audit adversarial indépendant isSound=false : chiffres reproduits bit-exact (15/15 fenêtres, DSR from scratch), MAIS finding CRITIQUE d'infrastructure — bot/runner.py:_risk_manager_for_wallet neutralise le vol-targeting portefeuille (50.0 en dur) pour TOUS les wallets, labo compris : une candidate SANS sizing interne ne recevrait en production aucun vol-targeting réel, alors que le backtest lui applique l'overlay production (§1.4 : sizing plus généreux que la production). Rejet automatique §1.4 ; sans re-run (finding infra, sémantique pré-enregistrée SPEC §9) ; le verdict 'dominée par le contrôle' survivrait dans toutes les lectures (audit). Voir backlog #21. Ne pas retester (y compris la version marché-neutre #17) sans que #21 soit soldé ET sans raison structurellement neuve (§3.3) — la non-stationnarité du ratio condamne l'hypothèse dans ses deux versions."
     }
   ]
 }
