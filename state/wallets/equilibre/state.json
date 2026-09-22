@@ -1,15 +1,11 @@
 {
-  "cash_usd": 328.8610768270576,
+  "cash_usd": 328.7552574872776,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1190.8821076004217,
-        "ts": "2026-09-20T23:58:13.899747+00:00"
-      },
       {
         "equity": 1191.3098702004218,
         "ts": "2026-09-21T04:22:34.031663+00:00"
@@ -29,6 +25,10 @@
       {
         "equity": 1199.0743239004219,
         "ts": "2026-09-21T23:37:10.861217+00:00"
+      },
+      {
+        "equity": 1197.0493078004217,
+        "ts": "2026-09-22T01:52:32.607660+00:00"
       }
     ],
     "flatten_mode": false,
@@ -41,11 +41,11 @@
     "last_rate": 1.149,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-09-21T23:37:29.033776+00:00"
+    "last_rate_ts": "2026-09-22T01:52:51.448599+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-09-21T23:37:10.861217+00:00",
-  "last_run_id": "2026-09-21T23",
+  "last_run_completed_at": "2026-09-22T01:52:32.607660+00:00",
+  "last_run_id": "2026-09-22T01",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -70,6 +70,10 @@
     "DBC": {
       "prix_moyen": 28.412715647660065,
       "qty": 2.8987000000000003
+    },
+    "DOGE": {
+      "prix_moyen": 0.10014004,
+      "qty": 207.0
     },
     "EEM": {
       "prix_moyen": 63.81602095391006,
@@ -97,7 +101,7 @@
     },
     "SOL": {
       "prix_moyen": 84.92244,
-      "qty": 0.353
+      "qty": 0.177
     },
     "SPG": {
       "prix_moyen": 210.77061019615172,
@@ -120,9 +124,9 @@
       "qty": 0.1416
     }
   },
-  "realized_pnl_cumulative_usd": 10.868192217932618,
+  "realized_pnl_cumulative_usd": 16.57610520057262,
   "schema_version": 1,
-  "state_hash_prev": "ed948f063e7d578a9a485d583caea7ef95f567538c1991132d30dbd87b865046",
+  "state_hash_prev": "87549f409f11990c7e748c2d25e22b2b109944721c4c1484fb782156e3863b0b",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -217,6 +221,11 @@
       "realized_pnl_usd": 2.499722936098141,
       "symbol": "DBC",
       "ts": "2026-09-15T17:10:22.591396+00:00"
+    },
+    {
+      "realized_pnl_usd": 5.707912982640002,
+      "symbol": "SOL",
+      "ts": "2026-09-22T01:52:32.607660+00:00"
     }
   ],
   "wallet_id": "equilibre"
