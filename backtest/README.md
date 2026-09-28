@@ -22,7 +22,7 @@ non ré-exécutable ni auditable).
 |---|---|
 | `data.py` | Chargement CSV.gz par ticker (branche orpheline `market-data`), série brute (signal) vs alignée sur calendrier canonique SPY (simulation portefeuille), sans backfill. |
 | `engine.py` | `simulate_segment()` : simulation vectorisée long-only, signal décidé à la clôture `t`, exécuté à l'**open** de `t+1`, coûts bps/côté sur le turnover dollar réel. `generate_walk_forward_windows()`, `select_params_via_is()` (sélection IS-only), `concatenate_segments()` (équity OOS unique), `summarize_segment()` (bloc de métriques standard). |
-| `risk_overlay.py` | Surcouche de risque appliquée par défaut par `simulate_segment()` (correctif audit 2026-07-27) : bande de non-négociation + vol targeting, alignées `bot/risk/manager.py`. Voir §"Surcouche de risque" ci-dessous. |
+| `risk_overlay.py` | Surcouche de risque appliquée par défaut par `simulate_segment()` (correctif audit 2026-07-27) : bande de non-négociation + vol targeting, reprenant les primitives de `bot/risk/`. ⚠️ Le défaut `apply_vol_targeting=True` n'est PAS le chemin de production réel pour une candidate — cf. la convention obligatoire `docs/SIZING-FIDELITY-SPEC.md` en fin de §"Surcouche de risque" ci-dessous. |
 | `metrics.py` | Sharpe, Sortino, profit factor, max drawdown (pic-à-creux), CAGR, ratio d'information, exposition moyenne, Deflated Sharpe Ratio / PSR (Bailey & López de Prado 2014). |
 | `strategies/xsmom.py` | Version backtest vectorisée de `bot/strategies/xs_momentum_sp100.py` (constantes SPEC importées, jamais dupliquées). |
 | `run_xsmom_invvol.py` | Script d'exécution de bout en bout (exemple complet, cf. `backtest/results/xs_momentum_invvol_sp100/`). |
@@ -44,9 +44,13 @@ non ré-exécutable ni auditable).
    jamais de backtest "sans coûts" comme chiffre de décision (`docs/PROMOTION-RULES.md` §1.1).
 4. **Walk-forward IS/OOS, sélection IS-only, métriques sur l'OOS concaténé** — jamais sur une
    fenêtre isolée ni sur la période complète non découpée (§1.1/§1.4).
-5. **Surcouche de risque alignée production, activée par défaut** (voir section dédiée
-   ci-dessous) — un moteur qui ignore le sizing réel de `bot/risk/` est structurellement PLUS
-   généreux que ce qui se passerait en production.
+5. **Surcouche de risque : configuration EXPLICITE par SPEC, jamais par défaut** (voir section
+   dédiée ci-dessous, et `docs/SIZING-FIDELITY-SPEC.md`, convention obligatoire 2026-09-28) —
+   le sizing simulé doit répliquer le chemin de production RÉEL de la candidate (sizing interne
+   modélisé dans son module, ou vol brute s'il n'y en a pas), jamais un sizing plus généreux
+   NI plus protecteur que ce que la production appliquerait (finding F1 de l'audit session #8 :
+   le défaut `apply_vol_targeting=True` du moteur est PLUS protecteur que la production, qui
+   neutralise le vol-targeting portefeuille pour tous les wallets).
 
 ## Surcouche de risque (`risk_overlay.py`, correctif audit 2026-07-27)
 
@@ -61,8 +65,10 @@ deux conséquences concrètes :
   (donc plus risqué) que celui réellement dimensionné en production — MaxDD sous-estimé d'un
   facteur ~2.
 
-`simulate_segment()` applique désormais, **par défaut**, la même logique que
-`bot/risk/manager.py` (vol targeting puis bande, dans cet ordre) :
+`simulate_segment()` applique désormais, **par défaut**, une surcouche vol targeting + bande
+construite sur les primitives de `bot/risk/` (vol targeting puis bande, dans cet ordre — mais
+voir le bandeau ⚠️ en fin de section : ce défaut historique n'est PAS le chemin de production
+réel d'une candidate, et ne doit plus servir à un chiffre de décision) :
 
 ```python
 no_trade_band: float = risk_overlay.DEFAULT_NO_TRADE_BAND          # 0.05  (bot.config.NO_TRADE_BAND)
@@ -84,6 +90,17 @@ intégralement — pas de circuit breakers, pas de caps par actif, pas de bande 
 cap d'exposition brute totale. Un backtest qui active un breaker de drawdown sévère en
 production continuerait donc de trader normalement ici. Ligne de tête de
 `docs/RESEARCH-BACKLOG.md` : re-audit demandé pour la prochaine session hebdomadaire.
+
+**⚠️ CONVENTION OBLIGATOIRE depuis le 2026-09-28 (`docs/SIZING-FIDELITY-SPEC.md`, backlog
+#21)** : le défaut `apply_vol_targeting=True` de `simulate_segment()` n'est PAS le chemin de
+production réel — `bot/runner.py:_risk_manager_for_wallet` neutralise le vol-targeting
+portefeuille (`vol_target_annualized=50.0` en dur) pour TOUS les wallets, labo compris
+(finding F1 CRITIQUE de l'audit de `pairs_ethbtc_ratio_rotation`, session #8). Toute SPEC de
+candidate doit donc fixer **explicitement** `apply_vol_targeting=False` : en vol brute si la
+candidate n'a pas de sizing interne, ou avec le sizing modélisé DANS le module candidat
+(pattern `quasi_passif_crypto` / retest session #3) si elle en a un. Le défaut `True` du
+paramètre est conservé uniquement pour la rétro-compatibilité des archives et des tests du
+moteur — ne plus jamais s'y fier pour un chiffre de décision Porte 1.
 
 ## Convention temporelle interne
 

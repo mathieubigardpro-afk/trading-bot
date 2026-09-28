@@ -22,6 +22,12 @@ REQUIRED_INCUBATION_FIELDS = {
     "capital_alloc_pct",
     "entered_at",
     "entry_run_id",
+    # docs/SIZING-FIDELITY-SPEC.md (backlog #21, session #9 2026-09-28) : toute nouvelle
+    # candidate déclare si son vol-targeting est interne (pattern quasi_passif_crypto) ou si
+    # elle vit en vol brute -- et son backtest Porte 1 doit avoir été configuré en conséquence
+    # (apply_vol_targeting=False dans les deux cas ; sizing modélisé DANS le module candidat
+    # si sizing_interne=True). Vérifié par l'audit adversarial §1.4.
+    "sizing_interne",
 }
 VALID_ASSET_CLASSES = {"crypto", "equities", "etf"}
 
@@ -78,6 +84,18 @@ def test_each_incubating_entry_has_required_schema_fields():
         )
 
 
+def test_each_incubating_entry_sizing_interne_is_bool():
+    """docs/SIZING-FIDELITY-SPEC.md §3.1 : `sizing_interne` doit être un booléen STRICT
+    (pas un truthy quelconque -- une chaîne "false" serait truthy et inverserait silencieusement
+    la sémantique de la convention de backtest)."""
+    for entry in config.INCUBATING_STRATEGIES:
+        assert isinstance(entry.get("sizing_interne"), bool), (
+            f"entrée d'incubation {entry.get('id', '?')!r} : sizing_interne="
+            f"{entry.get('sizing_interne')!r} n'est pas un booléen strict "
+            "(docs/SIZING-FIDELITY-SPEC.md §3)"
+        )
+
+
 def test_each_incubating_entry_capital_alloc_pct_in_unit_interval():
     for entry in config.INCUBATING_STRATEGIES:
         alloc = float(entry["capital_alloc_pct"])
@@ -124,6 +142,7 @@ def test_schema_validation_would_actually_catch_a_malformed_entry():
     malformed_missing_field = {
         "id": "x", "module": "bot.strategies.x", "params": {}, "asset_class": "crypto",
         "univers": ["BTC"], "capital_alloc_pct": 0.1, "entered_at": "2026-07-23T00:00:00+00:00",
+        "sizing_interne": False,
         # entry_run_id manquant volontairement
     }
     assert REQUIRED_INCUBATION_FIELDS - set(malformed_missing_field.keys()) == {"entry_run_id"}
@@ -133,6 +152,46 @@ def test_schema_validation_would_actually_catch_a_malformed_entry():
 
     malformed_asset_class = {"asset_class": "forex"}
     assert malformed_asset_class["asset_class"] not in VALID_ASSET_CLASSES
+
+
+def _well_formed_entry(**overrides) -> dict:
+    entry = {
+        "id": "candidate_x", "module": "bot.strategies.candidate_x", "params": {},
+        "asset_class": "crypto", "univers": ["BTC"], "capital_alloc_pct": 0.1,
+        "entered_at": "2026-09-28T00:00:00+00:00", "entry_run_id": "2026-09-28T00",
+        "sizing_interne": False,
+    }
+    entry.update(overrides)
+    return entry
+
+
+def test_sizing_interne_guards_actually_fire_on_malformed_entries(monkeypatch):
+    """Garde de non-régression NON tautologique (finding MAJEUR de l'audit du livrable #21,
+    session #9) : exécute les VRAIES fonctions de validation ci-dessus contre un
+    `config.INCUBATING_STRATEGIES` monkeypatché et vérifie qu'elles échouent RÉELLEMENT
+    (rouge) sur une entrée malformée, et passent (vert) sur une entrée bien formée --
+    plutôt que de ré-affirmer en ligne des vérités Python génériques."""
+    import pytest
+
+    # Vert : une entrée bien formée passe les deux validations.
+    monkeypatch.setattr(config, "INCUBATING_STRATEGIES", [_well_formed_entry()])
+    test_each_incubating_entry_has_required_schema_fields()
+    test_each_incubating_entry_sizing_interne_is_bool()
+
+    # Rouge 1 : champ sizing_interne ABSENT -> la validation de schéma doit échouer.
+    entry_missing = _well_formed_entry()
+    del entry_missing["sizing_interne"]
+    monkeypatch.setattr(config, "INCUBATING_STRATEGIES", [entry_missing])
+    with pytest.raises(AssertionError):
+        test_each_incubating_entry_has_required_schema_fields()
+
+    # Rouge 2 : sizing_interne présent mais NON booléen strict (chaîne "false", truthy --
+    # inverserait silencieusement la convention docs/SIZING-FIDELITY-SPEC.md §3) -> échec.
+    monkeypatch.setattr(
+        config, "INCUBATING_STRATEGIES", [_well_formed_entry(sizing_interne="false")]
+    )
+    with pytest.raises(AssertionError):
+        test_each_incubating_entry_sizing_interne_is_bool()
 
     malformed_crypto_with_equity = {"asset_class": "crypto", "univers": ["AAPL", "BTC"]}
     known = _known_equity_etf_symbols()

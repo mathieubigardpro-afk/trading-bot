@@ -450,6 +450,15 @@ CRYPTO_SYMBOLS_AGRESSIF_12 = [
 #       "entry_run_id": str,         # run_id (§4.1) du cycle qui a vu la candidate trader pour
 #                                    # la première fois -- ancre non ambiguë et non falsifiable
 #                                    # a posteriori pour toute fenêtre d'observation future.
+#       "sizing_interne": bool,      # OBLIGATOIRE (docs/SIZING-FIDELITY-SPEC.md, backlog #21) :
+#                                    # True = la candidate applique ELLE-MÊME son vol-targeting
+#                                    # en lisant profile["risque"] (pattern quasi_passif_crypto)
+#                                    # et son backtest Porte 1 a modélisé ce sizing interne ;
+#                                    # False = candidate en vol brute (le RiskManager portefeuille
+#                                    # du runner neutralise le vol-targeting, design documenté) et
+#                                    # son backtest Porte 1 a été exécuté apply_vol_targeting=False.
+#                                    # Déclaratif ET vérifié : l'audit adversarial §1.4 confronte
+#                                    # cette déclaration au code de la candidate.
 #       "max_incubation_days": int,  # OPTIONNEL (défaut 56 si absent, cf.
 #                                    # tools/weekly_maintenance.py:INCUBATION_MAX_DAYS/
 #                                    # classify_incubating_drift()) -- durée max d'incubation
