@@ -550,7 +550,27 @@ version long-only est rejetée dominée (cf. P1#5) ; seule la voie funding carry
 encore cette extension, et elle attend elle-même une décision de gouvernance sur le palier de
 coûts perp.
 
-### 21. [P0 — infrastructure sizing, session DÉDIÉE, AJOUTÉE 2026-09-21] Fidélité backtest/production du sizing pour les candidates SANS sizing interne
+### 21. [P0 — infrastructure sizing, session DÉDIÉE, AJOUTÉE 2026-09-21] Fidélité backtest/production du sizing pour les candidates SANS sizing interne — ✅ TRANCHÉE 2026-09-28 (session #9)
+
+**DÉCISION (session dédiée #9, cf. `docs/SIZING-FIDELITY-SPEC.md` et `RESEARCH-LOG.md`
+2026-09-28 (b))** : option **(c) + (b) combinées, option (a) écartée**. (c) devient la
+convention de backtest PAR DÉFAUT : toute candidate sans sizing interne est backtestée
+`apply_vol_targeting=False` (vol brute — le chemin de production RÉEL, le 50.0 en dur du runner
+restant tel quel) ; (b) devient l'exigence de conception pour toute candidate revendiquant un
+vol-targeting réel : sizing DANS la stratégie via `profile["risque"]` (pattern
+`quasi_passif_crypto`, seul mécanisme fidèle sur tout le cycle backtest → labo → wallet réel,
+sans toucher une ligne de production). (a) écartée : code de production partagé + audit
+obligatoire + cliff de fidélité à la promotion (les wallets réels gardent 50.0) + ambiguë avec
+2 candidates de régimes différents dans le labo. Mécanisation : champ `sizing_interne: bool`
+OBLIGATOIRE dans le schéma `INCUBATING_STRATEGIES` (bandeau `bot/config.py`), validé par
+`bot/tests/test_governance_limits.py` ; avertissement bloquant ajouté à `backtest/README.md`
+(le défaut `apply_vol_targeting=True` du moteur ne doit plus jamais servir à un chiffre de
+décision). `PROMOTION-RULES.md`, `bot/runner.py`, `bot/risk/*` : INTOUCHÉS. Le DÉBLOCAGE est
+effectif : les futures Porte 1 de candidates sans sizing interne sont de nouveau possibles,
+sous la convention pré-enregistrée. Proposition d'inscription de la clause dans §1.4 versée
+aux amendements en attente (#12, décision humaine).
+
+**Fiche d'origine (pour mémoire) :**
 
 Finding F1 (CRITIQUE) de l'audit de `pairs_ethbtc_ratio_rotation` (session #8), démontré par
 exécution : `bot/runner.py:_risk_manager_for_wallet` construit le RiskManager portefeuille
@@ -644,7 +664,35 @@ explicite dans `tools/weekly_maintenance.py` (le MaxDD OOS de la vague 1 existe 
 rapports d'origine : ~19,9 % — à re-sourcer proprement avant de l'inscrire), avec note au
 rendu. Purement informatif, aucune règle de décision en jeu.
 
-**Priorité de la prochaine session (revue 2026-09-21, session #8)** :
+**Priorité de la prochaine session (revue 2026-09-28, session #9)** :
+
+1. **#19 (bande de non-négociation, session d'analyse dédiée)** : le dossier est mûr (3
+   pièces : F2 carry, flatten sous la bande, quantification session #7) et conditionne la
+   fidélité de toutes les futures SPEC — instruire les deux écarts moteur/production
+   ensemble, hors de toute session de jugement. C'est le dernier gros écart de fidélité
+   moteur/production documenté et non résolu depuis que #21 est tranché.
+2. **#14 (gouvernance, décision HUMAINE — Mathieu, en attente depuis le 2026-08-24)** : le
+   critère vécu de `SELECTION-FINALE.md` §5 arrive à maturité vers FIN OCTOBRE — c'est la
+   dernière ou avant-dernière session avant l'échéance. Les vécus 60 j restent au-dessus des
+   références auditées (aucune pression à la bascule), mais la décision reste ouverte. Peut
+   absorber #12a/#12b, le palier de coûts perp, et désormais la proposition d'inscription de
+   la convention #21 dans §1.4.
+3. **Prochaine candidate de jugement** (si une session de jugement est préférée à #19) :
+   le backlog technique reste mince — P2#7 (mid-caps momentum) exige un pipeline de données
+   étendu + coûts à re-caler ; P2#8 (régime cross-asset) exige une brique d'allocation
+   inter-poches (grosse infra). Toute nouvelle candidate DOIT désormais déclarer
+   `sizing_interne` et sa SPEC fixer `apply_vol_targeting` conformément à
+   `docs/SIZING-FIDELITY-SPEC.md`.
+4. **#18 (début de mois)** : la maintenance du dimanche 2026-10-04 tombe UN 4 DU MOIS —
+   occurrence-test probable du mode d'échec « archive mensuelle de septembre pas encore
+   publiée ». L'instrumentation `missing_symbols_reasons` (session #7) doit cette fois
+   donner le diagnostic par symbole sur run réel → boucler le correctif (complément API
+   étendu aux mois manquants EN QUEUE d'historique) à la session #10 si confirmé.
+5. #20 (ticker BK, **5e échec consécutif** au run du 2026-09-26) : investigation
+   mapping/source de repli ou exclusion documentée de l'univers (103 → 102 titres
+   effectifs pour tout futur backtest actions).
+
+**Priorité de la session #9 (revue 2026-09-21, session #8 — conservée pour mémoire)** :
 
 1. **#21 (P0 infrastructure sizing, session dédiée)** : trancher la fidélité
    backtest/production du sizing des candidates sans sizing interne (options (a)/(b)/(c) de

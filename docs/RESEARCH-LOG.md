@@ -1128,3 +1128,144 @@ structurellement neuve (§3.3). Backlog P1#5 soldé. Prochaine candidate → K_t
 - Suite de tests complète verte au push final (les 2 échecs rencontrés en cours de session
   étaient dus aux données absentes de l'environnement — résolus en stageant les fichiers
   `market-data` requis, aucun code modifié).
+
+---
+
+## 2026-09-28 — Session hebdomadaire #9 (a) : REVUE des stratégies actives et candidates
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56j. **Zéro action requise, zéro action prise.**
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-09-28 (67 j vécus, Sharpe roulant 60 j
+  calculable) : **5 lignes OK** (quasi_passif 2,39/4,66/2,26 vécus vs 0,81/0,28/0,07 attendus ;
+  xs_momentum 4,53/2,05 vs 0,82 — tous au-dessus des attentes ; DD vécus ≤ 1,7 % partout, très
+  loin des seuils 2×) ; 2 lignes **SURVEILLER** pour `dual_momentum_etf`, raison purement
+  mécanique inchangée (« DD de référence indisponible dans le registre », backlog #22 — pas un
+  signal de marché ; son Sharpe vécu 0,76/3,10 est positif). Aucune règle de mort ne serait
+  déclenchée même si §3 s'appliquait. **Aucune action.**
+- **Gouvernance #14** : toujours aucune décision humaine enregistrée
+  (`GOVERNANCE-DOSSIER-2026-08-24-quasi-passif.md`, en attente depuis 5 semaines). Le critère
+  vécu de `SELECTION-FINALE.md` §5 tranche de lui-même vers FIN OCTOBRE — dernière ou
+  avant-dernière session avant l'échéance. Vécus au-dessus des références auditées : aucune
+  pression à la bascule à ce jour. Rappel priorité haute maintenu.
+- Recalibrage du 2026-09-28 : exécuté normalement (rafraîchissement OK, 15 fenêtres,
+  175 vs 200 : +3,0 % < seuil 10 %) — 9e recalibrage consécutif sans changement, conforme.
+- Cron `fetch-data` du samedi 2026-09-26 : OK (397 s), 30 crypto (archives → 2026-08 + mois
+  courant) + 30 funding + 30 perp + 103 actions + 18 ETF régénérés ; 19 anomalies (crises
+  connues + DHR/Fortive), aucune incohérence OHLC nouvelle. Ticker **BK** : **5e échec
+  consécutif** (yfinance ET stooq) — #20 confirmé durable, à traiter.
+- **Attention pré-enregistrée pour la semaine** : la maintenance du dimanche 2026-10-04 tombe
+  un 4 du mois — occurrence-test probable du mode d'échec « début de mois » (#18) ;
+  l'instrumentation `missing_symbols_reasons` (session #7) donnera cette fois le diagnostic
+  par symbole sur run réel.
+- Wallets au cycle 2026-09-28T06 : 🛡️ 1 020 € | ⚖️ 1 046 € | 🔥 1 071 € | 🧪 999 € (labo
+  100 % cash, état attendu).
+
+---
+
+## 2026-09-28 — Session hebdomadaire #9 (b) : backlog #21 TRANCHÉ — fidélité backtest/production du sizing (session DÉDIÉE infrastructure, aucune candidate jugée)
+
+**Contexte.** Priorité n°1 pré-enregistrée par la revue de la session #8, BLOQUANTE pour toute
+future Porte 1 de candidate sans sizing interne : l'audit adversarial de `pairs_ethbtc_ratio_
+rotation` avait démontré par exécution que `bot/runner.py:_risk_manager_for_wallet` neutralise
+le vol-targeting portefeuille (`vol_target_annualized=50.0` en dur, `gross_exposure_max=1.0`)
+pour TOUS les wallets, labo compris, alors que le moteur commun applique par défaut un overlay
+« production » (`apply_vol_targeting=True`, scalar réel 0,23-0,79 mesuré) — backtest PLUS
+protecteur que le vécu d'incubation, le « sizing fictif plus généreux » que §1.4 interdit.
+
+**Instruction.** Analyse par agent dédié (lecture seule) des 3 options identifiées par l'audit,
+chaque affirmation load-bearing REVÉRIFIÉE dans le code par l'orchestrateur (runner l.606 :
+50.0 en dur pour les 4 wallets ; labo configuré `vol_target_annualized=0.20` jamais appliqué ;
+`backtest/engine.py:simulate_segment` expose déjà `apply_vol_targeting` ; chaque stratégie
+reçoit déjà `profile=wallet_cfg` donc `profile["risque"]` NON neutralisé — le pattern
+`quasi_passif_crypto`). Constats structurants : (i) ce qui reste réellement appliqué au labo
+sans vol-targeting = cap par actif 0,20, bande par poche, 4 circuit breakers — protections
+réactives/par-actif, pas préventives ; (ii) le 50.0 en dur s'applique AUSSI aux 3 wallets
+réels : l'option (a) (RiskManager labo conditionnel) créerait un CLIFF de fidélité à la
+promotion et resterait ambiguë avec 2 candidates de régimes différents dans le labo (un seul
+RiskManager par wallet) ; (iii) l'intention documentée du profil labo « équilibré-strict »
+(création 2026-07-23) est de fait vidée pour toute candidate sans sizing interne — constat
+d'écart, PAS corrigé ici (§4.3 : le runner et le cadre de risque restent hors de portée).
+
+**DÉCISION (pré-enregistrée dans `docs/SIZING-FIDELITY-SPEC.md`, nouveau document de
+convention — même pattern que `RECALIBRATION-SPEC.md`, `PROMOTION-RULES.md` reste GRAVÉ et
+intouché)** : **(c) + (b) combinées, (a) écartée.**
+- **(c) convention par défaut** : candidate sans sizing interne ⇒ backtest
+  `apply_vol_targeting=False` (vol brute), l'hypothèse la plus défavorable ET la plus fidèle
+  au chemin de production réel (principe pessimiste §0.2). Ses MaxDD Porte 1/Porte 2 sont
+  jugés tels quels — effet voulu, aucun seuil modifié.
+- **(b) exigence de conception** : candidate revendiquant un vol-targeting réel ⇒ sizing DANS
+  la stratégie via `profile["risque"]` (formule fonctionnellement équivalente à
+  `bot/risk/vol_targeting.compute_vol_scalar`, bornée `gross_exposure_max`), backtest overlay
+  désactivé + sizing modélisé dans le module candidat (précédent : retest quasi-passif,
+  session #3). Seule voie fidèle sur TOUT le cycle backtest → labo (0,20) → wallet réel
+  (profil de destination), sans toucher une ligne de production.
+- **Mécanisation** : champ `sizing_interne: bool` OBLIGATOIRE dans le schéma
+  `INCUBATING_STRATEGIES` (bandeau `bot/config.py`, commentaire uniquement) + 2 validations
+  et un test négatif de garde dans `bot/tests/test_governance_limits.py` (booléen STRICT — une
+  chaîne « false » truthy inverserait silencieusement la convention) ; avertissement bloquant
+  dans `backtest/README.md` (le défaut `apply_vol_targeting=True` du moteur ne sert plus
+  JAMAIS à un chiffre de décision — conservé pour la rétro-compat des archives et tests).
+- **Ce qui n'est PAS fait, volontairement** : aucun changement de `bot/runner.py`/`bot/risk/*`/
+  constantes `WALLETS` (§4.3) ; aucun changement de `PROMOTION-RULES.md` (la proposition
+  d'inscrire la convention dans §1.4 est versée aux amendements en attente #12, décision
+  humaine) ; aucun re-run des candidates passées (notes rétroactives datées des sessions #7/#8
+  déjà au registre ; aucun verdict ne dépendait de l'overlay — candidate et contrôle
+  subissaient la même distorsion).
+
+**Le blocage est levé : les futures Porte 1 sont de nouveau possibles, sous la convention
+pré-enregistrée.** Registre INCHANGÉ (aucune stratégie testée cette session — prochaine
+candidate : K_total = 16 lignes + sa grille). Labo toujours vide (0/3). Le livrable a été
+soumis à une revue adversariale indépendante AVANT commit — résultat en entrée (c).
+
+---
+
+## 2026-09-28 — Session hebdomadaire #9 (c) : revue adversariale du livrable #21 — verdict initial `isSound: false`, 3 MAJEURS corrigés, garde mécanique ajoutée
+
+**Protocole.** Agent adversarial indépendant sur copie isolée (remote git neutralisé),
+mandaté pour démolir le livrable (b) AVANT tout commit : exactitude factuelle de chaque
+affirmation technique contre le code réel (fichier:ligne), périmètre du diff (aucun fichier
+interdit), cohérence de fond de la convention, gouvernance §0, exécution des tests.
+
+**Vérifications qui tiennent (à charge de preuve exécutée)** : toutes les affirmations
+load-bearing de `SIZING-FIDELITY-SPEC.md` confirmées dans le code (runner 50.0/1.0 en dur
+pour les 4 wallets ; cap 0,20/bande/4 breakers = ce qui reste réel au labo ;
+`profile["risque"]` transmis non neutralisé ; `quasi_passif_crypto` borné par
+`gross_exposure_max` ; citations §1.4/§4.3 exactes ; scalar 0,23-0,79 cité à l'identique) ;
+aucun fichier interdit touché, diff `bot/config.py` intégralement en commentaire, registre
+inchangé, `check_governance_commit.py` trivialement OK (PROMOTION-RULES intouché) ; suite
+`bot/tests/` 561 verts sur la copie d'audit.
+
+**Verdict initial `isSound: false` — 3 findings MAJEURS + 1 MINEUR + 1 INFO, tous traités :**
+- **M1 (intégrité du journal)** : la première rédaction de l'entrée (b) affirmait AU PASSÉ une
+  revue adversariale et des tests « verts » qui n'avaient pas encore eu lieu, avec renvoi vers
+  une entrée (c) inexistante — l'anti-pattern exact que le pré-enregistrement combat, appliqué
+  au méta-processus. **Corrigé avant commit** (le journal n'était pas encore committé — aucune
+  réécriture d'historique publié) : (b) n'affirme plus que ce qui est advenu, la présente
+  entrée (c) documente la revue réellement menée.
+- **M2 (contradictions résiduelles)** : `backtest/README.md` gardait 3 passages non touchés
+  affirmant l'overlay « aligné production » (table des fichiers, règle n°5, §Surcouche) —
+  contredits 30 lignes plus bas par le nouveau bandeau. **Corrigés** : les 3 passages
+  renvoient désormais explicitement à la convention et ne revendiquent plus l'alignement.
+- **M3 (garde tautologique)** : l'extension du test négatif de schéma ré-affirmait des vérités
+  Python génériques sans jamais exécuter les vraies fonctions de validation. **Corrigée** :
+  nouveau test rouge/vert `test_sizing_interne_guards_actually_fire_on_malformed_entries`
+  (monkeypatch de `config.INCUBATING_STRATEGIES`, `pytest.raises(AssertionError)` sur les
+  validations RÉELLES — champ absent ET booléen non strict).
+- **Mineur (portée)** : la SPEC ne disait pas si (c) se généralise aux candidates
+  equities/ETF. L'auditeur a vérifié que OUI (le runner ne leur applique pas non plus de
+  vol-targeting portefeuille réel, `cap_per_asset_equity=1.0`) et qu'AUCUN précédent (b)
+  n'existe hors crypto. **§3.6 ajouté à la SPEC** (généralisation + réserve d'honnêteté).
+- **INFO (garde manquante, suggestion de l'auditeur adoptée)** : l'avertissement README était
+  documentaire, pas mécanique — un futur script `run_*.py` omettant le paramètre hériterait
+  silencieusement de l'overlay protecteur. **Livré** :
+  `backtest/tests/test_sizing_fidelity_lint.py` (lint statique AST : tout appel à
+  `simulate_segment` dans `backtest/run_*.py` doit passer `apply_vol_targeting=` explicitement ;
+  exemption FERMÉE limitée à `run_xsmom_invvol.py`, script pré-convention archivé ; test
+  rouge/vert de la fonction de lint elle-même — zéro changement de comportement runtime,
+  aucune archive re-exécutée).
+
+Suite de tests complète exécutée sur le dépôt corrigé au moment du push final (résultat dans
+le commit). Leçon consignée (M1, récidive du motif « test tautologique » de la session #6e) :
+un journal append-only n'écrit JAMAIS un résultat avant qu'il n'existe, et une garde de
+non-régression doit exécuter le code qu'elle garde.
