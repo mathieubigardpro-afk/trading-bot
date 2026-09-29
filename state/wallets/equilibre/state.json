@@ -1,15 +1,11 @@
 {
-  "cash_usd": 346.56574651992764,
+  "cash_usd": 367.02101102967765,
   "circuit_breakers": {
     "consecutive_losses": 0,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1192.9447826932917,
-        "ts": "2026-09-28T06:24:44.480042+00:00"
-      },
       {
         "equity": 1212.7657479862453,
         "ts": "2026-09-28T14:21:56.897278+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1196.7043102932919,
         "ts": "2026-09-29T06:12:25.567556+00:00"
+      },
+      {
+        "equity": 1201.871422643292,
+        "ts": "2026-09-29T13:06:02.757545+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,11 +37,11 @@
     "last_rate": 1.1378,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-09-29T06:12:42.371164+00:00"
+    "last_rate_ts": "2026-09-29T13:06:20.437284+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-09-29T06:12:25.567556+00:00",
-  "last_run_id": "2026-09-29T06",
+  "last_run_completed_at": "2026-09-29T13:06:02.757545+00:00",
+  "last_run_id": "2026-09-29T13",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -49,7 +49,7 @@
     },
     "AVAX": {
       "prix_moyen": 8.210201999999999,
-      "qty": 3.48
+      "qty": 1.73
     },
     "BTC": {
       "prix_moyen": 69393.4794,
@@ -120,9 +120,9 @@
       "qty": 0.1416
     }
   },
-  "realized_pnl_cumulative_usd": 22.413633233222626,
+  "realized_pnl_cumulative_usd": 28.50104424297263,
   "schema_version": 1,
-  "state_hash_prev": "6d4baba7eb17b715c4dd1742e70e1ecdc62ee2d2ea531fea1be12a0d212e048b",
+  "state_hash_prev": "b7f320e43eec9d030a57254213de0e5576e0491932be2ab14545249bc36f28c6",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -227,6 +227,11 @@
       "realized_pnl_usd": 5.837528032650004,
       "symbol": "LINK",
       "ts": "2026-09-24T23:22:40.545580+00:00"
+    },
+    {
+      "realized_pnl_usd": 6.087411009750002,
+      "symbol": "AVAX",
+      "ts": "2026-09-29T13:06:02.757545+00:00"
     }
   ],
   "wallet_id": "equilibre"
