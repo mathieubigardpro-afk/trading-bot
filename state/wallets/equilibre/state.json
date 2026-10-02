@@ -1,15 +1,11 @@
 {
-  "cash_usd": 367.02101102967765,
+  "cash_usd": 348.33297446483994,
   "circuit_breakers": {
-    "consecutive_losses": 0,
+    "consecutive_losses": 1,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1209.8900650541066,
-        "ts": "2026-10-01T15:46:38.334400+00:00"
-      },
       {
         "equity": 1198.1883793030418,
         "ts": "2026-10-01T20:37:13.555025+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1200.391113603042,
         "ts": "2026-10-02T12:02:57.433818+00:00"
+      },
+      {
+        "equity": 1219.5172527625145,
+        "ts": "2026-10-02T17:52:19.132654+00:00"
       }
     ],
     "flatten_mode": false,
@@ -34,14 +34,14 @@
   "equity_peak_usd": 1223.794894237504,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1298,
+    "last_rate": 1.1225,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-10-02T12:03:17.914880+00:00"
+    "last_rate_ts": "2026-10-02T17:52:36.851463+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-10-02T12:02:57.433818+00:00",
-  "last_run_id": "2026-10-02T12",
+  "last_run_completed_at": "2026-10-02T17:52:19.132654+00:00",
+  "last_run_id": "2026-10-02T17",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -51,17 +51,21 @@
       "prix_moyen": 8.210201999999999,
       "qty": 1.73
     },
+    "BAC": {
+      "prix_moyen": 53.658617943028446,
+      "qty": 0.7962
+    },
     "BTC": {
       "prix_moyen": 69393.4794,
       "qty": 0.00043
     },
+    "CRM": {
+      "prix_moyen": 234.30413584904477,
+      "qty": 0.1823
+    },
     "CSCO": {
       "prix_moyen": 114.2741922057724,
       "qty": 0.3498
-    },
-    "CVS": {
-      "prix_moyen": 104.80472312018966,
-      "qty": 0.3764
     },
     "DBC": {
       "prix_moyen": 28.412715647660065,
@@ -95,34 +99,30 @@
       "prix_moyen": 96.70163251154136,
       "qty": 0.4259
     },
+    "MS": {
+      "prix_moyen": 190.93578779855346,
+      "qty": 0.2237
+    },
+    "MSFT": {
+      "prix_moyen": 515.2354303158875,
+      "qty": 0.0829
+    },
     "SOL": {
       "prix_moyen": 84.92244,
       "qty": 0.177
-    },
-    "SPG": {
-      "prix_moyen": 210.77061019615172,
-      "qty": 0.1954
     },
     "TGT": {
       "prix_moyen": 139.6745735495224,
       "qty": 0.2862
     },
-    "TXN": {
-      "prix_moyen": 282.16696524664303,
-      "qty": 0.1416
-    },
     "UNH": {
       "prix_moyen": 415.72791632812505,
       "qty": 0.0949
-    },
-    "UNP": {
-      "prix_moyen": 290.790572625,
-      "qty": 0.1416
     }
   },
-  "realized_pnl_cumulative_usd": 28.50104424297263,
+  "realized_pnl_cumulative_usd": 19.081995764461677,
   "schema_version": 1,
-  "state_hash_prev": "3e123761a030f171521a680ac13f0776151a29d4e77de25c93116e864c6bf766",
+  "state_hash_prev": "62d4e24745905aa9a708e706d78931ea6f907deb17302ae045d72b479ab133f9",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -138,21 +138,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": 1.0563216472705552,
-      "symbol": "DOW",
-      "ts": "2026-08-03T13:46:15.865189+00:00"
-    },
-    {
-      "realized_pnl_usd": 0.5442932298357621,
-      "symbol": "F",
-      "ts": "2026-08-03T13:46:15.865189+00:00"
-    },
-    {
-      "realized_pnl_usd": -6.3929346001453995,
-      "symbol": "QCOM",
-      "ts": "2026-08-03T13:46:15.865189+00:00"
-    },
     {
       "realized_pnl_usd": 4.681437814165354,
       "symbol": "QQQ",
@@ -232,6 +217,26 @@
       "realized_pnl_usd": 6.087411009750002,
       "symbol": "AVAX",
       "ts": "2026-09-29T13:06:02.757545+00:00"
+    },
+    {
+      "realized_pnl_usd": -7.0507634165354,
+      "symbol": "CVS",
+      "ts": "2026-10-02T17:52:19.132654+00:00"
+    },
+    {
+      "realized_pnl_usd": -1.9535130171364328,
+      "symbol": "SPG",
+      "ts": "2026-10-02T17:52:19.132654+00:00"
+    },
+    {
+      "realized_pnl_usd": 1.5294618588820488,
+      "symbol": "TXN",
+      "ts": "2026-10-02T17:52:19.132654+00:00"
+    },
+    {
+      "realized_pnl_usd": -1.9442339037211664,
+      "symbol": "UNP",
+      "ts": "2026-10-02T17:52:19.132654+00:00"
     }
   ],
   "wallet_id": "equilibre"
