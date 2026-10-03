@@ -1,0 +1,2231 @@
+{
+  "counts": {
+    "crypto_excluded": 30,
+    "crypto_included": 0,
+    "equities_by_source": {
+      "FAILED": 1,
+      "yfinance": 103
+    },
+    "equities_failed": 1,
+    "equities_ok": 103,
+    "etf_by_source": {
+      "yfinance": 18
+    },
+    "etf_failed": 0,
+    "etf_ok": 18,
+    "funding_excluded": 0,
+    "funding_included": 30,
+    "perp_excluded": 0,
+    "perp_included": 30
+  },
+  "crypto": {
+    "archive_from": "2022-01",
+    "archive_to": "2026-09",
+    "excluded": {
+      "AAVE": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "AAVEUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "ADA": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "ADAUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "ALGO": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "ALGOUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "APT": {
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2026-09"
+        ],
+        "months_ok": 47,
+        "pair": "APTUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "ARB": {
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-01",
+          "2023-02",
+          "2026-09"
+        ],
+        "months_ok": 42,
+        "pair": "ARBUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "ATOM": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "ATOMUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "AVAX": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "AVAXUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "BCH": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "BCHUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "BNB": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "BNBUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "BTC": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "BTCUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "DOGE": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "DOGEUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "DOT": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "DOTUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "ETC": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "ETCUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "ETH": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "ETHUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "FIL": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "FILUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "HBAR": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "HBARUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "ICP": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "ICPUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "INJ": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "INJUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "LINK": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "LINKUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "LTC": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "LTCUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "MANA": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "MANAUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "NEAR": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "NEARUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "OP": {
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2026-09"
+        ],
+        "months_ok": 51,
+        "pair": "OPUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "SAND": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "SANDUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "SOL": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "SOLUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "TRX": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "TRXUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "UNI": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "UNIUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "VET": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "VETUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "XLM": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "XLMUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      },
+      "XRP": {
+        "months_error": [],
+        "months_missing": [
+          "2026-09"
+        ],
+        "months_ok": 56,
+        "pair": "XRPUSDT",
+        "reason": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
+      }
+    },
+    "full_coverage_required_from": "2023-07",
+    "included": {}
+  },
+  "equities": {
+    "AAPL": {
+      "first_ts": "1980-12-12T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11544,
+      "source": "yfinance",
+      "span_years": 45.8,
+      "status": "OK",
+      "symbol_used": "AAPL"
+    },
+    "ABBV": {
+      "first_ts": "2013-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 3459,
+      "source": "yfinance",
+      "span_years": 13.74,
+      "status": "OK",
+      "symbol_used": "ABBV"
+    },
+    "ABT": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11732,
+      "source": "yfinance",
+      "span_years": 46.54,
+      "status": "OK",
+      "symbol_used": "ABT"
+    },
+    "ACN": {
+      "first_ts": "2001-07-19T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6339,
+      "source": "yfinance",
+      "span_years": 25.2,
+      "status": "OK",
+      "symbol_used": "ACN"
+    },
+    "ADBE": {
+      "first_ts": "1986-08-13T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 10112,
+      "source": "yfinance",
+      "span_years": 40.14,
+      "status": "OK",
+      "symbol_used": "ADBE"
+    },
+    "AIG": {
+      "first_ts": "1973-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13552,
+      "source": "yfinance",
+      "span_years": 53.74,
+      "status": "OK",
+      "symbol_used": "AIG"
+    },
+    "AMD": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11732,
+      "source": "yfinance",
+      "span_years": 46.54,
+      "status": "OK",
+      "symbol_used": "AMD"
+    },
+    "AMGN": {
+      "first_ts": "1983-06-17T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 10909,
+      "source": "yfinance",
+      "span_years": 43.29,
+      "status": "OK",
+      "symbol_used": "AMGN"
+    },
+    "AMT": {
+      "first_ts": "1998-02-27T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 7194,
+      "source": "yfinance",
+      "span_years": 28.59,
+      "status": "OK",
+      "symbol_used": "AMT"
+    },
+    "AMZN": {
+      "first_ts": "1997-05-15T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 7392,
+      "source": "yfinance",
+      "span_years": 29.38,
+      "status": "OK",
+      "symbol_used": "AMZN"
+    },
+    "AVGO": {
+      "first_ts": "2009-08-06T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 4316,
+      "source": "yfinance",
+      "span_years": 17.16,
+      "status": "OK",
+      "symbol_used": "AVGO"
+    },
+    "AXP": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "AXP"
+    },
+    "BA": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "BA"
+    },
+    "BAC": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13518,
+      "source": "yfinance",
+      "span_years": 53.61,
+      "status": "OK",
+      "symbol_used": "BAC"
+    },
+    "BK": {
+      "error": "yfinance et stooq (repli) ont tous deux échoué — dernière erreur stooq: réponse stooq vide/invalide (ticker inconnu, ou blocage/rate limiting persistant)",
+      "source": "FAILED",
+      "status": "ERROR",
+      "symbol_used": "bk"
+    },
+    "BKNG": {
+      "first_ts": "1999-03-31T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6920,
+      "source": "yfinance",
+      "span_years": 27.5,
+      "status": "OK",
+      "symbol_used": "BKNG"
+    },
+    "BLK": {
+      "first_ts": "1999-10-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6792,
+      "source": "yfinance",
+      "span_years": 27.0,
+      "status": "OK",
+      "symbol_used": "BLK"
+    },
+    "BMY": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "BMY"
+    },
+    "BRK.B": {
+      "first_ts": "1996-05-09T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 7649,
+      "source": "yfinance",
+      "span_years": 30.4,
+      "status": "OK",
+      "symbol_used": "BRK-B"
+    },
+    "C": {
+      "first_ts": "1977-01-03T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 12541,
+      "source": "yfinance",
+      "span_years": 49.74,
+      "status": "OK",
+      "symbol_used": "C"
+    },
+    "CAT": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "CAT"
+    },
+    "CHTR": {
+      "first_ts": "2010-01-05T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 4212,
+      "source": "yfinance",
+      "span_years": 16.74,
+      "status": "OK",
+      "symbol_used": "CHTR"
+    },
+    "CL": {
+      "first_ts": "1973-05-02T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13469,
+      "source": "yfinance",
+      "span_years": 53.42,
+      "status": "OK",
+      "symbol_used": "CL"
+    },
+    "CMCSA": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11732,
+      "source": "yfinance",
+      "span_years": 46.54,
+      "status": "OK",
+      "symbol_used": "CMCSA"
+    },
+    "COF": {
+      "first_ts": "1994-11-16T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8022,
+      "source": "yfinance",
+      "span_years": 31.87,
+      "status": "OK",
+      "symbol_used": "COF"
+    },
+    "COP": {
+      "first_ts": "1981-12-31T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11279,
+      "source": "yfinance",
+      "span_years": 44.75,
+      "status": "OK",
+      "symbol_used": "COP"
+    },
+    "COST": {
+      "first_ts": "1986-07-09T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 10137,
+      "source": "yfinance",
+      "span_years": 40.23,
+      "status": "OK",
+      "symbol_used": "COST"
+    },
+    "CRM": {
+      "first_ts": "2004-06-23T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5606,
+      "source": "yfinance",
+      "span_years": 22.28,
+      "status": "OK",
+      "symbol_used": "CRM"
+    },
+    "CSCO": {
+      "first_ts": "1990-02-16T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 9223,
+      "source": "yfinance",
+      "span_years": 36.62,
+      "status": "OK",
+      "symbol_used": "CSCO"
+    },
+    "CVS": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13518,
+      "source": "yfinance",
+      "span_years": 53.61,
+      "status": "OK",
+      "symbol_used": "CVS"
+    },
+    "CVX": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "CVX"
+    },
+    "DE": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "DE"
+    },
+    "DHR": {
+      "first_ts": "1978-12-29T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 12038,
+      "source": "yfinance",
+      "span_years": 47.76,
+      "status": "OK",
+      "symbol_used": "DHR"
+    },
+    "DIS": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "DIS"
+    },
+    "DOW": {
+      "first_ts": "2019-03-20T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 1896,
+      "source": "yfinance",
+      "span_years": 7.54,
+      "status": "OK",
+      "symbol_used": "DOW",
+      "warning": "historique disponible (7.5 ans) inférieur au minimum visé (8.0 ans) — probablement une introduction en bourse/cotation récente"
+    },
+    "DUK": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11732,
+      "source": "yfinance",
+      "span_years": 46.54,
+      "status": "OK",
+      "symbol_used": "DUK"
+    },
+    "EMR": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "EMR"
+    },
+    "F": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "F"
+    },
+    "FDX": {
+      "first_ts": "1978-04-12T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 12220,
+      "source": "yfinance",
+      "span_years": 48.47,
+      "status": "OK",
+      "symbol_used": "FDX"
+    },
+    "GD": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "GD"
+    },
+    "GE": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "GE"
+    },
+    "GILD": {
+      "first_ts": "1992-01-22T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8736,
+      "source": "yfinance",
+      "span_years": 34.69,
+      "status": "OK",
+      "symbol_used": "GILD"
+    },
+    "GM": {
+      "first_ts": "2010-11-18T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 3991,
+      "source": "yfinance",
+      "span_years": 15.87,
+      "status": "OK",
+      "symbol_used": "GM"
+    },
+    "GOOG": {
+      "first_ts": "2004-08-19T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5566,
+      "source": "yfinance",
+      "span_years": 22.12,
+      "status": "OK",
+      "symbol_used": "GOOG"
+    },
+    "GOOGL": {
+      "first_ts": "2004-08-19T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5566,
+      "source": "yfinance",
+      "span_years": 22.12,
+      "status": "OK",
+      "symbol_used": "GOOGL"
+    },
+    "GS": {
+      "first_ts": "1999-05-04T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6897,
+      "source": "yfinance",
+      "span_years": 27.41,
+      "status": "OK",
+      "symbol_used": "GS"
+    },
+    "HD": {
+      "first_ts": "1981-09-22T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11349,
+      "source": "yfinance",
+      "span_years": 45.03,
+      "status": "OK",
+      "symbol_used": "HD"
+    },
+    "HON": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "HON"
+    },
+    "IBM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "IBM"
+    },
+    "INTC": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11732,
+      "source": "yfinance",
+      "span_years": 46.54,
+      "status": "OK",
+      "symbol_used": "INTC"
+    },
+    "INTU": {
+      "first_ts": "1993-03-12T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8448,
+      "source": "yfinance",
+      "span_years": 33.56,
+      "status": "OK",
+      "symbol_used": "INTU"
+    },
+    "ISRG": {
+      "first_ts": "2000-06-16T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6613,
+      "source": "yfinance",
+      "span_years": 26.29,
+      "status": "OK",
+      "symbol_used": "ISRG"
+    },
+    "JNJ": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "JNJ"
+    },
+    "JPM": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11732,
+      "source": "yfinance",
+      "span_years": 46.54,
+      "status": "OK",
+      "symbol_used": "JPM"
+    },
+    "KHC": {
+      "first_ts": "2015-07-06T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 2829,
+      "source": "yfinance",
+      "span_years": 11.24,
+      "status": "OK",
+      "symbol_used": "KHC"
+    },
+    "KMI": {
+      "first_ts": "2011-02-11T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 3933,
+      "source": "yfinance",
+      "span_years": 15.64,
+      "status": "OK",
+      "symbol_used": "KMI"
+    },
+    "KO": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "KO"
+    },
+    "LIN": {
+      "first_ts": "1992-06-17T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8634,
+      "source": "yfinance",
+      "span_years": 34.29,
+      "status": "OK",
+      "symbol_used": "LIN"
+    },
+    "LLY": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "LLY"
+    },
+    "LMT": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16296,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "LMT"
+    },
+    "LOW": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11732,
+      "source": "yfinance",
+      "span_years": 46.54,
+      "status": "OK",
+      "symbol_used": "LOW"
+    },
+    "MA": {
+      "first_ts": "2006-05-25T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5121,
+      "source": "yfinance",
+      "span_years": 20.36,
+      "status": "OK",
+      "symbol_used": "MA"
+    },
+    "MCD": {
+      "first_ts": "1966-07-05T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 15162,
+      "source": "yfinance",
+      "span_years": 60.24,
+      "status": "OK",
+      "symbol_used": "MCD"
+    },
+    "MDLZ": {
+      "first_ts": "2001-06-13T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6364,
+      "source": "yfinance",
+      "span_years": 25.3,
+      "status": "OK",
+      "symbol_used": "MDLZ"
+    },
+    "MDT": {
+      "first_ts": "1973-05-02T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13469,
+      "source": "yfinance",
+      "span_years": 53.42,
+      "status": "OK",
+      "symbol_used": "MDT"
+    },
+    "MET": {
+      "first_ts": "2000-04-05T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6663,
+      "source": "yfinance",
+      "span_years": 26.49,
+      "status": "OK",
+      "symbol_used": "MET"
+    },
+    "META": {
+      "first_ts": "2012-05-18T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 3614,
+      "source": "yfinance",
+      "span_years": 14.37,
+      "status": "OK",
+      "symbol_used": "META"
+    },
+    "MMM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "MMM"
+    },
+    "MO": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "MO"
+    },
+    "MRK": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "MRK"
+    },
+    "MS": {
+      "first_ts": "1993-02-23T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8461,
+      "source": "yfinance",
+      "span_years": 33.6,
+      "status": "OK",
+      "symbol_used": "MS"
+    },
+    "MSFT": {
+      "first_ts": "1986-03-13T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 10218,
+      "source": "yfinance",
+      "span_years": 40.55,
+      "status": "OK",
+      "symbol_used": "MSFT"
+    },
+    "NEE": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13518,
+      "source": "yfinance",
+      "span_years": 53.61,
+      "status": "OK",
+      "symbol_used": "NEE"
+    },
+    "NFLX": {
+      "first_ts": "2002-05-23T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6130,
+      "source": "yfinance",
+      "span_years": 24.36,
+      "status": "OK",
+      "symbol_used": "NFLX"
+    },
+    "NKE": {
+      "first_ts": "1980-12-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11552,
+      "source": "yfinance",
+      "span_years": 45.83,
+      "status": "OK",
+      "symbol_used": "NKE"
+    },
+    "NVDA": {
+      "first_ts": "1999-01-22T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6967,
+      "source": "yfinance",
+      "span_years": 27.69,
+      "status": "OK",
+      "symbol_used": "NVDA"
+    },
+    "ORCL": {
+      "first_ts": "1986-03-12T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 10219,
+      "source": "yfinance",
+      "span_years": 40.56,
+      "status": "OK",
+      "symbol_used": "ORCL"
+    },
+    "PEP": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "PEP"
+    },
+    "PFE": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "PFE"
+    },
+    "PG": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "PG"
+    },
+    "PM": {
+      "first_ts": "2008-03-17T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 4667,
+      "source": "yfinance",
+      "span_years": 18.54,
+      "status": "OK",
+      "symbol_used": "PM"
+    },
+    "PYPL": {
+      "first_ts": "2015-07-06T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 2829,
+      "source": "yfinance",
+      "span_years": 11.24,
+      "status": "OK",
+      "symbol_used": "PYPL"
+    },
+    "QCOM": {
+      "first_ts": "1991-12-13T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8762,
+      "source": "yfinance",
+      "span_years": 34.8,
+      "status": "OK",
+      "symbol_used": "QCOM"
+    },
+    "RTX": {
+      "first_ts": "1962-04-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16234,
+      "source": "yfinance",
+      "span_years": 64.5,
+      "status": "OK",
+      "symbol_used": "RTX"
+    },
+    "SBUX": {
+      "first_ts": "1992-06-26T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8627,
+      "source": "yfinance",
+      "span_years": 34.27,
+      "status": "OK",
+      "symbol_used": "SBUX"
+    },
+    "SCHW": {
+      "first_ts": "1987-09-22T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 9832,
+      "source": "yfinance",
+      "span_years": 39.03,
+      "status": "OK",
+      "symbol_used": "SCHW"
+    },
+    "SO": {
+      "first_ts": "1981-12-31T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11279,
+      "source": "yfinance",
+      "span_years": 44.75,
+      "status": "OK",
+      "symbol_used": "SO"
+    },
+    "SPG": {
+      "first_ts": "1993-12-14T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8256,
+      "source": "yfinance",
+      "span_years": 32.8,
+      "status": "OK",
+      "symbol_used": "SPG"
+    },
+    "T": {
+      "first_ts": "1983-11-21T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 10800,
+      "source": "yfinance",
+      "span_years": 42.86,
+      "status": "OK",
+      "symbol_used": "T"
+    },
+    "TGT": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13518,
+      "source": "yfinance",
+      "span_years": 53.61,
+      "status": "OK",
+      "symbol_used": "TGT"
+    },
+    "TJX": {
+      "first_ts": "1987-06-26T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 9892,
+      "source": "yfinance",
+      "span_years": 39.27,
+      "status": "OK",
+      "symbol_used": "TJX"
+    },
+    "TMO": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11732,
+      "source": "yfinance",
+      "span_years": 46.54,
+      "status": "OK",
+      "symbol_used": "TMO"
+    },
+    "TMUS": {
+      "first_ts": "2007-04-19T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 4896,
+      "source": "yfinance",
+      "span_years": 19.46,
+      "status": "OK",
+      "symbol_used": "TMUS"
+    },
+    "TSLA": {
+      "first_ts": "2010-06-29T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 4091,
+      "source": "yfinance",
+      "span_years": 16.26,
+      "status": "OK",
+      "symbol_used": "TSLA"
+    },
+    "TXN": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "TXN"
+    },
+    "UNH": {
+      "first_ts": "1984-10-17T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 10571,
+      "source": "yfinance",
+      "span_years": 41.96,
+      "status": "OK",
+      "symbol_used": "UNH"
+    },
+    "UNP": {
+      "first_ts": "1980-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 11784,
+      "source": "yfinance",
+      "span_years": 46.75,
+      "status": "OK",
+      "symbol_used": "UNP"
+    },
+    "UPS": {
+      "first_ts": "1999-11-10T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6764,
+      "source": "yfinance",
+      "span_years": 26.89,
+      "status": "OK",
+      "symbol_used": "UPS"
+    },
+    "USB": {
+      "first_ts": "1973-05-03T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13468,
+      "source": "yfinance",
+      "span_years": 53.42,
+      "status": "OK",
+      "symbol_used": "USB"
+    },
+    "V": {
+      "first_ts": "2008-03-19T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 4665,
+      "source": "yfinance",
+      "span_years": 18.54,
+      "status": "OK",
+      "symbol_used": "V"
+    },
+    "VZ": {
+      "first_ts": "1983-11-21T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 10800,
+      "source": "yfinance",
+      "span_years": 42.86,
+      "status": "OK",
+      "symbol_used": "VZ"
+    },
+    "WFC": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13698,
+      "source": "yfinance",
+      "span_years": 54.34,
+      "status": "OK",
+      "symbol_used": "WFC"
+    },
+    "WMT": {
+      "first_ts": "1972-08-25T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 13638,
+      "source": "yfinance",
+      "span_years": 54.1,
+      "status": "OK",
+      "symbol_used": "WMT"
+    },
+    "XOM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 16297,
+      "source": "yfinance",
+      "span_years": 64.74,
+      "status": "OK",
+      "symbol_used": "XOM"
+    }
+  },
+  "etf": {
+    "DBC": {
+      "first_ts": "2006-02-06T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5197,
+      "source": "yfinance",
+      "span_years": 20.65,
+      "status": "OK",
+      "symbol_used": "DBC"
+    },
+    "EEM": {
+      "first_ts": "2003-04-14T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5906,
+      "source": "yfinance",
+      "span_years": 23.47,
+      "status": "OK",
+      "symbol_used": "EEM"
+    },
+    "EFA": {
+      "first_ts": "2001-08-27T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6312,
+      "source": "yfinance",
+      "span_years": 25.1,
+      "status": "OK",
+      "symbol_used": "EFA"
+    },
+    "GLD": {
+      "first_ts": "2004-11-18T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5502,
+      "source": "yfinance",
+      "span_years": 21.87,
+      "status": "OK",
+      "symbol_used": "GLD"
+    },
+    "HYG": {
+      "first_ts": "2007-04-11T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 4902,
+      "source": "yfinance",
+      "span_years": 19.48,
+      "status": "OK",
+      "symbol_used": "HYG"
+    },
+    "IEF": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6084,
+      "source": "yfinance",
+      "span_years": 24.18,
+      "status": "OK",
+      "symbol_used": "IEF"
+    },
+    "IWM": {
+      "first_ts": "2000-05-26T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6627,
+      "source": "yfinance",
+      "span_years": 26.35,
+      "status": "OK",
+      "symbol_used": "IWM"
+    },
+    "LQD": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6084,
+      "source": "yfinance",
+      "span_years": 24.18,
+      "status": "OK",
+      "symbol_used": "LQD"
+    },
+    "QQQ": {
+      "first_ts": "1999-03-10T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6935,
+      "source": "yfinance",
+      "span_years": 27.56,
+      "status": "OK",
+      "symbol_used": "QQQ"
+    },
+    "SLV": {
+      "first_ts": "2006-04-28T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5140,
+      "source": "yfinance",
+      "span_years": 20.43,
+      "status": "OK",
+      "symbol_used": "SLV"
+    },
+    "SPY": {
+      "first_ts": "1993-01-29T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 8477,
+      "source": "yfinance",
+      "span_years": 33.67,
+      "status": "OK",
+      "symbol_used": "SPY"
+    },
+    "TLT": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6084,
+      "source": "yfinance",
+      "span_years": 24.18,
+      "status": "OK",
+      "symbol_used": "TLT"
+    },
+    "VNQ": {
+      "first_ts": "2004-09-29T04:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 5538,
+      "source": "yfinance",
+      "span_years": 22.01,
+      "status": "OK",
+      "symbol_used": "VNQ"
+    },
+    "XLE": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6987,
+      "source": "yfinance",
+      "span_years": 27.78,
+      "status": "OK",
+      "symbol_used": "XLE"
+    },
+    "XLF": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6987,
+      "source": "yfinance",
+      "span_years": 27.78,
+      "status": "OK",
+      "symbol_used": "XLF"
+    },
+    "XLK": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6987,
+      "source": "yfinance",
+      "span_years": 27.78,
+      "status": "OK",
+      "symbol_used": "XLK"
+    },
+    "XLU": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6987,
+      "source": "yfinance",
+      "span_years": 27.78,
+      "status": "OK",
+      "symbol_used": "XLU"
+    },
+    "XLV": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-02T04:00:00+00:00",
+      "rows": 6987,
+      "source": "yfinance",
+      "span_years": 27.78,
+      "status": "OK",
+      "symbol_used": "XLV"
+    }
+  },
+  "funding": {
+    "archive_from": "2022-01",
+    "archive_to": "2026-09",
+    "excluded": {},
+    "flag_threshold_abs_rate": 0.03,
+    "included": {
+      "AAVE": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "AAVEUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ADA": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ADAUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ALGO": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ALGOUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "APT": {
+        "first_ts": "2022-10-18T16:00:00+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 48,
+        "pair": "APTUSDT",
+        "reason": "inclus",
+        "rows": 4330
+      },
+      "ARB": {
+        "first_ts": "2023-03-23T08:00:00.001000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-01",
+          "2023-02"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 43,
+        "pair": "ARBUSDT",
+        "reason": "inclus",
+        "rows": 3863
+      },
+      "ATOM": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ATOMUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "AVAX": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "AVAXUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "BCH": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BCHUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "BNB": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BNBUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "BTC": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BTCUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "DOGE": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "DOGEUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "DOT": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "DOTUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ETC": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ETCUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ETH": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ETHUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "FIL": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "FILUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "HBAR": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "HBARUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ICP": {
+        "first_ts": "2022-09-01T00:00:00.012000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 49,
+        "pair": "ICPUSDT",
+        "reason": "inclus",
+        "rows": 4473
+      },
+      "INJ": {
+        "first_ts": "2022-08-16T16:00:00+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 50,
+        "pair": "INJUSDT",
+        "reason": "inclus",
+        "rows": 4519
+      },
+      "LINK": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "LINKUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "LTC": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "LTCUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "MANA": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "MANAUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "NEAR": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "NEARUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "OP": {
+        "first_ts": "2022-06-01T08:00:00.011000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 52,
+        "pair": "OPUSDT",
+        "reason": "inclus",
+        "rows": 4748
+      },
+      "SAND": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "SANDUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "SOL": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "SOLUSDT",
+        "reason": "inclus",
+        "rows": 5277
+      },
+      "TRX": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "TRXUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "UNI": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "UNIUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "VET": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "VETUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "XLM": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "XLMUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "XRP": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "XRPUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      }
+    }
+  },
+  "generated_at": "2026-10-03T10:15:07.382127+00:00",
+  "generation_duration_seconds": 393.2,
+  "perp": {
+    "archive_from": "2022-01",
+    "archive_to": "2026-09",
+    "excluded": {},
+    "included": {
+      "AAVE": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "AAVEUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "ADA": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ADAUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "ALGO": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ALGOUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "APT": {
+        "first_ts": "2022-10-19T02:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 48,
+        "pair": "APTUSDT",
+        "reason": "inclus",
+        "rows": 34630
+      },
+      "ARB": {
+        "first_ts": "2023-03-23T15:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-01",
+          "2023-02"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 43,
+        "pair": "ARBUSDT",
+        "reason": "inclus",
+        "rows": 30897
+      },
+      "ATOM": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ATOMUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "AVAX": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "AVAXUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "BCH": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BCHUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "BNB": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BNBUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "BTC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BTCUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "DOGE": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "DOGEUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "DOT": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "DOTUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "ETC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ETCUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "ETH": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ETHUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "FIL": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "FILUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "HBAR": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "HBARUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "ICP": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ICPUSDT",
+        "reason": "inclus",
+        "rows": 40990
+      },
+      "INJ": {
+        "first_ts": "2022-08-17T02:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 50,
+        "pair": "INJUSDT",
+        "reason": "inclus",
+        "rows": 36142
+      },
+      "LINK": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "LINKUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "LTC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "LTCUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "MANA": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "MANAUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "NEAR": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "NEARUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "OP": {
+        "first_ts": "2022-06-01T14:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 52,
+        "pair": "OPUSDT",
+        "reason": "inclus",
+        "rows": 37978
+      },
+      "SAND": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "SANDUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "SOL": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "SOLUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "TRX": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "TRXUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "UNI": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "UNIUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "VET": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "VETUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "XLM": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "XLMUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "XRP": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "XRPUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      }
+    }
+  },
+  "sources": {
+    "crypto_bulk_archive": "https://data.binance.vision/data/spot/monthly/klines/{PAIR}/1h/{PAIR}-1h-{YYYY-MM}.zip",
+    "crypto_current_month_completion": "https://api.binance.com/api/v3/klines",
+    "equities_etf_daily_fallback": "stooq.com (`https://stooq.com/q/d/l/?s={ticker}.us&i=d`, User-Agent navigateur, séquentiel, pause >= 1.0s/requête) — utilisé uniquement si yfinance échoue pour un ticker",
+    "equities_etf_daily_primary": "yfinance (yf.download / yf.Ticker.history, period=max, interval=1d, auto_adjust=True)",
+    "funding_bulk_archive": "https://data.binance.vision/data/futures/um/monthly/fundingRate/{PAIR}/{PAIR}-fundingRate-{YYYY-MM}.zip",
+    "funding_current_month_completion": "https://fapi.binance.com/fapi/v1/fundingRate",
+    "perp_bulk_archive": "https://data.binance.vision/data/futures/um/monthly/klines/{PAIR}/1h/{PAIR}-1h-{YYYY-MM}.zip",
+    "perp_current_month_completion": "https://fapi.binance.com/fapi/v1/klines"
+  }
+}
