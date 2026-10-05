@@ -1,26 +1,24 @@
 {
   "data_refresh_status": "OK",
-  "generated_at": "2026-09-28T00:27:37.430142+00:00",
+  "generated_at": "2026-10-05T00:36:17.028275+00:00",
   "recalibration": {
-    "best_oos_sharpe": 0.5227648190046261,
-    "best_value": 175,
-    "changed": false,
-    "current_oos_sharpe": 0.5077570804564328,
-    "current_value": 200,
-    "modal_value": 175,
-    "param_name": "regime_sma_days",
-    "reason": "amélioration OOS relative 3.0% <= seuil 10% — pas assez significatif, aucun changement",
-    "relative_improvement": 0.02955692618742534,
-    "status": "OK",
-    "strategy_id": "quasi_passif_crypto",
-    "votes": {
-      "150": 4,
-      "175": 5,
-      "200": 1,
-      "225": 1,
-      "250": 4
+    "missing_symbols": [
+      "AVAX",
+      "BTC",
+      "DOGE",
+      "ETH",
+      "LINK",
+      "SOL"
+    ],
+    "missing_symbols_reasons": {
+      "AVAX": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)",
+      "BTC": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)",
+      "DOGE": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)",
+      "ETH": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)",
+      "LINK": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)",
+      "SOL": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)"
     },
-    "windows": 15
+    "status": "DONNEES_INSUFFISANTES"
   },
   "rows": [
     {
@@ -28,12 +26,12 @@
       "categorie": "active",
       "dd_live_pct": 1.6062312389235494,
       "dd_ref_pct": null,
-      "n_days_observed": 67,
+      "n_days_observed": 74,
       "negative_rolling_streak_days": 0,
       "reasons": [
         "DD de référence indisponible dans le registre — comparaison impossible"
       ],
-      "sharpe_live": 0.7643022708874497,
+      "sharpe_live": 0.7870254642712855,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -45,12 +43,12 @@
       "categorie": "active",
       "dd_live_pct": 0.12741396302544755,
       "dd_ref_pct": 8.4,
-      "n_days_observed": 67,
+      "n_days_observed": 74,
       "negative_rolling_streak_days": 0,
       "reasons": [
         "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 2.388510360225568,
+      "sharpe_live": 2.6970059978645504,
       "sharpe_ref": 0.808,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante prudent_btc_eth) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
@@ -60,14 +58,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.3046968000312094,
+      "dd_live_pct": 0.39376965089434307,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 67,
+      "n_days_observed": 74,
       "negative_rolling_streak_days": 0,
       "reasons": [
         "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 4.529291985926266,
+      "sharpe_live": 3.582530704932484,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -79,12 +77,12 @@
       "categorie": "active",
       "dd_live_pct": 0.3474867049900787,
       "dd_ref_pct": null,
-      "n_days_observed": 67,
+      "n_days_observed": 74,
       "negative_rolling_streak_days": 0,
       "reasons": [
         "DD de référence indisponible dans le registre — comparaison impossible"
       ],
-      "sharpe_live": 3.0982277459293286,
+      "sharpe_live": 2.451138737415873,
       "sharpe_ref": null,
       "source": "introuvable dans le registre",
       "strategy_id": "dual_momentum_etf",
@@ -96,12 +94,12 @@
       "categorie": "active",
       "dd_live_pct": 0.11821062420772246,
       "dd_ref_pct": 27.3,
-      "n_days_observed": 67,
+      "n_days_observed": 74,
       "negative_rolling_streak_days": 0,
       "reasons": [
         "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 4.664788664229232,
+      "sharpe_live": 3.9348283261645127,
       "sharpe_ref": 0.283,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante equilibre_6majors) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
@@ -113,12 +111,12 @@
       "categorie": "active",
       "dd_live_pct": 1.7172972706377627,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 67,
+      "n_days_observed": 74,
       "negative_rolling_streak_days": 0,
       "reasons": [
         "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 2.046501890083811,
+      "sharpe_live": 1.8056514828597123,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -130,12 +128,12 @@
       "categorie": "active",
       "dd_live_pct": 1.5602431755309139,
       "dd_ref_pct": 56.4,
-      "n_days_observed": 67,
+      "n_days_observed": 74,
       "negative_rolling_streak_days": 0,
       "reasons": [
         "aucun signal de dérive détecté"
       ],
-      "sharpe_live": 2.26229066416246,
+      "sharpe_live": 2.019059474897353,
       "sharpe_ref": 0.069,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante agressif_11diversifie) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",

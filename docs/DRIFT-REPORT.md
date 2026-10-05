@@ -1,6 +1,6 @@
 # DRIFT-REPORT.md — Moniteur de dérive (backtest vs vécu)
 
-*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-09-28T00:27:37.430142+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
+*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-10-05T00:36:17.028275+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
 
 ## 1. Moniteur de dérive par stratégie
 
@@ -8,13 +8,13 @@ Compare les métriques VÉCUES (journaux `state/wallets/*/`) aux métriques OOS 
 
 | Stratégie | Wallet | Statut | Jours observés | Sharpe vécu | Sharpe attendu | DD vécu | DD attendu | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| dual_momentum_etf | prudent | active | 67 | 0.76 | n/d | 1.6% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | prudent | active | 67 | 2.39 | 0.81 | 0.1% | 8.4% | **OK** |
-| xs_momentum_sp100 | equilibre | active | 67 | 4.53 | 0.82 | 0.3% | 50.3% | **OK** |
-| dual_momentum_etf | equilibre | active | 67 | 3.10 | n/d | 0.3% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | equilibre | active | 67 | 4.66 | 0.28 | 0.1% | 27.3% | **OK** |
-| xs_momentum_sp100 | agressif | active | 67 | 2.05 | 0.82 | 1.7% | 50.3% | **OK** |
-| quasi_passif_crypto | agressif | active | 67 | 2.26 | 0.07 | 1.6% | 56.4% | **OK** |
+| dual_momentum_etf | prudent | active | 74 | 0.79 | n/d | 1.6% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | prudent | active | 74 | 2.70 | 0.81 | 0.1% | 8.4% | **OK** |
+| xs_momentum_sp100 | equilibre | active | 74 | 3.58 | 0.82 | 0.4% | 50.3% | **OK** |
+| dual_momentum_etf | equilibre | active | 74 | 2.45 | n/d | 0.3% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | equilibre | active | 74 | 3.93 | 0.28 | 0.1% | 27.3% | **OK** |
+| xs_momentum_sp100 | agressif | active | 74 | 1.81 | 0.82 | 1.7% | 50.3% | **OK** |
+| quasi_passif_crypto | agressif | active | 74 | 2.02 | 0.07 | 1.6% | 56.4% | **OK** |
 
 ### Détail des raisons
 
@@ -43,10 +43,5 @@ Rafraîchissement des données de marché (`tools/fetch_data.py --only crypto`) 
 
 Grille pré-enregistrée (`docs/RECALIBRATION-SPEC.md`) : `REGIME_SMA_DAYS ∈ [150, 175, 200, 225, 250]` (seuil de changement : amélioration OOS relative > 10%).
 
-- Fenêtres walk-forward (9m IS / 3m OOS) : **15**
-- Valeur en production : `REGIME_SMA_DAYS = 200` (Sharpe OOS concaténé : 0.508)
-- Meilleure valeur de la grille : `REGIME_SMA_DAYS = 175` (Sharpe OOS concaténé : 0.523)
-- Valeur la plus souvent sélectionnée en IS (informatif) : `175`
-- Amélioration relative : 3.0%
-- **Décision : aucun changement**
-  - amélioration OOS relative 3.0% <= seuil 10% — pas assez significatif, aucun changement
+_Recalibrage SAUTÉ : données insuffisantes ou indisponibles ce cycle (['AVAX', 'BTC', 'DOGE', 'ETH', 'LINK', 'SOL'])._
+_Raison d'exclusion par symbole (`tools/fetch_data.py`) : AVAX : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant); BTC : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant); DOGE : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant); ETH : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant); LINK : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant); SOL : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-09] : 1 mois manquant(s) (2026-09) — exclu (trace du biais du survivant)._
