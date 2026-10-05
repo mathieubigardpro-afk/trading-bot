@@ -1,19 +1,11 @@
 {
-  "cash_usd": 348.33297446483994,
+  "cash_usd": 337.09689622754826,
   "circuit_breakers": {
-    "consecutive_losses": 1,
+    "consecutive_losses": 2,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1188.7491625360556,
-        "ts": "2026-10-04T12:36:11.231712+00:00"
-      },
-      {
-        "equity": 1189.2887660360554,
-        "ts": "2026-10-04T17:01:59.614776+00:00"
-      },
       {
         "equity": 1189.2299829360556,
         "ts": "2026-10-04T20:10:01.553081+00:00"
@@ -29,6 +21,10 @@
       {
         "equity": 1190.1534365360556,
         "ts": "2026-10-05T08:52:20.261593+00:00"
+      },
+      {
+        "equity": 1221.0898645077539,
+        "ts": "2026-10-05T18:03:46.502037+00:00"
       }
     ],
     "flatten_mode": false,
@@ -38,14 +34,14 @@
   "equity_peak_usd": 1223.794894237504,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1225,
+    "last_rate": 1.1204,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-10-05T08:52:37.280110+00:00"
+    "last_rate_ts": "2026-10-05T18:04:08.592048+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-10-05T08:52:20.261593+00:00",
-  "last_run_id": "2026-10-05T08",
+  "last_run_completed_at": "2026-10-05T18:03:46.502037+00:00",
+  "last_run_id": "2026-10-05T18",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -87,10 +83,6 @@
       "prix_moyen": 2259.2890799999996,
       "qty": 0.0132
     },
-    "GLD": {
-      "prix_moyen": 409.68255639836883,
-      "qty": 0.2393
-    },
     "INTC": {
       "prix_moyen": 91.31124402692413,
       "qty": 0.4378
@@ -111,6 +103,10 @@
       "prix_moyen": 515.2354303158875,
       "qty": 0.0829
     },
+    "QQQ": {
+      "prix_moyen": 755.6441232657622,
+      "qty": 0.1347
+    },
     "SOL": {
       "prix_moyen": 84.92244,
       "qty": 0.177
@@ -124,9 +120,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": 19.081995764461677,
+  "realized_pnl_cumulative_usd": 11.695930448342363,
   "schema_version": 1,
-  "state_hash_prev": "301818c7e7b15291418b968e5a522109cbaf2ec51c1a1dd3800337a651ecfd3e",
+  "state_hash_prev": "cd9a93bb0b7fc54cff8542a43e4857a580dd4e12a4e2968be3b8341bdbf8be22",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -142,11 +138,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": 4.681437814165354,
-      "symbol": "QQQ",
-      "ts": "2026-08-05T14:40:16.098117+00:00"
-    },
     {
       "realized_pnl_usd": -1.2118983789684754,
       "symbol": "EFA",
@@ -241,6 +232,11 @@
       "realized_pnl_usd": -1.9442339037211664,
       "symbol": "UNP",
       "ts": "2026-10-02T17:52:19.132654+00:00"
+    },
+    {
+      "realized_pnl_usd": -7.386065316119313,
+      "symbol": "GLD",
+      "ts": "2026-10-05T18:03:46.502037+00:00"
     }
   ],
   "wallet_id": "equilibre"

@@ -1,19 +1,11 @@
 {
-  "cash_usd": 450.434505016553,
+  "cash_usd": 433.2526035334182,
   "circuit_breakers": {
-    "consecutive_losses": 0,
+    "consecutive_losses": 1,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1164.965810235335,
-        "ts": "2026-10-04T12:36:11.231712+00:00"
-      },
-      {
-        "equity": 1165.0522747353352,
-        "ts": "2026-10-04T17:01:59.614776+00:00"
-      },
       {
         "equity": 1164.9901574353353,
         "ts": "2026-10-04T20:10:01.553081+00:00"
@@ -29,6 +21,10 @@
       {
         "equity": 1165.9021152353353,
         "ts": "2026-10-05T08:52:20.261593+00:00"
+      },
+      {
+        "equity": 1192.0360079583131,
+        "ts": "2026-10-05T18:03:46.502037+00:00"
       }
     ],
     "flatten_mode": false,
@@ -38,14 +34,14 @@
   "equity_peak_usd": 1203.5707228372196,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1225,
+    "last_rate": 1.1204,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-10-05T08:52:37.280110+00:00"
+    "last_rate_ts": "2026-10-05T18:04:08.592048+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-10-05T08:52:20.261593+00:00",
-  "last_run_id": "2026-10-05T08",
+  "last_run_completed_at": "2026-10-05T18:03:46.502037+00:00",
+  "last_run_id": "2026-10-05T18",
   "positions": {
     "BTC": {
       "prix_moyen": 74754.53655508473,
@@ -63,14 +59,14 @@
       "prix_moyen": 2370.462954947368,
       "qty": 0.019
     },
-    "GLD": {
-      "prix_moyen": 409.68255639836883,
-      "qty": 0.5325
+    "QQQ": {
+      "prix_moyen": 755.6441232657622,
+      "qty": 0.2894
     }
   },
-  "realized_pnl_cumulative_usd": 12.97700535888473,
+  "realized_pnl_cumulative_usd": -3.4587647239967314,
   "schema_version": 1,
-  "state_hash_prev": "e3e9a2f8bae8bd41113bc5a84bf97c5bdd1c3f7bac7dcad3d3568b150dbc1e7c",
+  "state_hash_prev": "7e9a9dfe95dfb6e5a6e3ad0dbaaca7dd8fdcda72f18e32958ab7c6367673d78e",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -106,6 +102,11 @@
       "realized_pnl_usd": 4.942804671697237,
       "symbol": "DBC",
       "ts": "2026-09-10T18:33:50.276035+00:00"
+    },
+    {
+      "realized_pnl_usd": -16.43577008288146,
+      "symbol": "GLD",
+      "ts": "2026-10-05T18:03:46.502037+00:00"
     }
   ],
   "wallet_id": "prudent"
