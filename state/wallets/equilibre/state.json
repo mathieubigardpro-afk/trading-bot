@@ -1,15 +1,11 @@
 {
-  "cash_usd": 337.09689622754826,
+  "cash_usd": 354.70575030698825,
   "circuit_breakers": {
-    "consecutive_losses": 2,
+    "consecutive_losses": 3,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1175.8503267565325,
-        "ts": "2026-10-08T00:46:48.538062+00:00"
-      },
       {
         "equity": 1174.0953152565323,
         "ts": "2026-10-08T06:44:09.296259+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1169.1306190565324,
         "ts": "2026-10-09T00:12:37.891875+00:00"
+      },
+      {
+        "equity": 1170.6818303065324,
+        "ts": "2026-10-09T06:21:07.730614+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,11 +37,11 @@
     "last_rate": 1.1186,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-10-09T00:12:56.001326+00:00"
+    "last_rate_ts": "2026-10-09T06:21:25.526530+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-10-09T00:12:37.891875+00:00",
-  "last_run_id": "2026-10-09T00",
+  "last_run_completed_at": "2026-10-09T06:21:07.730614+00:00",
+  "last_run_id": "2026-10-09T06",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -70,10 +70,6 @@
     "DBC": {
       "prix_moyen": 28.412715647660065,
       "qty": 2.8987000000000003
-    },
-    "DOGE": {
-      "prix_moyen": 0.10014004,
-      "qty": 207.0
     },
     "EEM": {
       "prix_moyen": 63.81602095391006,
@@ -120,9 +116,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": 11.695930448342363,
+  "realized_pnl_cumulative_usd": 8.575796247782364,
   "schema_version": 1,
-  "state_hash_prev": "3839bdac8d9a3e0d2ba9e34a3278568f3bbd1a65c1885b1902d02a7a8f60eae1",
+  "state_hash_prev": "78622dd5191ef35357d790149f16c089d6d8710198041d59e6ff538d46585985",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -138,11 +134,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": -1.2118983789684754,
-      "symbol": "EFA",
-      "ts": "2026-08-18T14:35:31.184165+00:00"
-    },
     {
       "realized_pnl_usd": 3.0753273464900013,
       "symbol": "LINK",
@@ -237,6 +228,11 @@
       "realized_pnl_usd": -7.386065316119313,
       "symbol": "GLD",
       "ts": "2026-10-05T18:03:46.502037+00:00"
+    },
+    {
+      "realized_pnl_usd": -3.1201342005599995,
+      "symbol": "DOGE",
+      "ts": "2026-10-09T06:21:07.730614+00:00"
     }
   ],
   "wallet_id": "equilibre"
