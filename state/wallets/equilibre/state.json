@@ -7,10 +7,6 @@
     "dd_half_size_active": false,
     "equity_window_24h": [
       {
-        "equity": 1198.6982711996768,
-        "ts": "2026-10-08T19:56:11.404918+00:00"
-      },
-      {
         "equity": 1169.1306190565324,
         "ts": "2026-10-09T00:12:37.891875+00:00"
       },
@@ -25,6 +21,10 @@
       {
         "equity": 1204.999617684933,
         "ts": "2026-10-09T18:59:25.255452+00:00"
+      },
+      {
+        "equity": 1170.1989911359722,
+        "ts": "2026-10-09T23:10:13.894093+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,11 +37,11 @@
     "last_rate": 1.1206,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-10-09T18:59:45.963653+00:00"
+    "last_rate_ts": "2026-10-09T23:10:36.531107+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-10-09T18:59:25.255452+00:00",
-  "last_run_id": "2026-10-09T18",
+  "last_run_completed_at": "2026-10-09T23:10:13.894093+00:00",
+  "last_run_id": "2026-10-09T23",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -118,7 +118,7 @@
   },
   "realized_pnl_cumulative_usd": 8.575796247782364,
   "schema_version": 1,
-  "state_hash_prev": "6670930aa8ef8a2a7424b23233796b9791bab4c5674b0698f0d1872cca8fa8f5",
+  "state_hash_prev": "71465d0ff6db3d64c33f7521ca5285f493dba11f2a11e42e36246239fbd5e447",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
