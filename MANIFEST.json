@@ -1,0 +1,2264 @@
+{
+  "counts": {
+    "crypto_excluded": 0,
+    "crypto_included": 30,
+    "equities_by_source": {
+      "FAILED": 1,
+      "yfinance": 103
+    },
+    "equities_failed": 1,
+    "equities_ok": 103,
+    "etf_by_source": {
+      "yfinance": 18
+    },
+    "etf_failed": 0,
+    "etf_ok": 18,
+    "funding_excluded": 0,
+    "funding_included": 30,
+    "perp_excluded": 0,
+    "perp_included": 30
+  },
+  "crypto": {
+    "archive_from": "2022-01",
+    "archive_to": "2026-09",
+    "excluded": {},
+    "full_coverage_required_from": "2023-07",
+    "included": {
+      "AAVE": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "AAVEUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "ADA": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "ADAUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "ALGO": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "ALGOUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "APT": {
+        "first_ts": "2022-10-19T01:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09"
+        ],
+        "months_ok": 48,
+        "pair": "APTUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 34630
+      },
+      "ARB": {
+        "first_ts": "2023-03-23T15:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-01",
+          "2023-02"
+        ],
+        "months_ok": 43,
+        "pair": "ARBUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 30896
+      },
+      "ATOM": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "ATOMUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "AVAX": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "AVAXUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "BCH": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "BCHUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "BNB": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "BNBUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "BTC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "BTCUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "DOGE": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "DOGEUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "DOT": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "DOTUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "ETC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "ETCUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "ETH": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "ETHUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "FIL": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "FILUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "HBAR": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "HBARUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "ICP": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "ICPUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "INJ": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "INJUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "LINK": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "LINKUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "LTC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "LTCUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "MANA": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "MANAUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "NEAR": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "NEARUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "OP": {
+        "first_ts": "2022-06-01T08:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05"
+        ],
+        "months_ok": 52,
+        "pair": "OPUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 37983
+      },
+      "SAND": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "SANDUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "SOL": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "SOLUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "TRX": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "TRXUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "UNI": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "UNIUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "VET": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "VETUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "XLM": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "XLMUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      },
+      "XRP": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing": [],
+        "months_ok": 57,
+        "pair": "XRPUSDT",
+        "reason": "historique complet depuis la fenêtre requise",
+        "rows": 41615
+      }
+    }
+  },
+  "equities": {
+    "AAPL": {
+      "first_ts": "1980-12-12T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11549,
+      "source": "yfinance",
+      "span_years": 45.82,
+      "status": "OK",
+      "symbol_used": "AAPL"
+    },
+    "ABBV": {
+      "first_ts": "2013-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 3464,
+      "source": "yfinance",
+      "span_years": 13.76,
+      "status": "OK",
+      "symbol_used": "ABBV"
+    },
+    "ABT": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11737,
+      "source": "yfinance",
+      "span_years": 46.56,
+      "status": "OK",
+      "symbol_used": "ABT"
+    },
+    "ACN": {
+      "first_ts": "2001-07-19T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6344,
+      "source": "yfinance",
+      "span_years": 25.22,
+      "status": "OK",
+      "symbol_used": "ACN"
+    },
+    "ADBE": {
+      "first_ts": "1986-08-13T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 10117,
+      "source": "yfinance",
+      "span_years": 40.16,
+      "status": "OK",
+      "symbol_used": "ADBE"
+    },
+    "AIG": {
+      "first_ts": "1973-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13557,
+      "source": "yfinance",
+      "span_years": 53.76,
+      "status": "OK",
+      "symbol_used": "AIG"
+    },
+    "AMD": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11737,
+      "source": "yfinance",
+      "span_years": 46.56,
+      "status": "OK",
+      "symbol_used": "AMD"
+    },
+    "AMGN": {
+      "first_ts": "1983-06-17T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 10914,
+      "source": "yfinance",
+      "span_years": 43.31,
+      "status": "OK",
+      "symbol_used": "AMGN"
+    },
+    "AMT": {
+      "first_ts": "1998-02-27T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 7199,
+      "source": "yfinance",
+      "span_years": 28.61,
+      "status": "OK",
+      "symbol_used": "AMT"
+    },
+    "AMZN": {
+      "first_ts": "1997-05-15T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 7397,
+      "source": "yfinance",
+      "span_years": 29.4,
+      "status": "OK",
+      "symbol_used": "AMZN"
+    },
+    "AVGO": {
+      "first_ts": "2009-08-06T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 4321,
+      "source": "yfinance",
+      "span_years": 17.17,
+      "status": "OK",
+      "symbol_used": "AVGO"
+    },
+    "AXP": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "AXP"
+    },
+    "BA": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "BA"
+    },
+    "BAC": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13523,
+      "source": "yfinance",
+      "span_years": 53.63,
+      "status": "OK",
+      "symbol_used": "BAC"
+    },
+    "BK": {
+      "error": "yfinance et stooq (repli) ont tous deux échoué — dernière erreur stooq: réponse stooq vide/invalide (ticker inconnu, ou blocage/rate limiting persistant)",
+      "source": "FAILED",
+      "status": "ERROR",
+      "symbol_used": "bk"
+    },
+    "BKNG": {
+      "first_ts": "1999-03-31T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6925,
+      "source": "yfinance",
+      "span_years": 27.52,
+      "status": "OK",
+      "symbol_used": "BKNG"
+    },
+    "BLK": {
+      "first_ts": "1999-10-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6797,
+      "source": "yfinance",
+      "span_years": 27.02,
+      "status": "OK",
+      "symbol_used": "BLK"
+    },
+    "BMY": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "BMY"
+    },
+    "BRK.B": {
+      "first_ts": "1996-05-09T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 7654,
+      "source": "yfinance",
+      "span_years": 30.42,
+      "status": "OK",
+      "symbol_used": "BRK-B"
+    },
+    "C": {
+      "first_ts": "1977-01-03T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 12546,
+      "source": "yfinance",
+      "span_years": 49.76,
+      "status": "OK",
+      "symbol_used": "C"
+    },
+    "CAT": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "CAT"
+    },
+    "CHTR": {
+      "first_ts": "2010-01-05T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 4217,
+      "source": "yfinance",
+      "span_years": 16.76,
+      "status": "OK",
+      "symbol_used": "CHTR"
+    },
+    "CL": {
+      "first_ts": "1973-05-02T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13474,
+      "source": "yfinance",
+      "span_years": 53.44,
+      "status": "OK",
+      "symbol_used": "CL"
+    },
+    "CMCSA": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11737,
+      "source": "yfinance",
+      "span_years": 46.56,
+      "status": "OK",
+      "symbol_used": "CMCSA"
+    },
+    "COF": {
+      "first_ts": "1994-11-16T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8027,
+      "source": "yfinance",
+      "span_years": 31.89,
+      "status": "OK",
+      "symbol_used": "COF"
+    },
+    "COP": {
+      "first_ts": "1981-12-31T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11284,
+      "source": "yfinance",
+      "span_years": 44.77,
+      "status": "OK",
+      "symbol_used": "COP"
+    },
+    "COST": {
+      "first_ts": "1986-07-09T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 10142,
+      "source": "yfinance",
+      "span_years": 40.25,
+      "status": "OK",
+      "symbol_used": "COST"
+    },
+    "CRM": {
+      "first_ts": "2004-06-23T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5611,
+      "source": "yfinance",
+      "span_years": 22.29,
+      "status": "OK",
+      "symbol_used": "CRM"
+    },
+    "CSCO": {
+      "first_ts": "1990-02-16T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 9228,
+      "source": "yfinance",
+      "span_years": 36.64,
+      "status": "OK",
+      "symbol_used": "CSCO"
+    },
+    "CVS": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13523,
+      "source": "yfinance",
+      "span_years": 53.63,
+      "status": "OK",
+      "symbol_used": "CVS"
+    },
+    "CVX": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "CVX"
+    },
+    "DE": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "DE"
+    },
+    "DHR": {
+      "first_ts": "1978-12-29T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 12043,
+      "source": "yfinance",
+      "span_years": 47.78,
+      "status": "OK",
+      "symbol_used": "DHR"
+    },
+    "DIS": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "DIS"
+    },
+    "DOW": {
+      "first_ts": "2019-03-20T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 1901,
+      "source": "yfinance",
+      "span_years": 7.56,
+      "status": "OK",
+      "symbol_used": "DOW",
+      "warning": "historique disponible (7.6 ans) inférieur au minimum visé (8.0 ans) — probablement une introduction en bourse/cotation récente"
+    },
+    "DUK": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11737,
+      "source": "yfinance",
+      "span_years": 46.56,
+      "status": "OK",
+      "symbol_used": "DUK"
+    },
+    "EMR": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "EMR"
+    },
+    "F": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "F"
+    },
+    "FDX": {
+      "first_ts": "1978-04-12T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 12225,
+      "source": "yfinance",
+      "span_years": 48.49,
+      "status": "OK",
+      "symbol_used": "FDX"
+    },
+    "GD": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "GD"
+    },
+    "GE": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "GE"
+    },
+    "GILD": {
+      "first_ts": "1992-01-22T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8741,
+      "source": "yfinance",
+      "span_years": 34.71,
+      "status": "OK",
+      "symbol_used": "GILD"
+    },
+    "GM": {
+      "first_ts": "2010-11-18T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 3996,
+      "source": "yfinance",
+      "span_years": 15.89,
+      "status": "OK",
+      "symbol_used": "GM"
+    },
+    "GOOG": {
+      "first_ts": "2004-08-19T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5571,
+      "source": "yfinance",
+      "span_years": 22.14,
+      "status": "OK",
+      "symbol_used": "GOOG"
+    },
+    "GOOGL": {
+      "first_ts": "2004-08-19T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5571,
+      "source": "yfinance",
+      "span_years": 22.14,
+      "status": "OK",
+      "symbol_used": "GOOGL"
+    },
+    "GS": {
+      "first_ts": "1999-05-04T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6902,
+      "source": "yfinance",
+      "span_years": 27.43,
+      "status": "OK",
+      "symbol_used": "GS"
+    },
+    "HD": {
+      "first_ts": "1981-09-22T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11354,
+      "source": "yfinance",
+      "span_years": 45.05,
+      "status": "OK",
+      "symbol_used": "HD"
+    },
+    "HON": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "HON"
+    },
+    "IBM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "IBM"
+    },
+    "INTC": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11737,
+      "source": "yfinance",
+      "span_years": 46.56,
+      "status": "OK",
+      "symbol_used": "INTC"
+    },
+    "INTU": {
+      "first_ts": "1993-03-12T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8453,
+      "source": "yfinance",
+      "span_years": 33.57,
+      "status": "OK",
+      "symbol_used": "INTU"
+    },
+    "ISRG": {
+      "first_ts": "2000-06-16T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6618,
+      "source": "yfinance",
+      "span_years": 26.31,
+      "status": "OK",
+      "symbol_used": "ISRG"
+    },
+    "JNJ": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "JNJ"
+    },
+    "JPM": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11737,
+      "source": "yfinance",
+      "span_years": 46.56,
+      "status": "OK",
+      "symbol_used": "JPM"
+    },
+    "KHC": {
+      "first_ts": "2015-07-06T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 2834,
+      "source": "yfinance",
+      "span_years": 11.26,
+      "status": "OK",
+      "symbol_used": "KHC"
+    },
+    "KMI": {
+      "first_ts": "2011-02-11T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 3938,
+      "source": "yfinance",
+      "span_years": 15.66,
+      "status": "OK",
+      "symbol_used": "KMI"
+    },
+    "KO": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "KO"
+    },
+    "LIN": {
+      "first_ts": "1992-06-17T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8639,
+      "source": "yfinance",
+      "span_years": 34.31,
+      "status": "OK",
+      "symbol_used": "LIN"
+    },
+    "LLY": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "LLY"
+    },
+    "LMT": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16301,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "LMT"
+    },
+    "LOW": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11737,
+      "source": "yfinance",
+      "span_years": 46.56,
+      "status": "OK",
+      "symbol_used": "LOW"
+    },
+    "MA": {
+      "first_ts": "2006-05-25T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5126,
+      "source": "yfinance",
+      "span_years": 20.38,
+      "status": "OK",
+      "symbol_used": "MA"
+    },
+    "MCD": {
+      "first_ts": "1966-07-05T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 15167,
+      "source": "yfinance",
+      "span_years": 60.26,
+      "status": "OK",
+      "symbol_used": "MCD"
+    },
+    "MDLZ": {
+      "first_ts": "2001-06-13T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6369,
+      "source": "yfinance",
+      "span_years": 25.32,
+      "status": "OK",
+      "symbol_used": "MDLZ"
+    },
+    "MDT": {
+      "first_ts": "1973-05-02T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13474,
+      "source": "yfinance",
+      "span_years": 53.44,
+      "status": "OK",
+      "symbol_used": "MDT"
+    },
+    "MET": {
+      "first_ts": "2000-04-05T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6668,
+      "source": "yfinance",
+      "span_years": 26.51,
+      "status": "OK",
+      "symbol_used": "MET"
+    },
+    "META": {
+      "first_ts": "2012-05-18T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 3619,
+      "source": "yfinance",
+      "span_years": 14.39,
+      "status": "OK",
+      "symbol_used": "META"
+    },
+    "MMM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "MMM"
+    },
+    "MO": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "MO"
+    },
+    "MRK": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "MRK"
+    },
+    "MS": {
+      "first_ts": "1993-02-23T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8466,
+      "source": "yfinance",
+      "span_years": 33.62,
+      "status": "OK",
+      "symbol_used": "MS"
+    },
+    "MSFT": {
+      "first_ts": "1986-03-13T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 10223,
+      "source": "yfinance",
+      "span_years": 40.57,
+      "status": "OK",
+      "symbol_used": "MSFT"
+    },
+    "NEE": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13523,
+      "source": "yfinance",
+      "span_years": 53.63,
+      "status": "OK",
+      "symbol_used": "NEE"
+    },
+    "NFLX": {
+      "first_ts": "2002-05-23T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6135,
+      "source": "yfinance",
+      "span_years": 24.38,
+      "status": "OK",
+      "symbol_used": "NFLX"
+    },
+    "NKE": {
+      "first_ts": "1980-12-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11557,
+      "source": "yfinance",
+      "span_years": 45.85,
+      "status": "OK",
+      "symbol_used": "NKE"
+    },
+    "NVDA": {
+      "first_ts": "1999-01-22T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6972,
+      "source": "yfinance",
+      "span_years": 27.71,
+      "status": "OK",
+      "symbol_used": "NVDA"
+    },
+    "ORCL": {
+      "first_ts": "1986-03-12T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 10224,
+      "source": "yfinance",
+      "span_years": 40.57,
+      "status": "OK",
+      "symbol_used": "ORCL"
+    },
+    "PEP": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "PEP"
+    },
+    "PFE": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "PFE"
+    },
+    "PG": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "PG"
+    },
+    "PM": {
+      "first_ts": "2008-03-17T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 4672,
+      "source": "yfinance",
+      "span_years": 18.56,
+      "status": "OK",
+      "symbol_used": "PM"
+    },
+    "PYPL": {
+      "first_ts": "2015-07-06T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 2834,
+      "source": "yfinance",
+      "span_years": 11.26,
+      "status": "OK",
+      "symbol_used": "PYPL"
+    },
+    "QCOM": {
+      "first_ts": "1991-12-13T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8767,
+      "source": "yfinance",
+      "span_years": 34.82,
+      "status": "OK",
+      "symbol_used": "QCOM"
+    },
+    "RTX": {
+      "first_ts": "1962-04-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16239,
+      "source": "yfinance",
+      "span_years": 64.52,
+      "status": "OK",
+      "symbol_used": "RTX"
+    },
+    "SBUX": {
+      "first_ts": "1992-06-26T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8632,
+      "source": "yfinance",
+      "span_years": 34.29,
+      "status": "OK",
+      "symbol_used": "SBUX"
+    },
+    "SCHW": {
+      "first_ts": "1987-09-22T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 9837,
+      "source": "yfinance",
+      "span_years": 39.05,
+      "status": "OK",
+      "symbol_used": "SCHW"
+    },
+    "SO": {
+      "first_ts": "1981-12-31T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11284,
+      "source": "yfinance",
+      "span_years": 44.77,
+      "status": "OK",
+      "symbol_used": "SO"
+    },
+    "SPG": {
+      "first_ts": "1993-12-14T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8261,
+      "source": "yfinance",
+      "span_years": 32.82,
+      "status": "OK",
+      "symbol_used": "SPG"
+    },
+    "T": {
+      "first_ts": "1983-11-21T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 10805,
+      "source": "yfinance",
+      "span_years": 42.88,
+      "status": "OK",
+      "symbol_used": "T"
+    },
+    "TGT": {
+      "first_ts": "1973-02-21T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13523,
+      "source": "yfinance",
+      "span_years": 53.63,
+      "status": "OK",
+      "symbol_used": "TGT"
+    },
+    "TJX": {
+      "first_ts": "1987-06-26T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 9897,
+      "source": "yfinance",
+      "span_years": 39.29,
+      "status": "OK",
+      "symbol_used": "TJX"
+    },
+    "TMO": {
+      "first_ts": "1980-03-17T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11737,
+      "source": "yfinance",
+      "span_years": 46.56,
+      "status": "OK",
+      "symbol_used": "TMO"
+    },
+    "TMUS": {
+      "first_ts": "2007-04-19T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 4901,
+      "source": "yfinance",
+      "span_years": 19.47,
+      "status": "OK",
+      "symbol_used": "TMUS"
+    },
+    "TSLA": {
+      "first_ts": "2010-06-29T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 4096,
+      "source": "yfinance",
+      "span_years": 16.28,
+      "status": "OK",
+      "symbol_used": "TSLA"
+    },
+    "TXN": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "TXN"
+    },
+    "UNH": {
+      "first_ts": "1984-10-17T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 10576,
+      "source": "yfinance",
+      "span_years": 41.98,
+      "status": "OK",
+      "symbol_used": "UNH"
+    },
+    "UNP": {
+      "first_ts": "1980-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 11789,
+      "source": "yfinance",
+      "span_years": 46.77,
+      "status": "OK",
+      "symbol_used": "UNP"
+    },
+    "UPS": {
+      "first_ts": "1999-11-10T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6769,
+      "source": "yfinance",
+      "span_years": 26.91,
+      "status": "OK",
+      "symbol_used": "UPS"
+    },
+    "USB": {
+      "first_ts": "1973-05-03T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13473,
+      "source": "yfinance",
+      "span_years": 53.43,
+      "status": "OK",
+      "symbol_used": "USB"
+    },
+    "V": {
+      "first_ts": "2008-03-19T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 4670,
+      "source": "yfinance",
+      "span_years": 18.56,
+      "status": "OK",
+      "symbol_used": "V"
+    },
+    "VZ": {
+      "first_ts": "1983-11-21T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 10805,
+      "source": "yfinance",
+      "span_years": 42.88,
+      "status": "OK",
+      "symbol_used": "VZ"
+    },
+    "WFC": {
+      "first_ts": "1972-06-01T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13703,
+      "source": "yfinance",
+      "span_years": 54.35,
+      "status": "OK",
+      "symbol_used": "WFC"
+    },
+    "WMT": {
+      "first_ts": "1972-08-25T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 13643,
+      "source": "yfinance",
+      "span_years": 54.12,
+      "status": "OK",
+      "symbol_used": "WMT"
+    },
+    "XOM": {
+      "first_ts": "1962-01-02T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 16302,
+      "source": "yfinance",
+      "span_years": 64.76,
+      "status": "OK",
+      "symbol_used": "XOM"
+    }
+  },
+  "etf": {
+    "DBC": {
+      "first_ts": "2006-02-06T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5202,
+      "source": "yfinance",
+      "span_years": 20.67,
+      "status": "OK",
+      "symbol_used": "DBC"
+    },
+    "EEM": {
+      "first_ts": "2003-04-14T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5911,
+      "source": "yfinance",
+      "span_years": 23.49,
+      "status": "OK",
+      "symbol_used": "EEM"
+    },
+    "EFA": {
+      "first_ts": "2001-08-27T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6317,
+      "source": "yfinance",
+      "span_years": 25.12,
+      "status": "OK",
+      "symbol_used": "EFA"
+    },
+    "GLD": {
+      "first_ts": "2004-11-18T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5507,
+      "source": "yfinance",
+      "span_years": 21.89,
+      "status": "OK",
+      "symbol_used": "GLD"
+    },
+    "HYG": {
+      "first_ts": "2007-04-11T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 4907,
+      "source": "yfinance",
+      "span_years": 19.5,
+      "status": "OK",
+      "symbol_used": "HYG"
+    },
+    "IEF": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6089,
+      "source": "yfinance",
+      "span_years": 24.19,
+      "status": "OK",
+      "symbol_used": "IEF"
+    },
+    "IWM": {
+      "first_ts": "2000-05-26T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6632,
+      "source": "yfinance",
+      "span_years": 26.37,
+      "status": "OK",
+      "symbol_used": "IWM"
+    },
+    "LQD": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6089,
+      "source": "yfinance",
+      "span_years": 24.19,
+      "status": "OK",
+      "symbol_used": "LQD"
+    },
+    "QQQ": {
+      "first_ts": "1999-03-10T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6940,
+      "source": "yfinance",
+      "span_years": 27.58,
+      "status": "OK",
+      "symbol_used": "QQQ"
+    },
+    "SLV": {
+      "first_ts": "2006-04-28T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5145,
+      "source": "yfinance",
+      "span_years": 20.45,
+      "status": "OK",
+      "symbol_used": "SLV"
+    },
+    "SPY": {
+      "first_ts": "1993-01-29T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 8482,
+      "source": "yfinance",
+      "span_years": 33.69,
+      "status": "OK",
+      "symbol_used": "SPY"
+    },
+    "TLT": {
+      "first_ts": "2002-07-30T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6089,
+      "source": "yfinance",
+      "span_years": 24.19,
+      "status": "OK",
+      "symbol_used": "TLT"
+    },
+    "VNQ": {
+      "first_ts": "2004-09-29T04:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 5543,
+      "source": "yfinance",
+      "span_years": 22.03,
+      "status": "OK",
+      "symbol_used": "VNQ"
+    },
+    "XLE": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6992,
+      "source": "yfinance",
+      "span_years": 27.79,
+      "status": "OK",
+      "symbol_used": "XLE"
+    },
+    "XLF": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6992,
+      "source": "yfinance",
+      "span_years": 27.79,
+      "status": "OK",
+      "symbol_used": "XLF"
+    },
+    "XLK": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6992,
+      "source": "yfinance",
+      "span_years": 27.79,
+      "status": "OK",
+      "symbol_used": "XLK"
+    },
+    "XLU": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6992,
+      "source": "yfinance",
+      "span_years": 27.79,
+      "status": "OK",
+      "symbol_used": "XLU"
+    },
+    "XLV": {
+      "first_ts": "1998-12-22T05:00:00+00:00",
+      "last_ts": "2026-10-09T04:00:00+00:00",
+      "rows": 6992,
+      "source": "yfinance",
+      "span_years": 27.79,
+      "status": "OK",
+      "symbol_used": "XLV"
+    }
+  },
+  "funding": {
+    "archive_from": "2022-01",
+    "archive_to": "2026-09",
+    "excluded": {},
+    "flag_threshold_abs_rate": 0.03,
+    "included": {
+      "AAVE": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "AAVEUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ADA": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ADAUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ALGO": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ALGOUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "APT": {
+        "first_ts": "2022-10-18T16:00:00+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 48,
+        "pair": "APTUSDT",
+        "reason": "inclus",
+        "rows": 4330
+      },
+      "ARB": {
+        "first_ts": "2023-03-23T08:00:00.001000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-01",
+          "2023-02"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 43,
+        "pair": "ARBUSDT",
+        "reason": "inclus",
+        "rows": 3863
+      },
+      "ATOM": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ATOMUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "AVAX": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "AVAXUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "BCH": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BCHUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "BNB": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BNBUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "BTC": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BTCUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "DOGE": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "DOGEUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "DOT": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "DOTUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ETC": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ETCUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ETH": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ETHUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "FIL": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "FILUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "HBAR": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "HBARUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "ICP": {
+        "first_ts": "2022-09-01T00:00:00.012000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 49,
+        "pair": "ICPUSDT",
+        "reason": "inclus",
+        "rows": 4473
+      },
+      "INJ": {
+        "first_ts": "2022-08-16T16:00:00+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 50,
+        "pair": "INJUSDT",
+        "reason": "inclus",
+        "rows": 4519
+      },
+      "LINK": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "LINKUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "LTC": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "LTCUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "MANA": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "MANAUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "NEAR": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "NEARUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "OP": {
+        "first_ts": "2022-06-01T08:00:00.011000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 52,
+        "pair": "OPUSDT",
+        "reason": "inclus",
+        "rows": 4748
+      },
+      "SAND": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "SANDUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "SOL": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "SOLUSDT",
+        "reason": "inclus",
+        "rows": 5277
+      },
+      "TRX": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "TRXUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "UNI": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "UNIUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "VET": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "VETUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "XLM": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "XLMUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      },
+      "XRP": {
+        "first_ts": "2022-01-01T00:00:00.006000+00:00",
+        "flagged_extreme_rates": [],
+        "last_ts": "2026-09-30T16:00:00.002000+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "XRPUSDT",
+        "reason": "inclus",
+        "rows": 5202
+      }
+    }
+  },
+  "generated_at": "2026-10-10T11:02:30.234980+00:00",
+  "generation_duration_seconds": 490.7,
+  "perp": {
+    "archive_from": "2022-01",
+    "archive_to": "2026-09",
+    "excluded": {},
+    "included": {
+      "AAVE": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "AAVEUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "ADA": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ADAUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "ALGO": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ALGOUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "APT": {
+        "first_ts": "2022-10-19T02:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 48,
+        "pair": "APTUSDT",
+        "reason": "inclus",
+        "rows": 34630
+      },
+      "ARB": {
+        "first_ts": "2023-03-23T15:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07",
+          "2022-08",
+          "2022-09",
+          "2022-10",
+          "2022-11",
+          "2022-12",
+          "2023-01",
+          "2023-02"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 43,
+        "pair": "ARBUSDT",
+        "reason": "inclus",
+        "rows": 30897
+      },
+      "ATOM": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ATOMUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "AVAX": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "AVAXUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "BCH": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BCHUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "BNB": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BNBUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "BTC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "BTCUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "DOGE": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "DOGEUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "DOT": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "DOTUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "ETC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ETCUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "ETH": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ETHUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "FIL": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "FILUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "HBAR": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "HBARUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "ICP": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "ICPUSDT",
+        "reason": "inclus",
+        "rows": 40990
+      },
+      "INJ": {
+        "first_ts": "2022-08-17T02:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05",
+          "2022-06",
+          "2022-07"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 50,
+        "pair": "INJUSDT",
+        "reason": "inclus",
+        "rows": 36142
+      },
+      "LINK": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "LINKUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "LTC": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "LTCUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "MANA": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "MANAUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "NEAR": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "NEARUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "OP": {
+        "first_ts": "2022-06-01T14:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [
+          "2022-01",
+          "2022-02",
+          "2022-03",
+          "2022-04",
+          "2022-05"
+        ],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 52,
+        "pair": "OPUSDT",
+        "reason": "inclus",
+        "rows": 37978
+      },
+      "SAND": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "SANDUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "SOL": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "SOLUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "TRX": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "TRXUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "UNI": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "UNIUSDT",
+        "reason": "inclus",
+        "rows": 41616
+      },
+      "VET": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "VETUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "XLM": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "XLMUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      },
+      "XRP": {
+        "first_ts": "2022-01-01T00:00:00+00:00",
+        "last_ts": "2026-09-30T23:00:00+00:00",
+        "months_error": [],
+        "months_missing_leading_normal": [],
+        "months_missing_mid_anomaly": [],
+        "months_ok": 57,
+        "pair": "XRPUSDT",
+        "reason": "inclus",
+        "rows": 41496
+      }
+    }
+  },
+  "sources": {
+    "crypto_bulk_archive": "https://data.binance.vision/data/spot/monthly/klines/{PAIR}/1h/{PAIR}-1h-{YYYY-MM}.zip",
+    "crypto_current_month_completion": "https://api.binance.com/api/v3/klines",
+    "equities_etf_daily_fallback": "stooq.com (`https://stooq.com/q/d/l/?s={ticker}.us&i=d`, User-Agent navigateur, séquentiel, pause >= 1.0s/requête) — utilisé uniquement si yfinance échoue pour un ticker",
+    "equities_etf_daily_primary": "yfinance (yf.download / yf.Ticker.history, period=max, interval=1d, auto_adjust=True)",
+    "funding_bulk_archive": "https://data.binance.vision/data/futures/um/monthly/fundingRate/{PAIR}/{PAIR}-fundingRate-{YYYY-MM}.zip",
+    "funding_current_month_completion": "https://fapi.binance.com/fapi/v1/fundingRate",
+    "perp_bulk_archive": "https://data.binance.vision/data/futures/um/monthly/klines/{PAIR}/1h/{PAIR}-1h-{YYYY-MM}.zip",
+    "perp_current_month_completion": "https://fapi.binance.com/fapi/v1/klines"
+  }
+}
