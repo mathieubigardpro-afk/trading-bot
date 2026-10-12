@@ -1,0 +1,1237 @@
+{
+ "vol_breakout_6majors/W55_P0.2": {
+  "label": "vol_breakout_6majors/W55_P0.2",
+  "n_cols": 6,
+  "median_nonzero_weight_post_overlay": 0.16666666666666666,
+  "share_nonzero_weights_below_band": 0.008829739586665813,
+  "share_nonzero_weights_below_2band": 0.2202316207050995,
+  "frac_bars_invested": 0.19641956025471585,
+  "S1": {
+   "sharpe": 0.03298423155761785,
+   "max_drawdown": 0.1814542986180777,
+   "cagr": -0.0015656775536443401,
+   "annual_turnover_x_equity": 38.454720620284775,
+   "cost_drag_per_year": 0.09613680155071194
+  },
+  "S3": {
+   "sharpe": -0.07051120621151778,
+   "max_drawdown": 0.169652678227729,
+   "cagr": -0.010798204170814674,
+   "annual_turnover_x_equity": 43.57668374727659,
+   "cost_drag_per_year": 0.10894170936819147
+  },
+  "n_orders_S1": 1084,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": -0.039424962308698026,
+     "max_drawdown": 0.17641710036803854,
+     "cagr": -0.008457978372433783,
+     "annual_turnover_x_equity": 46.044746428341305,
+     "cost_drag_per_year": 0.11511186607085327
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.10349543776913564,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.098685431570332,
+    "delta_band_value_wallet_minus_pocket": -0.004810006198803646,
+    "frame_effect_noband_S2b_minus_S3": 0.031086243902819756,
+    "D2_unmatched_S1_pm24h": 2,
+    "D2_unmatched_S2_pm24h": 2,
+    "D1_episodes": 51,
+    "min_pocket_equity_S1": 0.8422711252067574,
+    "min_pocket_equity_S2": 0.8343462612432049,
+    "wallet_final_equity_S2": 1.0008504217605692,
+    "wallet_min_equity_S2": 0.9585865653108012,
+    "S2": {
+     "sharpe": 0.059260469261633975,
+     "max_drawdown": 0.18935122038103241,
+     "cagr": 0.0008830472860885674,
+     "annual_turnover_x_equity": 39.83489111915215,
+     "cost_drag_per_year": 0.09958722779788036
+    },
+    "n_orders_S2": 1083,
+    "d_sharpe_S2_minus_S1": 0.026276237704016124,
+    "d_maxdd": 0.007896921762954728,
+    "d_cagr": 0.0024487248397329076,
+    "D1_disagree_cells": 108,
+    "D1_per_S1_order": 0.0996309963099631,
+    "D1_share_of_active": 0.006679861454725384,
+    "D2_xor_cells": 35
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": -0.041738749139977424,
+     "max_drawdown": 0.1759581235858257,
+     "cagr": -0.008645968299326734,
+     "annual_turnover_x_equity": 45.89915440637342,
+     "cost_drag_per_year": 0.11474788601593355
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.10349543776913564,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.09976689280261745,
+    "delta_band_value_wallet_minus_pocket": -0.0037285449665181852,
+    "frame_effect_noband_S2b_minus_S3": 0.028772457071540358,
+    "D2_unmatched_S1_pm24h": 2,
+    "D2_unmatched_S2_pm24h": 2,
+    "D1_episodes": 46,
+    "min_pocket_equity_S1": 0.8422711252067574,
+    "min_pocket_equity_S2": 0.8354348193737432,
+    "wallet_final_equity_S2": 1.000888677295357,
+    "wallet_min_equity_S2": 0.950630445812123,
+    "S2": {
+     "sharpe": 0.05802814366264003,
+     "max_drawdown": 0.188280554007325,
+     "cagr": 0.0007691001155512023,
+     "annual_turnover_x_equity": 39.73336861892265,
+     "cost_drag_per_year": 0.09933342154730661
+    },
+    "n_orders_S2": 1083,
+    "d_sharpe_S2_minus_S1": 0.02504391210502218,
+    "d_maxdd": 0.006826255389247304,
+    "d_cagr": 0.0023347776691955424,
+    "D1_disagree_cells": 98,
+    "D1_per_S1_order": 0.09040590405904059,
+    "D1_share_of_active": 0.0060613557644730335,
+    "D2_xor_cells": 33
+   }
+  }
+ },
+ "vol_breakout_6majors/W55_P0.35": {
+  "label": "vol_breakout_6majors/W55_P0.35",
+  "n_cols": 6,
+  "median_nonzero_weight_post_overlay": 0.15634041233265963,
+  "share_nonzero_weights_below_band": 0.017102246675836773,
+  "share_nonzero_weights_below_2band": 0.31279229711141676,
+  "frac_bars_invested": 0.24837198125675838,
+  "S1": {
+   "sharpe": -0.27878847569147774,
+   "max_drawdown": 0.2572857022655704,
+   "cagr": -0.03751185220271969,
+   "annual_turnover_x_equity": 51.699070909527826,
+   "cost_drag_per_year": 0.12924767727381956
+  },
+  "S3": {
+   "sharpe": -0.4493376402578129,
+   "max_drawdown": 0.24325822628693503,
+   "cagr": -0.05287310950315449,
+   "annual_turnover_x_equity": 59.09208363881027,
+   "cost_drag_per_year": 0.14773020909702572
+  },
+  "n_orders_S1": 1549,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": -0.40727493682550275,
+     "max_drawdown": 0.25944652984427063,
+     "cagr": -0.05369852321179591,
+     "annual_turnover_x_equity": 65.7409628829398,
+     "cost_drag_per_year": 0.16435240720734948
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.17054916456633518,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.1809072057495962,
+    "delta_band_value_wallet_minus_pocket": 0.01035804118326103,
+    "frame_effect_noband_S2b_minus_S3": 0.04206270343231017,
+    "D2_unmatched_S1_pm24h": 1,
+    "D2_unmatched_S2_pm24h": 1,
+    "D1_episodes": 117,
+    "min_pocket_equity_S1": 0.7791616022192871,
+    "min_pocket_equity_S2": 0.7578623315217707,
+    "wallet_final_equity_S2": 0.9679075155328559,
+    "wallet_min_equity_S2": 0.9394655828804427,
+    "S2": {
+     "sharpe": -0.22636773107590655,
+     "max_drawdown": 0.27509074947277307,
+     "cagr": -0.03453550682514206,
+     "annual_turnover_x_equity": 55.785381456292946,
+     "cost_drag_per_year": 0.13946345364073237
+    },
+    "n_orders_S2": 1552,
+    "d_sharpe_S2_minus_S1": 0.052420744615571196,
+    "d_maxdd": 0.017805047207202662,
+    "d_cagr": 0.002976345377577627,
+    "D1_disagree_cells": 339,
+    "D1_per_S1_order": 0.21885087153001936,
+    "D1_share_of_active": 0.01493918561607615,
+    "D2_xor_cells": 43
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": -0.4104700850582838,
+     "max_drawdown": 0.25832454200701427,
+     "cagr": -0.05370631014291549,
+     "annual_turnover_x_equity": 65.31419713241608,
+     "cost_drag_per_year": 0.16328549283104019
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.17054916456633518,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.17364256513566986,
+    "delta_band_value_wallet_minus_pocket": 0.0030934005693346867,
+    "frame_effect_noband_S2b_minus_S3": 0.038867555199529114,
+    "D2_unmatched_S1_pm24h": 1,
+    "D2_unmatched_S2_pm24h": 1,
+    "D1_episodes": 113,
+    "min_pocket_equity_S1": 0.7791616022192871,
+    "min_pocket_equity_S2": 0.7596771165163017,
+    "wallet_final_equity_S2": 0.9602103205909098,
+    "wallet_min_equity_S2": 0.9279031349548905,
+    "S2": {
+     "sharpe": -0.23682751992261394,
+     "max_drawdown": 0.27335226719551564,
+     "cagr": -0.03574544235677424,
+     "annual_turnover_x_equity": 55.64164559987785,
+     "cost_drag_per_year": 0.1391041139996946
+    },
+    "n_orders_S2": 1551,
+    "d_sharpe_S2_minus_S1": 0.0419609557688638,
+    "d_maxdd": 0.016066564929945237,
+    "d_cagr": 0.0017664098459454491,
+    "D1_disagree_cells": 301,
+    "D1_per_S1_order": 0.19431891542930924,
+    "D1_share_of_active": 0.013264586638462894,
+    "D2_xor_cells": 40
+   }
+  }
+ },
+ "vol_breakout_6majors/W110_P0.2": {
+  "label": "vol_breakout_6majors/W110_P0.2",
+  "n_cols": 6,
+  "median_nonzero_weight_post_overlay": 0.1566274566976245,
+  "share_nonzero_weights_below_band": 0.022156982219021768,
+  "share_nonzero_weights_below_2band": 0.2690411565944718,
+  "frac_bars_invested": 0.21453802715367054,
+  "S1": {
+   "sharpe": 0.917005419435994,
+   "max_drawdown": 0.14550158388864806,
+   "cagr": 0.09727613445247107,
+   "annual_turnover_x_equity": 19.996819258059336,
+   "cost_drag_per_year": 0.04999204814514835
+  },
+  "S3": {
+   "sharpe": 0.8083534251986707,
+   "max_drawdown": 0.14132625379226954,
+   "cagr": 0.07805384743979138,
+   "annual_turnover_x_equity": 24.236762030918953,
+   "cost_drag_per_year": 0.060591905077297385
+  },
+  "n_orders_S1": 598,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": 0.8168235351226072,
+     "max_drawdown": 0.1454938013955093,
+     "cagr": 0.07293527581368053,
+     "annual_turnover_x_equity": 22.46407615051172,
+     "cost_drag_per_year": 0.05616019037627929
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.1086519942373233,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.12668473915946366,
+    "delta_band_value_wallet_minus_pocket": 0.018032744922140354,
+    "frame_effect_noband_S2b_minus_S3": 0.008470109923936486,
+    "D2_unmatched_S1_pm24h": 6,
+    "D2_unmatched_S2_pm24h": 7,
+    "D1_episodes": 144,
+    "min_pocket_equity_S1": 0.8765055059378993,
+    "min_pocket_equity_S2": 0.8731459253199585,
+    "wallet_final_equity_S2": 1.1013750744275355,
+    "wallet_min_equity_S2": 0.9682864813299896,
+    "S2": {
+     "sharpe": 0.9435082742820708,
+     "max_drawdown": 0.15059837060408124,
+     "cagr": 0.09098284210670649,
+     "annual_turnover_x_equity": 17.94958097007505,
+     "cost_drag_per_year": 0.044873952425187644
+    },
+    "n_orders_S2": 604,
+    "d_sharpe_S2_minus_S1": 0.02650285484607684,
+    "d_maxdd": 0.005096786715433177,
+    "d_cagr": -0.0062932923457645895,
+    "D1_disagree_cells": 2597,
+    "D1_per_S1_order": 4.342809364548495,
+    "D1_share_of_active": 0.14185055713349357,
+    "D2_xor_cells": 54
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": 0.8162570467064716,
+     "max_drawdown": 0.14521571738782496,
+     "cagr": 0.07325198986871806,
+     "annual_turnover_x_equity": 22.589287297759117,
+     "cost_drag_per_year": 0.056473218244397785
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.1086519942373233,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.11419904706803741,
+    "delta_band_value_wallet_minus_pocket": 0.005547052830714105,
+    "frame_effect_noband_S2b_minus_S3": 0.007903621507800884,
+    "D2_unmatched_S1_pm24h": 5,
+    "D2_unmatched_S2_pm24h": 7,
+    "D1_episodes": 130,
+    "min_pocket_equity_S1": 0.8765055059378993,
+    "min_pocket_equity_S2": 0.8734331665747255,
+    "wallet_final_equity_S2": 1.1205832662070208,
+    "wallet_min_equity_S2": 0.9620299499724176,
+    "S2": {
+     "sharpe": 0.930456093774509,
+     "max_drawdown": 0.15028188157263173,
+     "cagr": 0.09027603695572672,
+     "annual_turnover_x_equity": 18.13148874817096,
+     "cost_drag_per_year": 0.04532872187042739
+    },
+    "n_orders_S2": 605,
+    "d_sharpe_S2_minus_S1": 0.01345067433851499,
+    "d_maxdd": 0.004780297683983664,
+    "d_cagr": -0.007000097496744351,
+    "D1_disagree_cells": 2128,
+    "D1_per_S1_order": 3.5585284280936453,
+    "D1_share_of_active": 0.1162333406161241,
+    "D2_xor_cells": 51
+   }
+  }
+ },
+ "vol_breakout_6majors/W110_P0.35": {
+  "label": "vol_breakout_6majors/W110_P0.35",
+  "n_cols": 6,
+  "median_nonzero_weight_post_overlay": 0.1442413887105891,
+  "share_nonzero_weights_below_band": 0.02812883800166396,
+  "share_nonzero_weights_below_2band": 0.34051741214690384,
+  "frac_bars_invested": 0.2815571308422444,
+  "S1": {
+   "sharpe": 0.7923001704170638,
+   "max_drawdown": 0.2173975965651879,
+   "cagr": 0.0948065096994084,
+   "annual_turnover_x_equity": 27.713969746829395,
+   "cost_drag_per_year": 0.0692849243670735
+  },
+  "S3": {
+   "sharpe": 0.6498570367025399,
+   "max_drawdown": 0.20487688440072085,
+   "cagr": 0.07099987719558842,
+   "annual_turnover_x_equity": 34.180444213733644,
+   "cost_drag_per_year": 0.08545111053433409
+  },
+  "n_orders_S1": 881,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": 0.6590396300663826,
+     "max_drawdown": 0.21895610655691589,
+     "cagr": 0.06804764986617573,
+     "annual_turnover_x_equity": 32.06653143146073,
+     "cost_drag_per_year": 0.08016632857865183
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.14244313371452388,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.1593750509874391,
+    "delta_band_value_wallet_minus_pocket": 0.01693191727291521,
+    "frame_effect_noband_S2b_minus_S3": 0.00918259336384264,
+    "D2_unmatched_S1_pm24h": 4,
+    "D2_unmatched_S2_pm24h": 6,
+    "D1_episodes": 207,
+    "min_pocket_equity_S1": 0.7903830681597868,
+    "min_pocket_equity_S2": 0.77774769663006,
+    "wallet_final_equity_S2": 1.1023797774733433,
+    "wallet_min_equity_S2": 0.944436924157515,
+    "S2": {
+     "sharpe": 0.8184146810538216,
+     "max_drawdown": 0.23035792830219423,
+     "cagr": 0.09151203783822637,
+     "annual_turnover_x_equity": 25.092739515064565,
+     "cost_drag_per_year": 0.06273184878766143
+    },
+    "n_orders_S2": 887,
+    "d_sharpe_S2_minus_S1": 0.02611451063675785,
+    "d_maxdd": 0.012960331737006336,
+    "d_cagr": -0.0032944718611820356,
+    "D1_disagree_cells": 2835,
+    "D1_per_S1_order": 3.217934165720772,
+    "D1_share_of_active": 0.11073353644246543,
+    "D2_xor_cells": 62
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": 0.6585234052519309,
+     "max_drawdown": 0.21798227378038634,
+     "cagr": 0.06822893109069095,
+     "annual_turnover_x_equity": 32.21849054030613,
+     "cost_drag_per_year": 0.08054622635076533
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.14244313371452388,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.16769762383144415,
+    "delta_band_value_wallet_minus_pocket": 0.02525449011692027,
+    "frame_effect_noband_S2b_minus_S3": 0.008666368549390957,
+    "D2_unmatched_S1_pm24h": 4,
+    "D2_unmatched_S2_pm24h": 7,
+    "D1_episodes": 213,
+    "min_pocket_equity_S1": 0.7903830681597868,
+    "min_pocket_equity_S2": 0.7788351599191115,
+    "wallet_final_equity_S2": 1.1245984791051062,
+    "wallet_min_equity_S2": 0.9336505479757334,
+    "S2": {
+     "sharpe": 0.826221029083375,
+     "max_drawdown": 0.22925162542016295,
+     "cagr": 0.09265787087709643,
+     "annual_turnover_x_equity": 25.252706838191894,
+     "cost_drag_per_year": 0.06313176709547974
+    },
+    "n_orders_S2": 888,
+    "d_sharpe_S2_minus_S1": 0.03392085866631123,
+    "d_maxdd": 0.011854028854975052,
+    "d_cagr": -0.0021486388223119768,
+    "D1_disagree_cells": 2456,
+    "D1_per_S1_order": 2.7877412031782067,
+    "D1_share_of_active": 0.09593000546832278,
+    "D2_xor_cells": 55
+   }
+  }
+ },
+ "pairs_ethbtc/L720_th1.5": {
+  "label": "pairs_ethbtc/L720_th1.5",
+  "n_cols": 2,
+  "median_nonzero_weight_post_overlay": 0.32633972913243925,
+  "share_nonzero_weights_below_band": 0.0,
+  "share_nonzero_weights_below_2band": 0.001253374469726186,
+  "frac_bars_invested": 1.0,
+  "S1": {
+   "sharpe": -0.06800872529558027,
+   "max_drawdown": 0.5039691110227663,
+   "cagr": -0.05608184760936319,
+   "annual_turnover_x_equity": 37.17707148806184,
+   "cost_drag_per_year": 0.0929426787201546
+  },
+  "S3": {
+   "sharpe": -0.2726381359706172,
+   "max_drawdown": 0.5655626486138995,
+   "cagr": -0.10948905581286927,
+   "annual_turnover_x_equity": 59.423124797357595,
+   "cost_drag_per_year": 0.14855781199339396
+  },
+  "n_orders_S1": 1292,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": -0.08956184209941374,
+     "max_drawdown": 0.666574394550054,
+     "cagr": -0.10528976811676971,
+     "annual_turnover_x_equity": 80.33194892372101,
+     "cost_drag_per_year": 0.20082987230930258
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.20462941067503693,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.13921316027046984,
+    "delta_band_value_wallet_minus_pocket": -0.06541625040456708,
+    "frame_effect_noband_S2b_minus_S3": 0.18307629387120344,
+    "D2_unmatched_S1_pm24h": 31,
+    "D2_unmatched_S2_pm24h": 40,
+    "D1_episodes": 1293,
+    "min_pocket_equity_S1": 0.5557638379114309,
+    "min_pocket_equity_S2": 0.4628637551330086,
+    "wallet_final_equity_S2": 0.956352786502086,
+    "wallet_min_equity_S2": 0.8657159387832521,
+    "S2": {
+     "sharpe": 0.04965131817105609,
+     "max_drawdown": 0.5450194110749602,
+     "cagr": -0.03958574458383035,
+     "annual_turnover_x_equity": 43.33370953305364,
+     "cost_drag_per_year": 0.10833427383263411
+    },
+    "n_orders_S2": 1320,
+    "d_sharpe_S2_minus_S1": 0.11766004346663636,
+    "d_maxdd": 0.0410503000521939,
+    "d_cagr": 0.016496103025532838,
+    "D1_disagree_cells": 33314,
+    "D1_per_S1_order": 25.78482972136223,
+    "D1_share_of_active": 0.5344006159867819,
+    "D2_xor_cells": 1074
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": -0.10200156586296437,
+     "max_drawdown": 0.6609717413009827,
+     "cagr": -0.1060158899122069,
+     "annual_turnover_x_equity": 78.92159338248494,
+     "cost_drag_per_year": 0.19730398345621242
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.20462941067503693,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.14356760215900125,
+    "delta_band_value_wallet_minus_pocket": -0.06106180851603568,
+    "frame_effect_noband_S2b_minus_S3": 0.17063657010765282,
+    "D2_unmatched_S1_pm24h": 35,
+    "D2_unmatched_S2_pm24h": 42,
+    "D1_episodes": 1276,
+    "min_pocket_equity_S1": 0.5557638379114309,
+    "min_pocket_equity_S2": 0.4733916577489037,
+    "wallet_final_equity_S2": 0.9462972460484984,
+    "wallet_min_equity_S2": 0.8420174973246711,
+    "S2": {
+     "sharpe": 0.041566036296036876,
+     "max_drawdown": 0.5346712979718418,
+     "cagr": -0.04067073839003821,
+     "annual_turnover_x_equity": 42.92175376529707,
+     "cost_drag_per_year": 0.10730438441324266
+    },
+    "n_orders_S2": 1319,
+    "d_sharpe_S2_minus_S1": 0.10957476159161715,
+    "d_maxdd": 0.03070218694907545,
+    "d_cagr": 0.015411109219324981,
+    "D1_disagree_cells": 32314,
+    "D1_per_S1_order": 25.010835913312693,
+    "D1_share_of_active": 0.5183592935401594,
+    "D2_xor_cells": 1053
+   }
+  }
+ },
+ "pairs_ethbtc/L720_th2.0": {
+  "label": "pairs_ethbtc/L720_th2.0",
+  "n_cols": 2,
+  "median_nonzero_weight_post_overlay": 0.3023914321021704,
+  "share_nonzero_weights_below_band": 0.0,
+  "share_nonzero_weights_below_2band": 0.003557266153487287,
+  "frac_bars_invested": 1.0,
+  "S1": {
+   "sharpe": 0.046582511098310415,
+   "max_drawdown": 0.4702792383591586,
+   "cagr": -0.02518141569522747,
+   "annual_turnover_x_equity": 30.26942536443255,
+   "cost_drag_per_year": 0.07567356341108136
+  },
+  "S3": {
+   "sharpe": -0.17355871703515044,
+   "max_drawdown": 0.5381619830153915,
+   "cagr": -0.08381580254712317,
+   "annual_turnover_x_equity": 53.180099877025285,
+   "cost_drag_per_year": 0.13295024969256322
+  },
+  "n_orders_S1": 1154,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": -0.017422720415033146,
+     "max_drawdown": 0.6022003119539946,
+     "cagr": -0.0689776743546443,
+     "annual_turnover_x_equity": 67.65260606863613,
+     "cost_drag_per_year": 0.16913151517159034
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.22014122813346085,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.15356431576805998,
+    "delta_band_value_wallet_minus_pocket": -0.06657691236540086,
+    "frame_effect_noband_S2b_minus_S3": 0.1561359966201173,
+    "D2_unmatched_S1_pm24h": 52,
+    "D2_unmatched_S2_pm24h": 48,
+    "D1_episodes": 1271,
+    "min_pocket_equity_S1": 0.5978505743256093,
+    "min_pocket_equity_S2": 0.5195677462255985,
+    "wallet_final_equity_S2": 0.9919425263624765,
+    "wallet_min_equity_S2": 0.8798919365563996,
+    "S2": {
+     "sharpe": 0.13614159535302683,
+     "max_drawdown": 0.4892811620208879,
+     "cagr": -0.006872604420675943,
+     "annual_turnover_x_equity": 33.06226810986412,
+     "cost_drag_per_year": 0.0826556702746603
+    },
+    "n_orders_S2": 1169,
+    "d_sharpe_S2_minus_S1": 0.08955908425471643,
+    "d_maxdd": 0.019001923661729314,
+    "d_cagr": 0.01830881127455153,
+    "D1_disagree_cells": 29179,
+    "D1_per_S1_order": 25.285095320623917,
+    "D1_share_of_active": 0.4248791426408061,
+    "D2_xor_cells": 1031
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": -0.027401510926793847,
+     "max_drawdown": 0.5992731415759533,
+     "cagr": -0.07029026890317891,
+     "annual_turnover_x_equity": 66.7333872204526,
+     "cost_drag_per_year": 0.1668334680511315
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.22014122813346085,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.1573231586922453,
+    "delta_band_value_wallet_minus_pocket": -0.06281806944121554,
+    "frame_effect_noband_S2b_minus_S3": 0.14615720610835659,
+    "D2_unmatched_S1_pm24h": 58,
+    "D2_unmatched_S2_pm24h": 49,
+    "D1_episodes": 1276,
+    "min_pocket_equity_S1": 0.5978505743256093,
+    "min_pocket_equity_S2": 0.5300311425923256,
+    "wallet_final_equity_S2": 0.9885556422656296,
+    "wallet_min_equity_S2": 0.8590093427776977,
+    "S2": {
+     "sharpe": 0.12992164776545145,
+     "max_drawdown": 0.4789965146622618,
+     "cagr": -0.008154110508802437,
+     "annual_turnover_x_equity": 32.767897226516475,
+     "cost_drag_per_year": 0.0819197430662912
+    },
+    "n_orders_S2": 1160,
+    "d_sharpe_S2_minus_S1": 0.08333913666714104,
+    "d_maxdd": 0.008717276303103205,
+    "d_cagr": 0.017027305186425035,
+    "D1_disagree_cells": 27926,
+    "D1_per_S1_order": 24.199306759098786,
+    "D1_share_of_active": 0.4066340497408119,
+    "D2_xor_cells": 998
+   }
+  }
+ },
+ "pairs_ethbtc/L2160_th1.5": {
+  "label": "pairs_ethbtc/L2160_th1.5",
+  "n_cols": 2,
+  "median_nonzero_weight_post_overlay": 0.3180392671365452,
+  "share_nonzero_weights_below_band": 0.0,
+  "share_nonzero_weights_below_2band": 0.004047486256075213,
+  "frac_bars_invested": 1.0,
+  "S1": {
+   "sharpe": 0.19619108300553692,
+   "max_drawdown": 0.44971332804631853,
+   "cagr": 0.01603453359353968,
+   "annual_turnover_x_equity": 20.370275729154518,
+   "cost_drag_per_year": 0.05092568932288629
+  },
+  "S3": {
+   "sharpe": -0.003341368057664172,
+   "max_drawdown": 0.5075254084261813,
+   "cagr": -0.03938341501435494,
+   "annual_turnover_x_equity": 42.59454205417596,
+   "cost_drag_per_year": 0.10648635513543994
+  },
+  "n_orders_S1": 1013,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": 0.11036092844915618,
+     "max_drawdown": 0.5068217411278032,
+     "cagr": -0.016167284804043724,
+     "annual_turnover_x_equity": 48.0650184907578,
+     "cost_drag_per_year": 0.12016254622689453
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.19953245106320108,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.19234549495565806,
+    "delta_band_value_wallet_minus_pocket": -0.007186956107543024,
+    "frame_effect_noband_S2b_minus_S3": 0.11370229650682036,
+    "D2_unmatched_S1_pm24h": 68,
+    "D2_unmatched_S2_pm24h": 65,
+    "D1_episodes": 1278,
+    "min_pocket_equity_S1": 0.6085556850488784,
+    "min_pocket_equity_S2": 0.5484909467047667,
+    "wallet_final_equity_S2": 1.0605932509758969,
+    "wallet_min_equity_S2": 0.8871227366761917,
+    "S2": {
+     "sharpe": 0.30270642340481424,
+     "max_drawdown": 0.4608505609170546,
+     "cagr": 0.04674433763098995,
+     "annual_turnover_x_equity": 19.612214296036193,
+     "cost_drag_per_year": 0.04903053574009049
+    },
+    "n_orders_S2": 1037,
+    "d_sharpe_S2_minus_S1": 0.10651534039927732,
+    "d_maxdd": 0.011137232870736091,
+    "d_cagr": 0.030709804037450272,
+    "D1_disagree_cells": 30530,
+    "D1_per_S1_order": 30.138203356367224,
+    "D1_share_of_active": 0.4862084341954389,
+    "D2_xor_cells": 1146
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": 0.10339358287069535,
+     "max_drawdown": 0.5015604962501385,
+     "cagr": -0.01775984523718188,
+     "annual_turnover_x_equity": 47.755019495027454,
+     "cost_drag_per_year": 0.11938754873756863
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.19953245106320108,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.19562911095889646,
+    "delta_band_value_wallet_minus_pocket": -0.0039033401043046256,
+    "frame_effect_noband_S2b_minus_S3": 0.10673495092835952,
+    "D2_unmatched_S1_pm24h": 75,
+    "D2_unmatched_S2_pm24h": 65,
+    "D1_episodes": 1313,
+    "min_pocket_equity_S1": 0.6085556850488784,
+    "min_pocket_equity_S2": 0.5582596465014964,
+    "wallet_final_equity_S2": 1.0708008174596357,
+    "wallet_min_equity_S2": 0.8674778939504489,
+    "S2": {
+     "sharpe": 0.2990226938295918,
+     "max_drawdown": 0.45124880751694796,
+     "cagr": 0.04561221737688048,
+     "annual_turnover_x_equity": 19.611834098565076,
+     "cost_drag_per_year": 0.04902958524641269
+    },
+    "n_orders_S2": 1029,
+    "d_sharpe_S2_minus_S1": 0.10283161082405487,
+    "d_maxdd": 0.0015354794706294306,
+    "d_cagr": 0.029577683783340802,
+    "D1_disagree_cells": 28904,
+    "D1_per_S1_order": 28.533070088845015,
+    "D1_share_of_active": 0.460313415721748,
+    "D2_xor_cells": 1128
+   }
+  }
+ },
+ "pairs_ethbtc/L2160_th2.0": {
+  "label": "pairs_ethbtc/L2160_th2.0",
+  "n_cols": 2,
+  "median_nonzero_weight_post_overlay": 0.2987228052989137,
+  "share_nonzero_weights_below_band": 0.0,
+  "share_nonzero_weights_below_2band": 0.003775407173273629,
+  "frac_bars_invested": 1.0,
+  "S1": {
+   "sharpe": 0.21412442663894615,
+   "max_drawdown": 0.43982222161399337,
+   "cagr": 0.02114684990942628,
+   "annual_turnover_x_equity": 17.13872155697639,
+   "cost_drag_per_year": 0.04284680389244098
+  },
+  "S3": {
+   "sharpe": 0.020256501957807364,
+   "max_drawdown": 0.4913787457724532,
+   "cagr": -0.03263659903819116,
+   "annual_turnover_x_equity": 39.69433604832796,
+   "cost_drag_per_year": 0.0992358401208199
+  },
+  "n_orders_S1": 963,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": 0.128337548957844,
+     "max_drawdown": 0.489971299523041,
+     "cagr": -0.009083515882153392,
+     "annual_turnover_x_equity": 44.42958954538034,
+     "cost_drag_per_year": 0.11107397386345086
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.19386792468113878,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.1691755876938263,
+    "delta_band_value_wallet_minus_pocket": -0.02469233698731249,
+    "frame_effect_noband_S2b_minus_S3": 0.10808104700003662,
+    "D2_unmatched_S1_pm24h": 90,
+    "D2_unmatched_S2_pm24h": 77,
+    "D1_episodes": 1352,
+    "min_pocket_equity_S1": 0.6274584155424637,
+    "min_pocket_equity_S2": 0.544129918483578,
+    "wallet_final_equity_S2": 1.0584156864823493,
+    "wallet_min_equity_S2": 0.8860324796208945,
+    "S2": {
+     "sharpe": 0.2975131366516703,
+     "max_drawdown": 0.46513731520790425,
+     "cagr": 0.04519520147291223,
+     "annual_turnover_x_equity": 16.665494230935018,
+     "cost_drag_per_year": 0.041663735577337546
+    },
+    "n_orders_S2": 960,
+    "d_sharpe_S2_minus_S1": 0.08338871001272413,
+    "d_maxdd": 0.025315093593910876,
+    "d_cagr": 0.024048351563485948,
+    "D1_disagree_cells": 30542,
+    "D1_per_S1_order": 31.71547248182762,
+    "D1_share_of_active": 0.44676213741351317,
+    "D2_xor_cells": 1121
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": 0.12179096633275811,
+     "max_drawdown": 0.4851344544173199,
+     "cagr": -0.010661632451190894,
+     "annual_turnover_x_equity": 44.1666583845192,
+     "cost_drag_per_year": 0.11041664596129803
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.19386792468113878,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.1840836965901232,
+    "delta_band_value_wallet_minus_pocket": -0.00978422809101559,
+    "frame_effect_noband_S2b_minus_S3": 0.10153446437495076,
+    "D2_unmatched_S1_pm24h": 95,
+    "D2_unmatched_S2_pm24h": 81,
+    "D1_episodes": 1324,
+    "min_pocket_equity_S1": 0.6274584155424637,
+    "min_pocket_equity_S2": 0.5664836338800385,
+    "wallet_final_equity_S2": 1.0741383729553584,
+    "wallet_min_equity_S2": 0.8699450901640116,
+    "S2": {
+     "sharpe": 0.3058746629228813,
+     "max_drawdown": 0.4431648936800404,
+     "cagr": 0.04758639184586988,
+     "annual_turnover_x_equity": 16.50842487744155,
+     "cost_drag_per_year": 0.041271062193603866
+    },
+    "n_orders_S2": 956,
+    "d_sharpe_S2_minus_S1": 0.09175023628393514,
+    "d_maxdd": 0.0033426720660470477,
+    "d_cagr": 0.0264395419364436,
+    "D1_disagree_cells": 28467,
+    "D1_per_S1_order": 29.560747663551403,
+    "D1_share_of_active": 0.416409461258283,
+    "D2_xor_cells": 1097
+   }
+  }
+ },
+ "btc_seasonality_2123utc": {
+  "label": "btc_seasonality_2123utc",
+  "n_cols": 1,
+  "median_nonzero_weight_post_overlay": 0.6216622748241396,
+  "share_nonzero_weights_below_band": 0.0,
+  "share_nonzero_weights_below_2band": 0.0,
+  "frac_bars_invested": 0.08333533581641235,
+  "S1": {
+   "sharpe": -11.477904258962466,
+   "max_drawdown": 0.9944680371829383,
+   "cagr": -0.6652034953740058,
+   "annual_turnover_x_equity": 404.19182988127966,
+   "cost_drag_per_year": 1.0104795747031992
+  },
+  "S3": {
+   "sharpe": -11.5188850406145,
+   "max_drawdown": 0.9945339243006445,
+   "cagr": -0.6660469891319001,
+   "annual_turnover_x_equity": 405.02225049126633,
+   "cost_drag_per_year": 1.012555626228166
+  },
+  "n_orders_S1": 3482,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": -0.5040308615732857,
+     "max_drawdown": 2.9058360809181543,
+     "cagr": NaN,
+     "annual_turnover_x_equity": -359.79922602592603,
+     "cost_drag_per_year": -0.8994980650648151
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.040980781652033116,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": -0.07221618261729834,
+    "delta_band_value_wallet_minus_pocket": -0.11319696426933146,
+    "frame_effect_noband_S2b_minus_S3": 11.014854179041214,
+    "D2_unmatched_S1_pm24h": 0,
+    "D2_unmatched_S2_pm24h": 0,
+    "D1_episodes": 1661,
+    "min_pocket_equity_S1": 0.005540861915409373,
+    "min_pocket_equity_S2": -1.9035503029801752,
+    "wallet_final_equity_S2": 0.2741124242549562,
+    "wallet_min_equity_S2": 0.2741124242549562,
+    "S2": {
+     "sharpe": -0.576247044190584,
+     "max_drawdown": 2.9004869172140326,
+     "cagr": NaN,
+     "annual_turnover_x_equity": -361.7043685097443,
+     "cost_drag_per_year": -0.9042609212743605
+    },
+    "n_orders_S2": 3481,
+    "d_sharpe_S2_minus_S1": 10.901657214771882,
+    "d_maxdd": 1.9060188800310942,
+    "d_cagr": NaN,
+    "D1_disagree_cells": 2465,
+    "D1_per_S1_order": 0.7079264790350374,
+    "D1_share_of_active": 0.4738562091503268,
+    "D2_xor_cells": 1
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": -0.6399547936428543,
+     "max_drawdown": 2.6296945413272312,
+     "cagr": NaN,
+     "annual_turnover_x_equity": -382.74887356668705,
+     "cost_drag_per_year": -0.9568721839167179
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.040980781652033116,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.2014641663418078,
+    "delta_band_value_wallet_minus_pocket": 0.1604833846897747,
+    "frame_effect_noband_S2b_minus_S3": 10.878930246971645,
+    "D2_unmatched_S1_pm24h": 0,
+    "D2_unmatched_S2_pm24h": 0,
+    "D1_episodes": 1655,
+    "min_pocket_equity_S1": 0.005540861915409373,
+    "min_pocket_equity_S2": -1.628267135834406,
+    "wallet_final_equity_S2": 0.21151985924967823,
+    "wallet_min_equity_S2": 0.21151985924967823,
+    "S2": {
+     "sharpe": -0.43849062730104654,
+     "max_drawdown": 2.6256471126024246,
+     "cagr": NaN,
+     "annual_turnover_x_equity": -384.91100208135884,
+     "cost_drag_per_year": -0.9622775052033973
+    },
+    "n_orders_S2": 3481,
+    "d_sharpe_S2_minus_S1": 11.03941363166142,
+    "d_maxdd": 1.6311790754194861,
+    "d_cagr": NaN,
+    "D1_disagree_cells": 2442,
+    "D1_per_S1_order": 0.7013210798391729,
+    "D1_share_of_active": 0.46943483275663206,
+    "D2_xor_cells": 1
+   }
+  }
+ },
+ "protective_vol_gate/V24_pin0.95": {
+  "label": "protective_vol_gate/V24_pin0.95",
+  "n_cols": 6,
+  "median_nonzero_weight_post_overlay": 0.06629611973581552,
+  "share_nonzero_weights_below_band": 0.1707845234678703,
+  "share_nonzero_weights_below_2band": 0.9104333533355945,
+  "frac_bars_invested": 0.9210380872281629,
+  "S1": {
+   "sharpe": -0.0709578247127366,
+   "max_drawdown": 0.3354331290434017,
+   "cagr": -0.038072804946911676,
+   "annual_turnover_x_equity": 6.0775080362001335,
+   "cost_drag_per_year": 0.015193770090500333
+  },
+  "S3": {
+   "sharpe": -0.25020247578631183,
+   "max_drawdown": 0.45808613837225093,
+   "cagr": -0.08384290098189029,
+   "annual_turnover_x_equity": 30.844438003706717,
+   "cost_drag_per_year": 0.0771110950092668
+  },
+  "n_orders_S1": 504,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": -0.11596920694576131,
+     "max_drawdown": 0.5076849667175969,
+     "cagr": -0.07663124862922233,
+     "annual_turnover_x_equity": 39.53663058970629,
+     "cost_drag_per_year": 0.09884157647426575
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.17924465107357523,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.14908263061271776,
+    "delta_band_value_wallet_minus_pocket": -0.030162020460857475,
+    "frame_effect_noband_S2b_minus_S3": 0.13423326884055053,
+    "D2_unmatched_S1_pm24h": 32,
+    "D2_unmatched_S2_pm24h": 43,
+    "D1_episodes": 432,
+    "min_pocket_equity_S1": 0.6797365582735723,
+    "min_pocket_equity_S2": 0.6667035759428974,
+    "wallet_final_equity_S2": 0.9772779279940056,
+    "wallet_min_equity_S2": 0.9166758939857244,
+    "S2": {
+     "sharpe": 0.03311342366695645,
+     "max_drawdown": 0.3481752541818928,
+     "cagr": -0.01985872085258511,
+     "annual_turnover_x_equity": 6.829468461759119,
+     "cost_drag_per_year": 0.017073671154397802
+    },
+    "n_orders_S2": 521,
+    "d_sharpe_S2_minus_S1": 0.10407124837969305,
+    "d_maxdd": 0.0127421251384911,
+    "d_cagr": 0.018214084094326566,
+    "D1_disagree_cells": 5110,
+    "D1_per_S1_order": 10.13888888888889,
+    "D1_share_of_active": 0.021457515379285728,
+    "D2_xor_cells": 273
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": -0.12552821646315324,
+     "max_drawdown": 0.5060311851635463,
+     "cagr": -0.07769647628892906,
+     "annual_turnover_x_equity": 39.09852936703823,
+     "cost_drag_per_year": 0.0977463234175956
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.17924465107357523,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.1551657212529362,
+    "delta_band_value_wallet_minus_pocket": -0.024078929820639028,
+    "frame_effect_noband_S2b_minus_S3": 0.12467425932315859,
+    "D2_unmatched_S1_pm24h": 32,
+    "D2_unmatched_S2_pm24h": 40,
+    "D1_episodes": 411,
+    "min_pocket_equity_S1": 0.6797365582735723,
+    "min_pocket_equity_S2": 0.6678718090702701,
+    "wallet_final_equity_S2": 0.9720793103299555,
+    "wallet_min_equity_S2": 0.900361542721081,
+    "S2": {
+     "sharpe": 0.029637504789782974,
+     "max_drawdown": 0.34703309252447445,
+     "cagr": -0.020354101616999465,
+     "annual_turnover_x_equity": 6.740473280318567,
+     "cost_drag_per_year": 0.016851183200796416
+    },
+    "n_orders_S2": 517,
+    "d_sharpe_S2_minus_S1": 0.10059532950251956,
+    "d_maxdd": 0.011599963481072728,
+    "d_cagr": 0.01771870332991221,
+    "D1_disagree_cells": 4581,
+    "D1_per_S1_order": 9.089285714285714,
+    "D1_share_of_active": 0.019236179638455562,
+    "D2_xor_cells": 267
+   }
+  }
+ },
+ "protective_vol_gate/V24_pin0.98": {
+  "label": "protective_vol_gate/V24_pin0.98",
+  "n_cols": 6,
+  "median_nonzero_weight_post_overlay": 0.06581712043616798,
+  "share_nonzero_weights_below_band": 0.17236233020514508,
+  "share_nonzero_weights_below_2band": 0.9131611565021628,
+  "frac_bars_invested": 0.9499699627538147,
+  "S1": {
+   "sharpe": 0.11197152395805418,
+   "max_drawdown": 0.3314533060049985,
+   "cagr": -0.0004575603631038483,
+   "annual_turnover_x_equity": 3.9525557253394803,
+   "cost_drag_per_year": 0.0098813893133487
+  },
+  "S3": {
+   "sharpe": -0.0900111416547099,
+   "max_drawdown": 0.42788020597172044,
+   "cagr": -0.0501485029058254,
+   "annual_turnover_x_equity": 27.649842655589506,
+   "cost_drag_per_year": 0.06912460663897377
+  },
+  "n_orders_S1": 326,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": 0.024444498573175162,
+     "max_drawdown": 0.45067443904073323,
+     "cagr": -0.03359262392024198,
+     "annual_turnover_x_equity": 33.26853877329064,
+     "cost_drag_per_year": 0.0831713469332266
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.20198266561276407,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.1284321147416994,
+    "delta_band_value_wallet_minus_pocket": -0.07355055087106466,
+    "frame_effect_noband_S2b_minus_S3": 0.11445564022788507,
+    "D2_unmatched_S1_pm24h": 36,
+    "D2_unmatched_S2_pm24h": 33,
+    "D1_episodes": 289,
+    "min_pocket_equity_S1": 0.6838072264529356,
+    "min_pocket_equity_S2": 0.671565647380882,
+    "wallet_final_equity_S2": 1.008877001995783,
+    "wallet_min_equity_S2": 0.9178914118452205,
+    "S2": {
+     "sharpe": 0.15287661331487457,
+     "max_drawdown": 0.3434216896390124,
+     "cagr": 0.0073720473326484015,
+     "annual_turnover_x_equity": 4.228987311030976,
+     "cost_drag_per_year": 0.010572468277577437
+    },
+    "n_orders_S2": 328,
+    "d_sharpe_S2_minus_S1": 0.040905089356820384,
+    "d_maxdd": 0.011968383634013868,
+    "d_cagr": 0.00782960769575225,
+    "D1_disagree_cells": 3667,
+    "D1_per_S1_order": 11.248466257668712,
+    "D1_share_of_active": 0.015178859702135058,
+    "D2_xor_cells": 230
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": 0.01642786289472319,
+     "max_drawdown": 0.4499273312774291,
+     "cagr": -0.0351337120570927,
+     "annual_turnover_x_equity": 33.06025272363196,
+     "cost_drag_per_year": 0.08265063180907992
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.20198266561276407,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.13231325942989752,
+    "delta_band_value_wallet_minus_pocket": -0.06966940618286654,
+    "frame_effect_noband_S2b_minus_S3": 0.10643900454943309,
+    "D2_unmatched_S1_pm24h": 34,
+    "D2_unmatched_S2_pm24h": 32,
+    "D1_episodes": 284,
+    "min_pocket_equity_S1": 0.6838072264529356,
+    "min_pocket_equity_S2": 0.6727016730363361,
+    "wallet_final_equity_S2": 1.0093531311238222,
+    "wallet_min_equity_S2": 0.9018105019109008,
+    "S2": {
+     "sharpe": 0.14874112232462072,
+     "max_drawdown": 0.34231101667905156,
+     "cagr": 0.0064836691729956986,
+     "annual_turnover_x_equity": 4.2137605013422155,
+     "cost_drag_per_year": 0.010534401253355538
+    },
+    "n_orders_S2": 328,
+    "d_sharpe_S2_minus_S1": 0.03676959836656654,
+    "d_maxdd": 0.010857710674053056,
+    "d_cagr": 0.006941229536099547,
+    "D1_disagree_cells": 3316,
+    "D1_per_S1_order": 10.171779141104295,
+    "D1_share_of_active": 0.013725960941445282,
+    "D2_xor_cells": 230
+   }
+  }
+ },
+ "protective_vol_gate/V72_pin0.95": {
+  "label": "protective_vol_gate/V72_pin0.95",
+  "n_cols": 6,
+  "median_nonzero_weight_post_overlay": 0.06676968128425703,
+  "share_nonzero_weights_below_band": 0.14471252837759357,
+  "share_nonzero_weights_below_2band": 0.9093764848740826,
+  "frac_bars_invested": 0.9102967679923105,
+  "S1": {
+   "sharpe": 0.03716739438643815,
+   "max_drawdown": 0.3388149055962357,
+   "cagr": -0.017006343628449105,
+   "annual_turnover_x_equity": 4.09731899821547,
+   "cost_drag_per_year": 0.01024329749553868
+  },
+  "S3": {
+   "sharpe": -0.22289907639201406,
+   "max_drawdown": 0.4868764499448938,
+   "cagr": -0.07929127335977271,
+   "annual_turnover_x_equity": 27.025690226941627,
+   "cost_drag_per_year": 0.06756422556735406
+  },
+  "n_orders_S1": 347,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": -0.08427008348505045,
+     "max_drawdown": 0.5479511245951735,
+     "cagr": -0.06988661776564231,
+     "annual_turnover_x_equity": 34.689732771383156,
+     "cost_drag_per_year": 0.0867243319284579
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.26006647077845224,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.18470655478539022,
+    "delta_band_value_wallet_minus_pocket": -0.07535991599306202,
+    "frame_effect_noband_S2b_minus_S3": 0.13862899290696362,
+    "D2_unmatched_S1_pm24h": 41,
+    "D2_unmatched_S2_pm24h": 33,
+    "D1_episodes": 298,
+    "min_pocket_equity_S1": 0.6810605105274725,
+    "min_pocket_equity_S2": 0.6696206653942061,
+    "wallet_final_equity_S2": 0.9935086184333809,
+    "wallet_min_equity_S2": 0.9174051663485515,
+    "S2": {
+     "sharpe": 0.10043647130033977,
+     "max_drawdown": 0.3537663482649157,
+     "cagr": -0.005522809360162029,
+     "annual_turnover_x_equity": 4.394149494847658,
+     "cost_drag_per_year": 0.010985373737119147
+    },
+    "n_orders_S2": 345,
+    "d_sharpe_S2_minus_S1": 0.06326907691390161,
+    "d_maxdd": 0.014951442668679982,
+    "d_cagr": 0.011483534268287077,
+    "D1_disagree_cells": 4192,
+    "D1_per_S1_order": 12.080691642651297,
+    "D1_share_of_active": 0.017763615099072833,
+    "D2_xor_cells": 252
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": -0.09397728244609078,
+     "max_drawdown": 0.545680798771717,
+     "cagr": -0.07108699228535609,
+     "annual_turnover_x_equity": 34.31514057430151,
+     "cost_drag_per_year": 0.08578785143575376
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.26006647077845224,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.18618820721967216,
+    "delta_band_value_wallet_minus_pocket": -0.07387826355878008,
+    "frame_effect_noband_S2b_minus_S3": 0.1289217939459233,
+    "D2_unmatched_S1_pm24h": 39,
+    "D2_unmatched_S2_pm24h": 30,
+    "D1_episodes": 305,
+    "min_pocket_equity_S1": 0.6810605105274725,
+    "min_pocket_equity_S2": 0.6714684233627483,
+    "wallet_final_equity_S2": 0.9896005651722638,
+    "wallet_min_equity_S2": 0.9014405270088245,
+    "S2": {
+     "sharpe": 0.09221092477358138,
+     "max_drawdown": 0.3539437173628622,
+     "cagr": -0.00739911632331991,
+     "annual_turnover_x_equity": 4.358057199900094,
+     "cost_drag_per_year": 0.010895142999750234
+    },
+    "n_orders_S2": 343,
+    "d_sharpe_S2_minus_S1": 0.05504353038714323,
+    "d_maxdd": 0.015128811766626449,
+    "d_cagr": 0.009607227305129196,
+    "D1_disagree_cells": 3811,
+    "D1_per_S1_order": 10.982708933717579,
+    "D1_share_of_active": 0.016149126226757293,
+    "D2_xor_cells": 244
+   }
+  }
+ },
+ "protective_vol_gate/V72_pin0.98": {
+  "label": "protective_vol_gate/V72_pin0.98",
+  "n_cols": 6,
+  "median_nonzero_weight_post_overlay": 0.06613261940909637,
+  "share_nonzero_weights_below_band": 0.16258329062019478,
+  "share_nonzero_weights_below_2band": 0.912019477191184,
+  "frac_bars_invested": 0.9376426769193801,
+  "S1": {
+   "sharpe": -0.01115190114351121,
+   "max_drawdown": 0.41036138590058546,
+   "cagr": -0.030137535653810832,
+   "annual_turnover_x_equity": 3.3610642374924655,
+   "cost_drag_per_year": 0.008402660593731162
+  },
+  "S3": {
+   "sharpe": -0.1910447398685977,
+   "max_drawdown": 0.46929637316454575,
+   "cagr": -0.07388303989089173,
+   "annual_turnover_x_equity": 26.543135531185957,
+   "cost_drag_per_year": 0.0663578388279649
+  },
+  "n_orders_S1": 287,
+  "by_alloc": {
+   "a=0.25": {
+    "S2b": {
+     "sharpe": -0.057222539975496145,
+     "max_drawdown": 0.5221399053348901,
+     "cagr": -0.06206308058164389,
+     "annual_turnover_x_equity": 33.64875031354215,
+     "cost_drag_per_year": 0.0841218757838554
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.1798928387250865,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.11431455871242086,
+    "delta_band_value_wallet_minus_pocket": -0.06557828001266564,
+    "frame_effect_noband_S2b_minus_S3": 0.13382219989310157,
+    "D2_unmatched_S1_pm24h": 39,
+    "D2_unmatched_S2_pm24h": 31,
+    "D1_episodes": 337,
+    "min_pocket_equity_S1": 0.6236056497876169,
+    "min_pocket_equity_S2": 0.6063296923246995,
+    "wallet_final_equity_S2": 0.9775989345770744,
+    "wallet_min_equity_S2": 0.9015824230811749,
+    "S2": {
+     "sharpe": 0.05709201873692472,
+     "max_drawdown": 0.4227259264312992,
+     "cagr": -0.019567469466425624,
+     "annual_turnover_x_equity": 3.676875929632003,
+     "cost_drag_per_year": 0.009192189824080009
+    },
+    "n_orders_S2": 283,
+    "d_sharpe_S2_minus_S1": 0.06824391988043593,
+    "d_maxdd": 0.01236454053071373,
+    "d_cagr": 0.010570066187385208,
+    "D1_disagree_cells": 5670,
+    "D1_per_S1_order": 19.75609756097561,
+    "D1_share_of_active": 0.02368856431424322,
+    "D2_xor_cells": 226
+   },
+   "a=0.30": {
+    "S2b": {
+     "sharpe": -0.0666119811735143,
+     "max_drawdown": 0.5205775573541013,
+     "cagr": -0.06341890720200138,
+     "annual_turnover_x_equity": 33.32565941106607,
+     "cost_drag_per_year": 0.0833141485276652
+    },
+    "band_value_sharpe_pocket_frame_S1_minus_S3": 0.1798928387250865,
+    "band_value_sharpe_wallet_frame_S2_minus_S2b": 0.12647445600307286,
+    "delta_band_value_wallet_minus_pocket": -0.05341838272201363,
+    "frame_effect_noband_S2b_minus_S3": 0.12443275869508341,
+    "D2_unmatched_S1_pm24h": 36,
+    "D2_unmatched_S2_pm24h": 31,
+    "D1_episodes": 321,
+    "min_pocket_equity_S1": 0.6236056497876169,
+    "min_pocket_equity_S2": 0.6062267455617019,
+    "wallet_final_equity_S2": 0.9746922813656814,
+    "wallet_min_equity_S2": 0.8818680236685106,
+    "S2": {
+     "sharpe": 0.05986247482955855,
+     "max_drawdown": 0.42128078984380596,
+     "cagr": -0.018381076130040364,
+     "annual_turnover_x_equity": 3.67869620825617,
+     "cost_drag_per_year": 0.009196740520640423
+    },
+    "n_orders_S2": 285,
+    "d_sharpe_S2_minus_S1": 0.07101437597306977,
+    "d_maxdd": 0.010919403943220496,
+    "d_cagr": 0.011756459523770468,
+    "D1_disagree_cells": 5063,
+    "D1_per_S1_order": 17.641114982578397,
+    "D1_share_of_active": 0.021152592790654925,
+    "D2_xor_cells": 220
+   }
+  }
+ }
+}

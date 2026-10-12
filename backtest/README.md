@@ -190,7 +190,10 @@ Sémantique complète, pré-enregistrée AVANT implémentation : `backtest/CARRY
 par le finding F1 (CRITIQUE, audit adversarial 2026-08-31) : la remise à plat de la position à
 chaque fenêtre OOS, combinée à la bande de non-négociation et au vol targeting, empêche toute
 entrée d'une candidate dont le poids scalé reste sous la bande — le moteur était PLUS sévère que
-la production (où l'exécution est continue) pour les candidates à faible poids nominal. Résumé :
+la production (où l'exécution est continue) pour les candidates à faible poids nominal. (Nuance
+2026-10-12, analyse #19 : cette sévérité venait de la REMISE À PLAT entre fenêtres — la
+composante « bande bloque l'entrée d'un poids < 0,05 » existe, elle, aussi en production, cf.
+`docs/BAND-FIDELITY-SPEC.md` §1.3.) Résumé :
 
 - `engine.simulate_segment(..., carry_in: Optional[CarryState] = None)` — `None` (défaut) :
   comportement STRICTEMENT identique (bit-à-bit) à avant cette extension, testé explicitement
@@ -263,8 +266,10 @@ la production (où l'exécution est continue) pour les candidates à faible poid
   persistent pendant un recalibrage — documentée spec §1.2 : porter l'état dans l'IS
   introduirait une dépendance de la SÉLECTION au chemin OOS, jugée plus dangereuse que l'écart).
 - Analyse "bande par poche" (spec §5, imposée par la spec, pas un nouveau réglage) — **STATUT :
-  NON RÉSOLU (audit F2, CRITIQUE), renvoyé au backlog pour analyse dédiée. Clause d'arrêt de la
-  spec §5 appliquée : AUCUN changement de comportement de la bande n'a été fait.** L'équivalence
+  instruit le 2026-10-12 (session #10, voir la mise à jour datée en fin de ce point —
+  historiquement : NON RÉSOLU, audit F2 CRITIQUE, renvoyé au backlog). Clause d'arrêt de la
+  spec §5 appliquée : AUCUN changement de comportement de la bande n'a été fait, ni alors ni
+  depuis.** L'équivalence
   poids wallet = `capital_alloc_pct` × poids poche / bande wallet = `0.05 * capital_alloc_pct`
   n'est prouvée QUE pour une poche à rendement ~NUL (court terme, prix constants + coût nul, seule
   condition sous laquelle l'équity de référence des DEUX runs reste exactement `initial_capital`
@@ -280,6 +285,15 @@ la production (où l'exécution est continue) pour les candidates à faible poid
   compounding` (garde contre une re-revendication future). Aucun correctif de la bande n'est
   fait ici — la spec §5 exige explicitement d'arrêter et de documenter le désaccord plutôt que
   d'improviser un correctif hors périmètre pré-enregistré.
+  **Mise à jour 2026-10-12 (session #10) : l'analyse dédiée promise est faite** —
+  `backtest/results/band_fidelity_analysis_2026-10-12/REPORT.md` (quantification complète des
+  deux écarts) et `docs/BAND-FIDELITY-SPEC.md` (convention OBLIGATOIRE : la Porte 1 reste jugée
+  sur la sémantique du moteur, inchangée bit-à-bit ; toute SPEC de candidate doit désormais
+  déclarer son `capital_alloc_pct` et fournir l'annexe band_fidelity S1/S2 + exposition aux
+  circuit breakers ; flag « band-fragile » consigné au registre et tranché en session selon la pratique d'ambiguïté conservatrice). Aucun
+  changement de comportement du moteur n'a été fait — le statut « pas de correctif de bande »
+  ci-dessus reste exact, et l'écart résiduel dû au P&L du reste du wallet est documenté comme
+  limite structurelle (backlog, écart (c), P3).
 - Orchestration (runners) : `backtest/run_funding_carry.py` expose `--carry-across-windows`
   (défaut **désactivé**) — enchaîne `carry_in(fenêtre k+1) = carry_out(fenêtre OOS k)` si la
   frontière est calendaire-adjacente, sinon démarre à plat + journalise l'évènement

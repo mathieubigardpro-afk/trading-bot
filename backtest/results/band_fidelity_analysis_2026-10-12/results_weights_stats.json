@@ -1,0 +1,34 @@
+{
+ "A_quasi_passif_equilibre": {
+  "frac_bars_invested": 0.5841883936080741,
+  "median_nonzero_weight": 0.06145487880031606,
+  "p10_nonzero": 0.038444309108537585,
+  "p90_nonzero": 0.16071717962113807,
+  "frac_nonzero_weights_below_band": 0.31494817466594516,
+  "frac_nonzero_weights_below_2band": 0.7797111101860716,
+  "median_rowmax": 0.08224000206352636,
+  "median_gross": 0.30732751634585587
+ },
+ "B_lowweight_volgate": {
+  "frac_bars_invested": 0.9376426769193801,
+  "median_nonzero_weight": 0.06613261940909637,
+  "p10_nonzero": 0.04561413878499197,
+  "p90_nonzero": 0.09753835160361364,
+  "frac_nonzero_weights_below_band": 0.16258329062019478,
+  "frac_nonzero_weights_below_2band": 0.912019477191184,
+  "median_rowmax": 0.06613261940909637,
+  "median_gross": 0.39679571645457823
+ },
+ "C_bigweight_sma200_equal": {
+  "frac_bars_invested": 0.5841883936080741,
+  "median_nonzero_weight": 0.16666666666666666,
+  "p10_nonzero": 0.16666666666666666,
+  "p90_nonzero": 0.3333333333333333,
+  "frac_nonzero_weights_below_band": 0.0,
+  "frac_nonzero_weights_below_2band": 0.0,
+  "median_rowmax": 0.25,
+  "median_gross": 1.0
+ },
+ "B_vol_scalar_median_on_invested_bars": 0.40517398035703295,
+ "B_raw_weight_per_symbol": 0.16666666666666666
+}

@@ -1,0 +1,91 @@
+{
+ "C1_strategic_zero_under_band_no_cb": {
+  "label": "cible strategique 0, position 1.0% wallet (3.3% poche) < bande 1.5%",
+  "pos_weight_wallet": 0.01,
+  "strategic_target_wallet": 0.0,
+  "band_effective": 0.015,
+  "flatten_mode": false,
+  "cible_finale": 0.01,
+  "executes_order": false,
+  "reason": "vol targeting appliqué ; no-trade band : écart < 1.50% (poche), poids actuel conservé"
+ },
+ "C2_strategic_zero_above_band_no_cb": {
+  "label": "cible strategique 0, position 3.0% wallet >= bande 1.5%",
+  "pos_weight_wallet": 0.03,
+  "strategic_target_wallet": 0.0,
+  "band_effective": 0.015,
+  "flatten_mode": false,
+  "cible_finale": 0.0,
+  "executes_order": true,
+  "reason": "vol targeting appliqué"
+ },
+ "C3_same_position_under_band_with_cb_flatten": {
+  "label": "idem C1 + drawdown wallet 30% > 25% => flatten CB",
+  "pos_weight_wallet": 0.01,
+  "strategic_target_wallet": 0.0,
+  "band_effective": 0.015,
+  "flatten_mode": true,
+  "cible_finale": 0.0,
+  "executes_order": true,
+  "reason": "atten_mode actif (drawdown > seuil flatten) — position mise à plat, revue manuelle requise"
+ },
+ "C3b_flatten_with_nonzero_strategy_target": {
+  "label": "cible strategique NON nulle 5% poche + flatten CB",
+  "pos_weight_wallet": 0.01,
+  "strategic_target_wallet": 0.015,
+  "band_effective": 0.015,
+  "flatten_mode": true,
+  "cible_finale": 0.0,
+  "executes_order": true,
+  "reason": "atten_mode actif (drawdown > seuil flatten) — position mise à plat, revue manuelle requise"
+ },
+ "C4_control_drawdown_below_flatten": {
+  "label": "idem C1 + drawdown 10% (< flatten 25%)",
+  "pos_weight_wallet": 0.01,
+  "strategic_target_wallet": 0.0,
+  "band_effective": 0.015,
+  "flatten_mode": false,
+  "cible_finale": 0.01,
+  "executes_order": false,
+  "reason": "vol targeting appliqué ; no-trade band : écart < 1.50% (poche), poids actuel conservé"
+ },
+ "C5_entry_from_flat_low_nominal_weight_a0.25": {
+  "label": "entree depuis flat, poids poche 0.04 (<0.05), alloc 0.25 : cible wallet 0.01 < bande 0.0125",
+  "pos_weight_wallet": 0.0,
+  "strategic_target_wallet": 0.01,
+  "band_effective": 0.0125,
+  "flatten_mode": false,
+  "cible_finale": 0.0,
+  "executes_order": false,
+  "reason": "vol targeting appliqué ; no-trade band : écart < 1.25% (poche), poids actuel conservé"
+ },
+ "C5b_entry_from_flat_weight_0.06": {
+  "label": "entree depuis flat, poids poche 0.06 (>0.05), alloc 0.25 : cible wallet 0.015 >= bande 0.0125",
+  "pos_weight_wallet": 0.0,
+  "strategic_target_wallet": 0.015,
+  "band_effective": 0.0125,
+  "flatten_mode": false,
+  "cible_finale": 0.015,
+  "executes_order": true,
+  "reason": "vol targeting appliqué"
+ },
+ "engine": {
+  "exposure_with_band_0p05_w4": [
+   0.3,
+   0.3,
+   0.03,
+   0.03,
+   0.03
+  ],
+  "comment_w4": "poids decides 0.30,0.30,0.03,0.0,... : sortie 0.30->0.03 executee (ecart 0.27>bande) puis la 'sortie' 0.03->0 est RETENUE par la bande (exposition residuelle 3% conservee ad vitam)",
+  "exposure_without_band_w4": [
+   0.3,
+   0.3,
+   0.03,
+   0.0,
+   0.0
+  ],
+  "mentions_of_flatten_in_engine_and_overlay_code": [],
+  "mentions_of_flatten_in_risk_overlay": []
+ }
+}

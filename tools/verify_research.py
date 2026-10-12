@@ -44,6 +44,24 @@ logger = logging.getLogger("tools.verify_research")
 
 REGISTRY_RELPATH = "docs/RESEARCH-REGISTRY.json"
 
+# Convention de fidélité de la bande de non-négociation (docs/BAND-FIDELITY-SPEC.md §3.6,
+# session #10) : toute NOUVELLE entrée du registre (date_test >= cette date) doit porter un
+# bloc `band_fidelity` (dict de l'annexe S1/S2 + exposition CB, clés minimales ci-dessous) ou
+# une exemption explicite (chaîne SUBSTANTIELLE documentant pourquoi la bande est sans objet
+# pour cette entrée — audit adversarial 2026-10-12, M4 : une chaîne courte type "n/a" ne
+# passe pas). Les entrées antérieures sont exemptées (registre append-only, jamais réécrit).
+BAND_FIDELITY_REQUIRED_FROM = "2026-10-12"
+BAND_FIDELITY_REQUIRED_KEYS = ("a", "sharpe_s1", "sharpe_s2", "band_fragile", "cb")
+BAND_FIDELITY_EXEMPTION_MIN_CHARS = 30
+
+# Audit adversarial 2026-10-12 (M4) : les comparaisons de dates de ce script sont
+# lexicographiques — elles ne sont correctes QUE si date_test est au format ISO strict
+# YYYY-MM-DD. Toute entrée dont la date ne matche pas ce format est une violation (une date
+# "15/10/2026" passerait sinon silencieusement pour antérieure à toutes les bornes).
+import re as _re
+
+_ISO_DATE_RE = _re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
 
 def load_registry(path: str) -> Dict[str, Any]:
     """Charge le registre JSON. Lève `FileNotFoundError`/`json.JSONDecodeError` telles quelles
@@ -76,11 +94,13 @@ def compute_k_total(registry: Dict[str, Any], grid_size: int) -> int:
 
 
 def verify_registry(registry: Dict[str, Any]) -> List[str]:
-    """Retourne la liste des violations (`[]` si le registre est conforme). Une entrée qui NE
-    déclare PAS de champ `k_total` (cas actuel : `dsr` calculé sans K_total inter-stratégies,
-    antécédent documenté `docs/PROMOTION-RULES.md` §5) n'est PAS une violation — seule une
-    entrée qui DÉCLARE `k_total` est vérifiée, cf. mission §1.3 ("pour toute entrée du registre
-    ayant un champ k_total déclaré")."""
+    """Retourne la liste des violations (`[]` si le registre est conforme). Deux familles de
+    vérifications : (1) borne minimale de `k_total` (§1.3) — une entrée qui NE déclare PAS de
+    champ `k_total` (antécédent documenté `docs/PROMOTION-RULES.md` §5) n'est pas une violation
+    de CETTE famille, seule une entrée qui le DÉCLARE est vérifiée ; (2) garde `band_fidelity`
+    (docs/BAND-FIDELITY-SPEC.md §3.6, session #10) — s'applique à TOUTE entrée datée >=
+    2026-10-12, et impose au passage un `date_test` ISO présent pour toutes les entrées (une
+    entrée sans date exploitable ne peut prouver son antériorité à la convention)."""
     entries = registry_entries(registry)
     issues: List[str] = []
     for entry in entries:
@@ -109,6 +129,82 @@ def verify_registry(registry: Dict[str, Any]) -> List[str]:
                 "tout le registre à la date du test, avant même d'ajouter la grille interne de "
                 "la candidate)"
             )
+    issues.extend(_verify_band_fidelity(entries))
+    return issues
+
+
+def _verify_band_fidelity(entries: List[dict]) -> List[str]:
+    """Garde mécanique de docs/BAND-FIDELITY-SPEC.md §3.6 : toute entrée dont `date_test` est
+    >= `BAND_FIDELITY_REQUIRED_FROM` doit porter un champ `band_fidelity` soit sous forme de
+    dict contenant les clés minimales `BAND_FIDELITY_REQUIRED_KEYS` non nulles (avec `a`/
+    `sharpe_s1`/`sharpe_s2` numériques, `band_fragile` booléen, `cb` dict non vide — contre-
+    audit 2026-10-12), soit sous forme de chaîne d'au moins `BAND_FIDELITY_EXEMPTION_MIN_CHARS`
+    caractères (exemption explicite, justifiée sur le fond dans la fiche — l'audit §1.4 la
+    vérifie, cette garde ne jauge que la forme). Toute autre forme = violation. LIMITE
+    DOCUMENTÉE : une entrée ANTIDATÉE (date_test < borne, choisie après coup) passe — la garde
+    ne consulte pas l'historique git ; c'est l'audit de la session qui attrape ce cas. Une entrée sans `date_test` exploitable n'est pas
+    évaluable ici — elle est déjà refusée par la vérification k_total si elle déclare k_total ;
+    par prudence, une entrée SANS date_test du tout est signalée (impossible de prouver son
+    antériorité à la convention)."""
+    issues: List[str] = []
+    for entry in entries:
+        strategy_id = entry.get("id", "?")
+        date_test = str(entry.get("date_test", "") or "")
+        if not date_test:
+            issues.append(
+                f"{strategy_id!r} : date_test manquant/vide — impossible de prouver l'antériorité "
+                f"à la convention band_fidelity ({BAND_FIDELITY_REQUIRED_FROM}), refus par prudence"
+            )
+            continue
+        if not _ISO_DATE_RE.match(date_test):
+            issues.append(
+                f"{strategy_id!r} : date_test={date_test!r} hors format ISO YYYY-MM-DD — les "
+                "comparaisons de dates de ce script sont lexicographiques, un format non-ISO "
+                "contournerait silencieusement les bornes (k_total ET band_fidelity), refus"
+            )
+            continue
+        if date_test < BAND_FIDELITY_REQUIRED_FROM:
+            continue  # antériorité : registre append-only, jamais réécrit
+        bf = entry.get("band_fidelity")
+        if isinstance(bf, str):
+            if len(bf.strip()) >= BAND_FIDELITY_EXEMPTION_MIN_CHARS:
+                continue  # exemption explicite substantielle — sa justification est auditée (§1.4)
+            issues.append(
+                f"{strategy_id!r} (date_test={date_test}) : exemption band_fidelity trop courte "
+                f"({len(bf.strip())} caractères < {BAND_FIDELITY_EXEMPTION_MIN_CHARS}) — une "
+                "exemption doit documenter POURQUOI la bande est sans objet, cf. "
+                "docs/BAND-FIDELITY-SPEC.md §3.6"
+            )
+            continue
+        if isinstance(bf, dict) and bf:
+            missing = [k for k in BAND_FIDELITY_REQUIRED_KEYS if bf.get(k) is None]
+            # Contre-audit 2026-10-12 : forme minimale des valeurs, pas seulement leur présence
+            # (un bloc {"a": "", ..., "cb": 0} ne doit pas passer). bool est un int en Python :
+            # exclu explicitement des champs numériques.
+            bad_types = [
+                k for k in ("a", "sharpe_s1", "sharpe_s2")
+                if k not in missing and (isinstance(bf.get(k), bool) or not isinstance(bf.get(k), (int, float)))
+            ]
+            if "band_fragile" not in missing and not isinstance(bf.get("band_fragile"), bool):
+                bad_types.append("band_fragile")
+            if "cb" not in missing and not (isinstance(bf.get("cb"), dict) and bf.get("cb")):
+                bad_types.append("cb")
+            if not missing and not bad_types:
+                continue
+            issues.append(
+                f"{strategy_id!r} (date_test={date_test}) : bloc band_fidelity incomplet — clés "
+                f"manquantes ou nulles : {missing}, clés de type invalide : {bad_types} "
+                f"(minimum requis : {list(BAND_FIDELITY_REQUIRED_KEYS)}, a/sharpe numériques, "
+                "band_fragile booléen, cb dict non vide), cf. docs/BAND-FIDELITY-SPEC.md §3.2"
+            )
+            continue
+        issues.append(
+            f"{strategy_id!r} (date_test={date_test}) : champ band_fidelity manquant ou vide — "
+            "toute entrée à partir du "
+            f"{BAND_FIDELITY_REQUIRED_FROM} doit porter le bloc d'annexe S1/S2 + exposition CB "
+            f"(dict avec au minimum {list(BAND_FIDELITY_REQUIRED_KEYS)}) ou une exemption "
+            "explicite justifiée (chaîne substantielle), cf. docs/BAND-FIDELITY-SPEC.md §3.6"
+        )
     return issues
 
 
@@ -144,7 +240,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"ÉCHEC : {len(issues)} violation(s) détectée(s) dans {args.registry}", file=sys.stderr)
             return 1
         n = len(registry_entries(registry))
-        print(f"OK : {n} entrée(s) dans {args.registry}, aucune violation de k_total détectée")
+        print(f"OK : {n} entrée(s) dans {args.registry}, aucune violation détectée (k_total §1.3, band_fidelity BAND-FIDELITY-SPEC §3.6)")
         return 0
 
     # --compute

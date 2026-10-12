@@ -1,0 +1,109 @@
+{
+ "walkforward_structure": {
+  "n_configs": 21,
+  "n_dSharpe_negative": 18,
+  "dSharpe_min": -0.22026823423988978,
+  "dSharpe_max": 0.007231160800182157,
+  "dSharpe_median": -0.052210385025037234,
+  "dBandValue_min": -0.015196728288636108,
+  "dBandValue_max": 0.05459045015090905,
+  "max_abs_dBandValue": 0.05459045015090905,
+  "frame_min": -0.2603011623777106,
+  "frame_max": -0.00992810890560547,
+  "n_ci_excludes_zero": 3,
+  "configs_ci_excl_zero": [
+   [
+    "A_quasi_passif_equilibre",
+    "a=0.25"
+   ],
+   [
+    "A_quasi_passif_equilibre",
+    "a=0.30"
+   ],
+   [
+    "C_bigweight_sma200_equal",
+    "a=0.25"
+   ]
+  ],
+  "unmatched_share_max": 0.1437216338880484,
+  "unmatched_share_median": 0.059895833333333336,
+  "candidates_only": {
+   "n": 12,
+   "dSharpe_min": -0.06580311068254165,
+   "dSharpe_max": 0.007231160800182157,
+   "max_abs_dBandValue": 0.045062102748679944,
+   "frame_min": -0.05717573790098754,
+   "frame_max": -0.00992810890560547,
+   "dMaxDD_abs_max": 0.018837973136971164
+  }
+ },
+ "fullsample_A_B_C": {
+  "n": 9,
+  "dSharpe_range": [
+   0.00029734046748408627,
+   0.13089850370644435
+  ],
+  "dBandValue_range": [
+   -0.06557828001266564,
+   0.02744059768328816
+  ],
+  "frame_range": [
+   0.0190063422488842,
+   0.16544978984173306
+  ],
+  "dMaxDD_range": [
+   -0.04124464360656532,
+   0.01236454053071373
+  ],
+  "dPF_range": [
+   -0.0035517330647847345,
+   0.18605414978119406
+  ]
+ },
+ "fullsample_candidate_signals_ex_seasonality": {
+  "n": 24,
+  "n_dSharpe_positive": 24,
+  "dSharpe_range": [
+   0.01345067433851499,
+   0.11766004346663636
+  ],
+  "dBandValue_range": [
+   -0.07535991599306202,
+   0.02525449011692027
+  ],
+  "frame_range": [
+   0.007903621507800884,
+   0.18307629387120344
+  ],
+  "unmatched_share_max": 0.13588850174216027
+ },
+ "subperiods": {
+  "n": 20,
+  "n_positive": 15,
+  "n_negative": 5,
+  "dSharpe_range": [
+   -0.11840144895461856,
+   0.2924292083957376
+  ],
+  "frame_range": [
+   -0.03793408639714846,
+   0.28114202055768867
+  ]
+ },
+ "t2": {
+  "V1_real_manager_vs_analytic_S2_rule": {
+   "n_states": 4000,
+   "mismatches": 0,
+   "comment": "mismatch=0 => la regle analytique |w_hat - V/E| < beta reproduit EXACTEMENT RiskManager.apply (hors CB/caps/gel)",
+   "share_S1_S2_disagree_in_sample": 0.3555
+  },
+  "V2_affine_relation_engine": {
+   "max_abs_err_E_vs_1_plus_a_Pm1": 0.0,
+   "P_end": 2.0,
+   "E_end": 1.2,
+   "k_end": 1.6666666666666667,
+   "homothety_value_a_times_P": 0.4
+  },
+  "V3_bound_checks_passed": 1100
+ }
+}

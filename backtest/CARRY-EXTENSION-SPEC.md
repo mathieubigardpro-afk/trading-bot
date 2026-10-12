@@ -196,3 +196,11 @@ seulement le cas particulier rendement-poche-nul/court-terme) ; (c) nouveau test
 non-équivalence sous compounding, garde contre une re-revendication future de l'équivalence
 générale. **§5 reste donc un point ouvert — aucune candidate ne doit s'appuyer sur l'équivalence
 poche/wallet hors du cas rendement-poche-nul tant que ce point n'est pas instruit séparément.**
+
+> **Note datée 2026-10-12 (addendum, le texte pré-enregistré ci-dessus n'est pas réécrit)** :
+> l'instruction séparée promise a eu lieu — analyse dédiée session #10
+> (`backtest/results/band_fidelity_analysis_2026-10-12/REPORT.md`) et convention
+> `docs/BAND-FIDELITY-SPEC.md`. Le point n'est plus « ouvert » : l'équivalence reste réfutée
+> (rien ne change au F2 ci-dessus ni au comportement de la bande), la Porte 1 continue de se
+> juger sur la sémantique du moteur, et toute SPEC de candidate doit désormais fournir
+> l'annexe band_fidelity (S1/S2 + exposition CB) définie par la convention.

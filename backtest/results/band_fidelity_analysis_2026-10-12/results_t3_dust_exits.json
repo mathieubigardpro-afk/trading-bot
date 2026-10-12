@@ -1,0 +1,62 @@
+{
+ "A": {
+  "S1": {
+   "dust_cells": 14687,
+   "dust_episodes": 18,
+   "median_episode_hours": 69.5,
+   "max_episode_hours": 3960,
+   "mean_dust_weight_pocket_units": 0.0237303488895144,
+   "share_of_gross_exposure_hours": 0.042026906425285164,
+   "n_zero_target_exits_executed": 97
+  },
+  "S2": {
+   "dust_cells": 14698,
+   "dust_episodes": 19,
+   "median_episode_hours": 67.0,
+   "max_episode_hours": 3960,
+   "mean_dust_weight_pocket_units": 0.024056722099841756,
+   "share_of_gross_exposure_hours": 0.04316573312577809,
+   "n_zero_target_exits_executed": 97
+  }
+ },
+ "B": {
+  "S1": {
+   "dust_cells": 5157,
+   "dust_episodes": 53,
+   "median_episode_hours": 95.0,
+   "max_episode_hours": 238,
+   "mean_dust_weight_pocket_units": 0.038926139128891445,
+   "share_of_gross_exposure_hours": 0.013743532587031421,
+   "n_zero_target_exits_executed": 85
+  },
+  "S2": {
+   "dust_cells": 5274,
+   "dust_episodes": 52,
+   "median_episode_hours": 97.5,
+   "max_episode_hours": 238,
+   "mean_dust_weight_pocket_units": 0.03741224384049271,
+   "share_of_gross_exposure_hours": 0.013640389458629406,
+   "n_zero_target_exits_executed": 83
+  }
+ },
+ "C": {
+  "S1": {
+   "dust_cells": 0,
+   "dust_episodes": 0,
+   "median_episode_hours": 0.0,
+   "max_episode_hours": 0,
+   "mean_dust_weight_pocket_units": 0.0,
+   "share_of_gross_exposure_hours": 0.0,
+   "n_zero_target_exits_executed": 115
+  },
+  "S2": {
+   "dust_cells": 0,
+   "dust_episodes": 0,
+   "median_episode_hours": 0.0,
+   "max_episode_hours": 0,
+   "mean_dust_weight_pocket_units": 0.0,
+   "share_of_gross_exposure_hours": 0.0,
+   "n_zero_target_exits_executed": 115
+  }
+ }
+}

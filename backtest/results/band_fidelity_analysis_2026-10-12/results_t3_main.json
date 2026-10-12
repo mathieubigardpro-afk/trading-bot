@@ -1,0 +1,1914 @@
+{
+ "meta": {
+  "window": "2022-01-01 01:00:00 -> 2026-09-30 23:00:00",
+  "n_bars": 41614,
+  "years": 4.747205110654803,
+  "cost_bps": 25.0,
+  "band": 0.05,
+  "bh_6majors_maxdd_full_window": 0.764057952950293,
+  "validation": "replica == moteur (equity max abs diff, couts) pour chaque config : voir 'replica_vs_engine'"
+ },
+ "profiles": {
+  "A": {
+   "name": "A_quasi_passif_equilibre",
+   "first_active_bar": "2022-10-29 01:00:00",
+   "semantics": {
+    "a=0.10": {
+     "S2": {
+      "sharpe": 0.6996906859926582,
+      "max_drawdown": 0.19800360514522217,
+      "cagr": 0.10087261261924985,
+      "profit_factor": 1.5099451193774498,
+      "total_return": 0.45831499560530453,
+      "n_trades_closed": 97,
+      "annual_turnover_x_equity": 7.881482466735264,
+      "cost_drag_per_year": 0.01970370616683816,
+      "cost_total_pocket_units": 0.09640240114265154,
+      "n_orders": 378,
+      "n_order_bars": 249,
+      "maxdd_over_bh_maxdd": 0.2591473649095092
+     },
+     "S2b": {
+      "sharpe": 0.42413616571274565,
+      "max_drawdown": 0.21732934117459718,
+      "cagr": 0.05572397752934055,
+      "profit_factor": 1.1380713483603415,
+      "total_return": 0.2372403672822987,
+      "n_trades_closed": 115,
+      "annual_turnover_x_equity": 20.998566978300655,
+      "cost_drag_per_year": 0.052496417445751634,
+      "cost_total_pocket_units": 0.2295692630795984,
+      "n_orders": 76980,
+      "n_order_bars": 22672,
+      "maxdd_over_bh_maxdd": 0.2844409122834376
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.00029734046748408627,
+      "max_drawdown": -0.01036596163932893,
+      "cagr": -0.01810203590987003,
+      "profit_factor": -0.0035517330647847345,
+      "annual_turnover_x_equity": -1.0671154506317144,
+      "cost_drag_per_year": -0.0026677886265792893,
+      "n_orders": 9,
+      "n_trades_closed": 0
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.2040912806152755,
+      0.18842381263972974
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.3224085493354468,
+      "band_wallet_frame_S2_minus_S2b": 0.2755545202799125,
+      "frame_S2b_minus_S3": 0.047151369523018405,
+      "total_S2_minus_S1": 0.00029734046748408627
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.0678070219539968,
+      "band_wallet_frame_S2_minus_S2b": 0.045148635089909295,
+      "frame_S2b_minus_S3": 0.00455635095421747,
+      "total_S2_minus_S1": -0.01810203590987003
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": 0.6993933455251741,
+        "max_drawdown": 0.2083695667845511,
+        "cagr": 0.11897464852911988,
+        "annual_turnover_x_equity": 8.948597917366978,
+        "cost_drag_per_year": 0.02237149479341745,
+        "n_orders": 369,
+        "final_pocket_equity": 1.554742541803607
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.6322054841999665,
+        "max_drawdown": 0.19925149799771813,
+        "cagr": 0.09507106148788869,
+        "annual_turnover_x_equity": 9.349525820248166,
+        "cost_drag_per_year": 0.023373814550620417,
+        "n_orders": 1845,
+        "final_pocket_equity": 1.428376033663837
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.6765481022576931,
+        "max_drawdown": 0.2064850819840839,
+        "cagr": 0.10558813992546234,
+        "annual_turnover_x_equity": 7.757024022758695,
+        "cost_drag_per_year": 0.01939256005689674,
+        "n_orders": 1834,
+        "final_pocket_equity": 1.482992029530661
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.6996906859926582,
+        "max_drawdown": 0.19800360514521562,
+        "cagr": 0.10087261261925007,
+        "annual_turnover_x_equity": 7.881482466735251,
+        "cost_drag_per_year": 0.019703706166838128,
+        "n_orders": 378,
+        "final_pocket_equity": 1.458314995605305
+       },
+       "size=P|noband": {
+        "sharpe": 0.37698479618972724,
+        "max_drawdown": 0.26868495465899866,
+        "cagr": 0.05116762657512308,
+        "annual_turnover_x_equity": 21.78862622549701,
+        "cost_drag_per_year": 0.054471565563742524,
+        "n_orders": 89654,
+        "final_pocket_equity": 1.2164095701120246
+       },
+       "size=E|noband": {
+        "sharpe": 0.4139455306685912,
+        "max_drawdown": 0.22116065577717944,
+        "cagr": 0.05411187397214756,
+        "annual_turnover_x_equity": 21.735097907240498,
+        "cost_drag_per_year": 0.05433774476810125,
+        "n_orders": 90904,
+        "final_pocket_equity": 1.229839980584132
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": -0.0671878613252076,
+       "dCAGR": -0.02390358704123119,
+       "dMaxDD": -0.009118068786832967,
+       "d_orders": 1476
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": 0.023142583734965028,
+       "dCAGR": -0.004715527306212275
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": -0.02284524326748094,
+       "dCAGR": -0.013386508603657532,
+       "dMaxDD": -0.0018844848004671844
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.036960734478863944
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.00029734046748408627
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 1618,
+      "orders_P_pocket": 369
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 435,
+      "n_s1_orders_ref": 369,
+      "n_active_cells": 110870,
+      "n_disagree_cells": 18638,
+      "share_disagree_of_active": 0.1681067917380716,
+      "n_bars_with_disagreement": 10518,
+      "n_s1_hold_s2_trade": 18603,
+      "n_s1_trade_s2_hold": 35,
+      "n_s1_orders": 369,
+      "disagree_per_s1_order": 50.50948509485095,
+      "n_disagree_cells_symmetric_on_S2_path": 3937,
+      "n_active_cells_S2_path": 110881,
+      "mean_abs_k_minus_1_when_invested": 0.25977627216848453
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 369,
+      "n_orders_S2": 378,
+      "n_xor_cells": 99,
+      "xor_per_S1_order": 0.2682926829268293,
+      "n_bars_with_xor": 90,
+      "n_bars_order_S1": 241,
+      "n_bars_order_S2": 249,
+      "unmatched_S1_orders_within_pm24h": 21,
+      "unmatched_S2_orders_within_pm24h": 30,
+      "unmatched_S1_orders_within_pm1h": 43,
+      "unmatched_S2_orders_within_pm1h": 51
+     },
+     "pocket_equity_range_S1": [
+      0.8619995143885228,
+      1.6226131641284705
+     ],
+     "pocket_equity_S2_range": [
+      0.8727126249017083,
+      1.5099146127684717
+     ],
+     "P_end_S1": 1.554742541803607,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.021357938043758188,
+      "half_size_thr": 0.15,
+      "flatten_thr": 0.25,
+      "hours_dd_above_half": 0,
+      "hours_dd_above_flatten": 0,
+      "flatten_would_trigger": false,
+      "freeze_thr": 0.03,
+      "hours_daily_loss_above_freeze": 0,
+      "n_freeze_episodes": 0
+     },
+     "porte1_threshold_flips_sharpe0p70": false,
+     "porte1_threshold_flips_pf1p15": false,
+     "porte1_threshold_flips_ntrades80": false,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    },
+    "a=0.25": {
+     "S2": {
+      "sharpe": 0.7158057757816693,
+      "max_drawdown": 0.200874686025936,
+      "cagr": 0.10542424349161572,
+      "profit_factor": 1.5125531878730427,
+      "total_return": 0.48212915264674194,
+      "n_trades_closed": 97,
+      "annual_turnover_x_equity": 8.047775018547622,
+      "cost_drag_per_year": 0.02011943754636905,
+      "cost_total_pocket_units": 0.09933097005696949,
+      "n_orders": 379,
+      "n_order_bars": 249,
+      "maxdd_over_bh_maxdd": 0.26290503914040697
+     },
+     "S2b": {
+      "sharpe": 0.4127680942959947,
+      "max_drawdown": 0.22740221608260308,
+      "cagr": 0.054495310682951326,
+      "profit_factor": 1.1373281610932686,
+      "total_return": 0.2315971545398101,
+      "n_trades_closed": 115,
+      "annual_turnover_x_equity": 21.459411979307742,
+      "cost_drag_per_year": 0.05364852994826935,
+      "cost_total_pocket_units": 0.23389743596812848,
+      "n_orders": 82303,
+      "n_order_bars": 23407,
+      "maxdd_over_bh_maxdd": 0.29762430350279606
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.016412430256495192,
+      "max_drawdown": -0.007494880758615097,
+      "cagr": -0.013550405037504154,
+      "profit_factor": -0.0009436645691918155,
+      "annual_turnover_x_equity": -0.9008228988193565,
+      "cost_drag_per_year": -0.0022520572470483974,
+      "n_orders": 10,
+      "n_trades_closed": 0
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.16308607458027663,
+      0.19573256833438435
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.3224085493354468,
+      "band_wallet_frame_S2_minus_S2b": 0.30303768148567456,
+      "frame_S2b_minus_S3": 0.03578329810626746,
+      "total_S2_minus_S1": 0.016412430256495192
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.0678070219539968,
+      "band_wallet_frame_S2_minus_S2b": 0.050928932808664396,
+      "frame_S2b_minus_S3": 0.0033276841078282438,
+      "total_S2_minus_S1": -0.013550405037504154
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": 0.6993933455251741,
+        "max_drawdown": 0.2083695667845511,
+        "cagr": 0.11897464852911988,
+        "annual_turnover_x_equity": 8.948597917366978,
+        "cost_drag_per_year": 0.02237149479341745,
+        "n_orders": 369,
+        "final_pocket_equity": 1.554742541803607
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.6060420775817532,
+        "max_drawdown": 0.20623300332617858,
+        "cagr": 0.09119783204054777,
+        "annual_turnover_x_equity": 8.916519238150077,
+        "cost_drag_per_year": 0.02229129809537519,
+        "n_orders": 554,
+        "final_pocket_equity": 1.408644824531998
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.6631245134709985,
+        "max_drawdown": 0.21107016132326703,
+        "cagr": 0.10522080998987793,
+        "annual_turnover_x_equity": 7.809985418116877,
+        "cost_drag_per_year": 0.019524963545292193,
+        "n_orders": 471,
+        "final_pocket_equity": 1.4810586427511327
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.7158057757816689,
+        "max_drawdown": 0.20087468602593359,
+        "cagr": 0.10542424349161728,
+        "annual_turnover_x_equity": 8.0477750185476,
+        "cost_drag_per_year": 0.020119437546369003,
+        "n_orders": 379,
+        "final_pocket_equity": 1.4821291526467504
+       },
+       "size=P|noband": {
+        "sharpe": 0.37698479618972724,
+        "max_drawdown": 0.26868495465899866,
+        "cagr": 0.05116762657512308,
+        "annual_turnover_x_equity": 21.78862622549701,
+        "cost_drag_per_year": 0.054471565563742524,
+        "n_orders": 89654,
+        "final_pocket_equity": 1.2164095701120246
+       },
+       "size=E|noband": {
+        "sharpe": 0.4087007497802926,
+        "max_drawdown": 0.22896510055339106,
+        "cagr": 0.05383434455687475,
+        "annual_turnover_x_equity": 21.755786729472796,
+        "cost_drag_per_year": 0.054389466823681974,
+        "n_orders": 90662,
+        "final_pocket_equity": 1.228569313683928
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": -0.09335126794342086,
+       "dCAGR": -0.02777681648857211,
+       "dMaxDD": -0.0021365634583725146,
+       "d_orders": 185
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": 0.052681262310670385,
+       "dCAGR": 0.00020343350173934738
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": -0.036268832054175526,
+       "dCAGR": -0.013753838539241947,
+       "dMaxDD": 0.0027005945387159336
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.03171595359056534
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.01641243025649486
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 333,
+      "orders_P_pocket": 369
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 360,
+      "n_s1_orders_ref": 369,
+      "n_active_cells": 110870,
+      "n_disagree_cells": 14115,
+      "share_disagree_of_active": 0.12731126544601787,
+      "n_bars_with_disagreement": 8149,
+      "n_s1_hold_s2_trade": 14085,
+      "n_s1_trade_s2_hold": 30,
+      "n_s1_orders": 369,
+      "disagree_per_s1_order": 38.2520325203252,
+      "n_disagree_cells_symmetric_on_S2_path": 2409,
+      "n_active_cells_S2_path": 110881,
+      "mean_abs_k_minus_1_when_invested": 0.20424516676225343
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 369,
+      "n_orders_S2": 379,
+      "n_xor_cells": 102,
+      "xor_per_S1_order": 0.2764227642276423,
+      "n_bars_with_xor": 89,
+      "n_bars_order_S1": 241,
+      "n_bars_order_S2": 249,
+      "unmatched_S1_orders_within_pm24h": 20,
+      "unmatched_S2_orders_within_pm24h": 30,
+      "unmatched_S1_orders_within_pm1h": 45,
+      "unmatched_S2_orders_within_pm1h": 54
+     },
+     "pocket_equity_range_S1": [
+      0.8619995143885228,
+      1.6226131641284705
+     ],
+     "pocket_equity_S2_range": [
+      0.8696843218210404,
+      1.538516574619286
+     ],
+     "P_end_S1": 1.554742541803607,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.053472403624205245,
+      "half_size_thr": 0.15,
+      "flatten_thr": 0.25,
+      "hours_dd_above_half": 0,
+      "hours_dd_above_flatten": 0,
+      "flatten_would_trigger": false,
+      "freeze_thr": 0.03,
+      "hours_daily_loss_above_freeze": 0,
+      "n_freeze_episodes": 0
+     },
+     "porte1_threshold_flips_sharpe0p70": true,
+     "porte1_threshold_flips_pf1p15": false,
+     "porte1_threshold_flips_ntrades80": false,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    },
+    "a=0.30": {
+     "S2": {
+      "sharpe": 0.7381908782255427,
+      "max_drawdown": 0.20102906595981376,
+      "cagr": 0.1103440273807057,
+      "profit_factor": 1.5315636791536171,
+      "total_return": 0.5081941458299655,
+      "n_trades_closed": 97,
+      "annual_turnover_x_equity": 8.087324745351786,
+      "cost_drag_per_year": 0.020218311863379464,
+      "cost_total_pocket_units": 0.10091045983261364,
+      "n_orders": 381,
+      "n_order_bars": 251,
+      "maxdd_over_bh_maxdd": 0.26310709179005437
+     },
+     "S2b": {
+      "sharpe": 0.41000962018518095,
+      "max_drawdown": 0.23038023572282268,
+      "cagr": 0.05423875942268541,
+      "profit_factor": 1.1366067396052015,
+      "total_return": 0.2304212510706094,
+      "n_trades_closed": 115,
+      "annual_turnover_x_equity": 21.532197296429082,
+      "cost_drag_per_year": 0.053830493241072704,
+      "cost_total_pocket_units": 0.23453672580825563,
+      "n_orders": 83443,
+      "n_order_bars": 23542,
+      "maxdd_over_bh_maxdd": 0.3015219393152635
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.038797532700368675,
+      "max_drawdown": -0.007340500824737334,
+      "cagr": -0.008630621148414175,
+      "profit_factor": 0.0180668267113826,
+      "annual_turnover_x_equity": -0.861273172015192,
+      "cost_drag_per_year": -0.002153182930037984,
+      "n_orders": 12,
+      "n_trades_closed": 0
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.1283677933786606,
+      0.19426495270614766
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.3224085493354468,
+      "band_wallet_frame_S2_minus_S2b": 0.3281812580403618,
+      "frame_S2b_minus_S3": 0.0330248239954537,
+      "total_S2_minus_S1": 0.038797532700368675
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.0678070219539968,
+      "band_wallet_frame_S2_minus_S2b": 0.05610526795802029,
+      "frame_S2b_minus_S3": 0.00307113284756233,
+      "total_S2_minus_S1": -0.008630621148414175
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": 0.6993933455251741,
+        "max_drawdown": 0.2083695667845511,
+        "cagr": 0.11897464852911988,
+        "annual_turnover_x_equity": 8.948597917366978,
+        "cost_drag_per_year": 0.02237149479341745,
+        "n_orders": 369,
+        "final_pocket_equity": 1.554742541803607
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.6391401882482071,
+        "max_drawdown": 0.19569306176712958,
+        "cagr": 0.09687720782995224,
+        "annual_turnover_x_equity": 8.945676772264083,
+        "cost_drag_per_year": 0.022364191930660207,
+        "n_orders": 532,
+        "final_pocket_equity": 1.4376470848280307
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.696485178588768,
+        "max_drawdown": 0.21234178722983044,
+        "cagr": 0.11227175259840982,
+        "annual_turnover_x_equity": 7.786925932908778,
+        "cost_drag_per_year": 0.01946731483227195,
+        "n_orders": 434,
+        "final_pocket_equity": 1.5184998042601365
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.7381908782255245,
+        "max_drawdown": 0.20102906595981232,
+        "cagr": 0.11034402738070526,
+        "annual_turnover_x_equity": 8.087324745351788,
+        "cost_drag_per_year": 0.020218311863379468,
+        "n_orders": 381,
+        "final_pocket_equity": 1.5081941458299637
+       },
+       "size=P|noband": {
+        "sharpe": 0.37698479618972724,
+        "max_drawdown": 0.26868495465899866,
+        "cagr": 0.05116762657512308,
+        "annual_turnover_x_equity": 21.78862622549701,
+        "cost_drag_per_year": 0.054471565563742524,
+        "n_orders": 89654,
+        "final_pocket_equity": 1.2164095701120246
+       },
+       "size=E|noband": {
+        "sharpe": 0.4068848997863068,
+        "max_drawdown": 0.2315762995159249,
+        "cagr": 0.05372707587500947,
+        "annual_turnover_x_equity": 21.760488004161083,
+        "cost_drag_per_year": 0.05440122001040271,
+        "n_orders": 90568,
+        "final_pocket_equity": 1.2280784468843484
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": -0.060253157276967007,
+       "dCAGR": -0.022097440699167636,
+       "dMaxDD": -0.012676505017421513,
+       "d_orders": 163
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": 0.04170569963675652,
+       "dCAGR": -0.0019277252177045678
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": -0.0029081669364060536,
+       "dCAGR": -0.006702895930710051,
+       "dMaxDD": 0.00397222044527934
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.029900103596579575
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.03879753270035047
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 307,
+      "orders_P_pocket": 369
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 408,
+      "n_s1_orders_ref": 369,
+      "n_active_cells": 110870,
+      "n_disagree_cells": 12589,
+      "share_disagree_of_active": 0.11354739785334175,
+      "n_bars_with_disagreement": 7367,
+      "n_s1_hold_s2_trade": 12559,
+      "n_s1_trade_s2_hold": 30,
+      "n_s1_orders": 369,
+      "disagree_per_s1_order": 34.116531165311656,
+      "n_disagree_cells_symmetric_on_S2_path": 2119,
+      "n_active_cells_S2_path": 110881,
+      "mean_abs_k_minus_1_when_invested": 0.18713297013583943
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 369,
+      "n_orders_S2": 381,
+      "n_xor_cells": 104,
+      "xor_per_S1_order": 0.28184281842818426,
+      "n_bars_with_xor": 91,
+      "n_bars_order_S1": 241,
+      "n_bars_order_S2": 251,
+      "unmatched_S1_orders_within_pm24h": 20,
+      "unmatched_S2_orders_within_pm24h": 32,
+      "unmatched_S1_orders_within_pm1h": 45,
+      "unmatched_S2_orders_within_pm1h": 56
+     },
+     "pocket_equity_range_S1": [
+      0.8619995143885228,
+      1.6226131641284705
+     ],
+     "pocket_equity_S2_range": [
+      0.8695482333543993,
+      1.5661262462266252
+     ],
+     "P_end_S1": 1.554742541803607,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.06394161614216215,
+      "half_size_thr": 0.15,
+      "flatten_thr": 0.25,
+      "hours_dd_above_half": 0,
+      "hours_dd_above_flatten": 0,
+      "flatten_would_trigger": false,
+      "freeze_thr": 0.03,
+      "hours_daily_loss_above_freeze": 0,
+      "n_freeze_episodes": 0
+     },
+     "porte1_threshold_flips_sharpe0p70": true,
+     "porte1_threshold_flips_pf1p15": false,
+     "porte1_threshold_flips_ntrades80": false,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    },
+    "a=0.60": {
+     "S2": {
+      "sharpe": 0.7295687759127388,
+      "max_drawdown": 0.20947115248834464,
+      "cagr": 0.11617063599178223,
+      "profit_factor": 1.534294422206177,
+      "total_return": 0.5395036339616781,
+      "n_trades_closed": 97,
+      "annual_turnover_x_equity": 8.35928989998418,
+      "cost_drag_per_year": 0.02089822474996045,
+      "cost_total_pocket_units": 0.10517293470332978,
+      "n_orders": 371,
+      "n_order_bars": 243,
+      "maxdd_over_bh_maxdd": 0.27415610514818123
+     },
+     "S2b": {
+      "sharpe": 0.39599113843861145,
+      "max_drawdown": 0.24704976740302456,
+      "cagr": 0.053037517457978245,
+      "profit_factor": 1.129571786935762,
+      "total_return": 0.2249264823648327,
+      "n_trades_closed": 115,
+      "annual_turnover_x_equity": 21.7138553118342,
+      "cost_drag_per_year": 0.054284638279585504,
+      "cost_total_pocket_units": 0.2357620898177006,
+      "n_orders": 87206,
+      "n_order_bars": 23897,
+      "maxdd_over_bh_maxdd": 0.32333904313027517
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.03017543038756476,
+      "max_drawdown": 0.0011015857037935395,
+      "cagr": -0.0028040125373376412,
+      "profit_factor": 0.020797569763942425,
+      "annual_turnover_x_equity": -0.5893080173827983,
+      "cost_drag_per_year": -0.0014732700434569972,
+      "n_orders": 2,
+      "n_trades_closed": 0
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.0797416040958637,
+      0.12608255976479238
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.3224085493354468,
+      "band_wallet_frame_S2_minus_S2b": 0.3335776374741274,
+      "frame_S2b_minus_S3": 0.0190063422488842,
+      "total_S2_minus_S1": 0.03017543038756476
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.0678070219539968,
+      "band_wallet_frame_S2_minus_S2b": 0.06313311853380399,
+      "frame_S2b_minus_S3": 0.001869890882855163,
+      "total_S2_minus_S1": -0.0028040125373376412
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": 0.6993933455251741,
+        "max_drawdown": 0.2083695667845511,
+        "cagr": 0.11897464852911988,
+        "annual_turnover_x_equity": 8.948597917366978,
+        "cost_drag_per_year": 0.02237149479341745,
+        "n_orders": 369,
+        "final_pocket_equity": 1.554742541803607
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.6597051685378261,
+        "max_drawdown": 0.218635937259852,
+        "cagr": 0.10606670551372055,
+        "annual_turnover_x_equity": 8.99563813025828,
+        "cost_drag_per_year": 0.022489095325645702,
+        "n_orders": 388,
+        "final_pocket_equity": 1.4855137095696607
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.5872459510869119,
+        "max_drawdown": 0.22400175246745047,
+        "cagr": 0.09539075977847467,
+        "annual_turnover_x_equity": 8.288964247178596,
+        "cost_drag_per_year": 0.02072241061794649,
+        "n_orders": 354,
+        "final_pocket_equity": 1.4300138081872253
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.729568775912733,
+        "max_drawdown": 0.209471152488345,
+        "cagr": 0.11617063599178201,
+        "annual_turnover_x_equity": 8.359289899984182,
+        "cost_drag_per_year": 0.020898224749960455,
+        "n_orders": 371,
+        "final_pocket_equity": 1.5395036339616777
+       },
+       "size=P|noband": {
+        "sharpe": 0.37698479618972724,
+        "max_drawdown": 0.26868495465899866,
+        "cagr": 0.05116762657512308,
+        "annual_turnover_x_equity": 21.78862622549701,
+        "cost_drag_per_year": 0.054471565563742524,
+        "n_orders": 89654,
+        "final_pocket_equity": 1.2164095701120246
+       },
+       "size=E|noband": {
+        "sharpe": 0.3951409831598182,
+        "max_drawdown": 0.24737444471373868,
+        "cagr": 0.05289212602341009,
+        "annual_turnover_x_equity": 21.77699025826636,
+        "cost_drag_per_year": 0.05444247564566591,
+        "n_orders": 90010,
+        "final_pocket_equity": 1.224262669980006
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": -0.039688176987347945,
+       "dCAGR": -0.012907943015399326,
+       "dMaxDD": 0.010266370475300907,
+       "d_orders": 19
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": 0.14232282482582104,
+       "dCAGR": 0.020779876213307347
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": -0.11214739443826216,
+       "dCAGR": -0.02358388875064521,
+       "dMaxDD": 0.01563218568289937
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.01815618697009097
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.030175430387558877
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 161,
+      "orders_P_pocket": 369
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 231,
+      "n_s1_orders_ref": 369,
+      "n_active_cells": 110870,
+      "n_disagree_cells": 3667,
+      "share_disagree_of_active": 0.033074772255795075,
+      "n_bars_with_disagreement": 2362,
+      "n_s1_hold_s2_trade": 3639,
+      "n_s1_trade_s2_hold": 28,
+      "n_s1_orders": 369,
+      "disagree_per_s1_order": 9.937669376693767,
+      "n_disagree_cells_symmetric_on_S2_path": 758,
+      "n_active_cells_S2_path": 110873,
+      "mean_abs_k_minus_1_when_invested": 0.09646565242324863
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 369,
+      "n_orders_S2": 371,
+      "n_xor_cells": 86,
+      "xor_per_S1_order": 0.23306233062330622,
+      "n_bars_with_xor": 74,
+      "n_bars_order_S1": 241,
+      "n_bars_order_S2": 243,
+      "unmatched_S1_orders_within_pm24h": 17,
+      "unmatched_S2_orders_within_pm24h": 20,
+      "unmatched_S1_orders_within_pm1h": 36,
+      "unmatched_S2_orders_within_pm1h": 38
+     },
+     "pocket_equity_range_S1": [
+      0.8619995143885228,
+      1.6226131641284705
+     ],
+     "pocket_equity_S2_range": [
+      0.8605494044469438,
+      1.6041291015466208
+     ],
+     "P_end_S1": 1.554742541803607,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.12991088932835407,
+      "half_size_thr": 0.2,
+      "flatten_thr": 0.35,
+      "hours_dd_above_half": 0,
+      "hours_dd_above_flatten": 0,
+      "flatten_would_trigger": false,
+      "freeze_thr": 0.05,
+      "hours_daily_loss_above_freeze": 0,
+      "n_freeze_episodes": 0
+     },
+     "porte1_threshold_flips_sharpe0p70": true,
+     "porte1_threshold_flips_pf1p15": false,
+     "porte1_threshold_flips_ntrades80": false,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    }
+   },
+   "S1": {
+    "sharpe": 0.6993933455251741,
+    "max_drawdown": 0.2083695667845511,
+    "cagr": 0.11897464852911988,
+    "profit_factor": 1.5134968524422345,
+    "total_return": 0.5547425418036069,
+    "n_trades_closed": 97,
+    "annual_turnover_x_equity": 8.948597917366978,
+    "cost_drag_per_year": 0.02237149479341745,
+    "cost_total_pocket_units": 0.1124513595383074,
+    "n_orders": 369,
+    "n_order_bars": 241,
+    "maxdd_over_bh_maxdd": 0.272714348407688
+   },
+   "S3": {
+    "sharpe": 0.37698479618972724,
+    "max_drawdown": 0.26868495465899866,
+    "cagr": 0.05116762657512308,
+    "profit_factor": 1.11943036197239,
+    "total_return": 0.21640957011202455,
+    "n_trades_closed": 115,
+    "annual_turnover_x_equity": 21.78862622549701,
+    "cost_drag_per_year": 0.054471565563742524,
+    "cost_total_pocket_units": 0.23548716408398462,
+    "n_orders": 89654,
+    "n_order_bars": 24028,
+    "maxdd_over_bh_maxdd": 0.3516552031446211
+   }
+  },
+  "B": {
+   "name": "B_lowweight_volgate",
+   "first_active_bar": "2022-01-01 01:00:00",
+   "semantics": {
+    "a=0.10": {
+     "S2": {
+      "sharpe": 0.09275398442213811,
+      "max_drawdown": 0.419167123208738,
+      "cagr": -0.010584836498977013,
+      "profit_factor": 0.8974977200817502,
+      "total_return": -0.04929438473538217,
+      "n_trades_closed": 79,
+      "annual_turnover_x_equity": 3.662618991757453,
+      "cost_drag_per_year": 0.009156547479393633,
+      "cost_total_pocket_units": 0.0385672816080934,
+      "n_orders": 279,
+      "n_order_bars": 147,
+      "maxdd_over_bh_maxdd": 0.548606452678345
+     },
+     "S2b": {
+      "sharpe": -0.025594950026864665,
+      "max_drawdown": 0.5219266317235186,
+      "cagr": -0.056157147888696635,
+      "profit_factor": 0.9402100125324658,
+      "total_return": -0.24009015370321296,
+      "n_trades_closed": 138,
+      "annual_turnover_x_equity": 33.81034961074928,
+      "cost_drag_per_year": 0.0845258740268732,
+      "cost_total_pocket_units": 0.3188681160470634,
+      "n_orders": 205372,
+      "n_order_bars": 39042,
+      "maxdd_over_bh_maxdd": 0.6830982253481934
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.10390588556564932,
+      "max_drawdown": 0.00880573730815254,
+      "cagr": 0.01955269915483382,
+      "profit_factor": 0.07556857926960403,
+      "annual_turnover_x_equity": 0.3015547542649877,
+      "cost_drag_per_year": 0.0007538868856624709,
+      "n_orders": -8,
+      "n_trades_closed": -6
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.05961984551028786,
+      0.2693777919457175
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.1798928387250865,
+      "band_wallet_frame_S2_minus_S2b": 0.11834893444900278,
+      "frame_S2b_minus_S3": 0.16544978984173306,
+      "total_S2_minus_S1": 0.10390588556564932
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.0437455042370809,
+      "band_wallet_frame_S2_minus_S2b": 0.04557231138971962,
+      "frame_S2b_minus_S3": 0.0177258920021951,
+      "total_S2_minus_S1": 0.01955269915483382
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": -0.01115190114351121,
+        "max_drawdown": 0.41036138590058546,
+        "cagr": -0.030137535653810832,
+        "annual_turnover_x_equity": 3.3610642374924655,
+        "cost_drag_per_year": 0.008402660593731162,
+        "n_orders": 287,
+        "final_pocket_equity": 0.864703370013284
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.046622249331405546,
+        "max_drawdown": 0.42982066997414403,
+        "cagr": -0.02183629868106196,
+        "annual_turnover_x_equity": 3.4572130817729927,
+        "cost_drag_per_year": 0.008643032704432481,
+        "n_orders": 337,
+        "final_pocket_equity": 0.9004310214720663
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.06858599582650553,
+        "max_drawdown": 0.4091596951869089,
+        "cagr": -0.013522850478289716,
+        "annual_turnover_x_equity": 3.6878760184796806,
+        "cost_drag_per_year": 0.009219690046199203,
+        "n_orders": 669,
+        "final_pocket_equity": 0.93736922654665
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.09275398442214794,
+        "max_drawdown": 0.41916712320873606,
+        "cagr": -0.010584836498976236,
+        "annual_turnover_x_equity": 3.662618991757447,
+        "cost_drag_per_year": 0.009156547479393618,
+        "n_orders": 279,
+        "final_pocket_equity": 0.9507056152646218
+       },
+       "size=P|noband": {
+        "sharpe": -0.1910447398685977,
+        "max_drawdown": 0.46929637316454575,
+        "cagr": -0.07388303989089173,
+        "annual_turnover_x_equity": 26.543135531185957,
+        "cost_drag_per_year": 0.0663578388279649,
+        "n_orders": 230150,
+        "final_pocket_equity": 0.6944604339619166
+       },
+       "size=E|noband": {
+        "sharpe": -0.038004102222163494,
+        "max_drawdown": 0.5347229467738207,
+        "cagr": -0.06080229554589178,
+        "annual_turnover_x_equity": 35.95400474666085,
+        "cost_drag_per_year": 0.08988501186665213,
+        "n_orders": 231242,
+        "final_pocket_equity": 0.7423067620588877
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": 0.057774150474916755,
+       "dCAGR": 0.008301236972748871,
+       "dMaxDD": 0.01945928407355857,
+       "d_orders": 50
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": 0.024167988595642412,
+       "dCAGR": 0.0029380139793134807
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": 0.07973789697001674,
+       "dCAGR": 0.016614685175521116,
+       "dMaxDD": -0.0012016907136765398
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.15304063764643422
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.10390588556565915
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 328,
+      "orders_P_pocket": 287
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 383,
+      "n_s1_orders_ref": 287,
+      "n_active_cells": 239356,
+      "n_disagree_cells": 7532,
+      "share_disagree_of_active": 0.031467771854476176,
+      "n_bars_with_disagreement": 3124,
+      "n_s1_hold_s2_trade": 7468,
+      "n_s1_trade_s2_hold": 64,
+      "n_s1_orders": 287,
+      "disagree_per_s1_order": 26.24390243902439,
+      "n_disagree_cells_symmetric_on_S2_path": 8810,
+      "n_active_cells_S2_path": 239975,
+      "mean_abs_k_minus_1_when_invested": 0.14829704380364936
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 287,
+      "n_orders_S2": 279,
+      "n_xor_cells": 242,
+      "xor_per_S1_order": 0.8432055749128919,
+      "n_bars_with_xor": 211,
+      "n_bars_order_S1": 154,
+      "n_bars_order_S2": 147,
+      "unmatched_S1_orders_within_pm24h": 54,
+      "unmatched_S2_orders_within_pm24h": 44,
+      "unmatched_S1_orders_within_pm1h": 112,
+      "unmatched_S2_orders_within_pm1h": 105
+     },
+     "pocket_equity_range_S1": [
+      0.6236056497876169,
+      1.1451771276601894
+     ],
+     "pocket_equity_S2_range": [
+      0.5940912161840441,
+      1.1992699909940865
+     ],
+     "P_end_S1": 0.864703370013284,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.04827416407512858,
+      "half_size_thr": 0.15,
+      "flatten_thr": 0.25,
+      "hours_dd_above_half": 0,
+      "hours_dd_above_flatten": 0,
+      "flatten_would_trigger": false,
+      "freeze_thr": 0.03,
+      "hours_daily_loss_above_freeze": 0,
+      "n_freeze_episodes": 0
+     },
+     "porte1_threshold_flips_sharpe0p70": false,
+     "porte1_threshold_flips_pf1p15": false,
+     "porte1_threshold_flips_ntrades80": true,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    },
+    "a=0.25": {
+     "S2": {
+      "sharpe": 0.05709201873692472,
+      "max_drawdown": 0.4227259264312992,
+      "cagr": -0.019567469466425624,
+      "profit_factor": 0.8688852942596299,
+      "total_return": -0.08960426169170255,
+      "n_trades_closed": 83,
+      "annual_turnover_x_equity": 3.676875929632003,
+      "cost_drag_per_year": 0.009192189824080009,
+      "cost_total_pocket_units": 0.038345565188389955,
+      "n_orders": 283,
+      "n_order_bars": 146,
+      "maxdd_over_bh_maxdd": 0.5532642187664006
+     },
+     "S2b": {
+      "sharpe": -0.057222539975496145,
+      "max_drawdown": 0.5221399053348901,
+      "cagr": -0.06206308058164389,
+      "profit_factor": 0.9180097747099494,
+      "total_return": -0.2624150588263796,
+      "n_trades_closed": 138,
+      "annual_turnover_x_equity": 33.64875031354215,
+      "cost_drag_per_year": 0.0841218757838554,
+      "cost_total_pocket_units": 0.3142268886380805,
+      "n_orders": 218904,
+      "n_order_bars": 39042,
+      "maxdd_over_bh_maxdd": 0.6833773581162615
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.06824391988043593,
+      "max_drawdown": 0.01236454053071373,
+      "cagr": 0.010570066187385208,
+      "profit_factor": 0.04695615344748372,
+      "annual_turnover_x_equity": 0.3158116921395373,
+      "cost_drag_per_year": 0.0007895292303488465,
+      "n_orders": -4,
+      "n_trades_closed": -2
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.07864078212256077,
+      0.22721173635300002
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.1798928387250865,
+      "band_wallet_frame_S2_minus_S2b": 0.11431455871242086,
+      "frame_S2b_minus_S3": 0.13382219989310157,
+      "total_S2_minus_S1": 0.06824391988043593
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.0437455042370809,
+      "band_wallet_frame_S2_minus_S2b": 0.04249561111521827,
+      "frame_S2b_minus_S3": 0.01181995930924784,
+      "total_S2_minus_S1": 0.010570066187385208
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": -0.01115190114351121,
+        "max_drawdown": 0.41036138590058546,
+        "cagr": -0.030137535653810832,
+        "annual_turnover_x_equity": 3.3610642374924655,
+        "cost_drag_per_year": 0.008402660593731162,
+        "n_orders": 287,
+        "final_pocket_equity": 0.864703370013284
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.036233313151704874,
+        "max_drawdown": 0.4276011816594317,
+        "cagr": -0.023165250125391612,
+        "annual_turnover_x_equity": 3.396677522475251,
+        "cost_drag_per_year": 0.008491693806188128,
+        "n_orders": 316,
+        "final_pocket_equity": 0.8946343740605467
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.053857827759975406,
+        "max_drawdown": 0.4081724966661301,
+        "cagr": -0.016859368080983983,
+        "annual_turnover_x_equity": 3.723561627515515,
+        "cost_drag_per_year": 0.009308904068788787,
+        "n_orders": 339,
+        "final_pocket_equity": 0.922403502373231
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.05709201873693207,
+        "max_drawdown": 0.42272592643129897,
+        "cagr": -0.019567469466425624,
+        "annual_turnover_x_equity": 3.6768759296320033,
+        "cost_drag_per_year": 0.009192189824080009,
+        "n_orders": 283,
+        "final_pocket_equity": 0.9103957383082975
+       },
+       "size=P|noband": {
+        "sharpe": -0.1910447398685977,
+        "max_drawdown": 0.46929637316454575,
+        "cagr": -0.07388303989089173,
+        "annual_turnover_x_equity": 26.543135531185957,
+        "cost_drag_per_year": 0.0663578388279649,
+        "n_orders": 230150,
+        "final_pocket_equity": 0.6944604339619166
+       },
+       "size=E|noband": {
+        "sharpe": -0.061718462500548084,
+        "max_drawdown": 0.5266028984869826,
+        "cagr": -0.06359334429052221,
+        "annual_turnover_x_equity": 34.33693916558295,
+        "cost_drag_per_year": 0.08584234791395738,
+        "n_orders": 231096,
+        "final_pocket_equity": 0.7318857754148422
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": 0.04738521429521608,
+       "dCAGR": 0.00697228552841922,
+       "dMaxDD": 0.01723979575884621,
+       "d_orders": 29
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": 0.0032341909769566662,
+       "dCAGR": -0.0027081013854416414
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": 0.06500972890348662,
+       "dCAGR": 0.013278167572826849,
+       "dMaxDD": -0.002188889234455371
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.12932627736804964
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.06824391988044329
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 313,
+      "orders_P_pocket": 287
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 337,
+      "n_s1_orders_ref": 287,
+      "n_active_cells": 239356,
+      "n_disagree_cells": 5670,
+      "share_disagree_of_active": 0.02368856431424322,
+      "n_bars_with_disagreement": 2585,
+      "n_s1_hold_s2_trade": 5610,
+      "n_s1_trade_s2_hold": 60,
+      "n_s1_orders": 287,
+      "disagree_per_s1_order": 19.75609756097561,
+      "n_disagree_cells_symmetric_on_S2_path": 6737,
+      "n_active_cells_S2_path": 239471,
+      "mean_abs_k_minus_1_when_invested": 0.12791193083053634
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 287,
+      "n_orders_S2": 283,
+      "n_xor_cells": 226,
+      "xor_per_S1_order": 0.7874564459930313,
+      "n_bars_with_xor": 205,
+      "n_bars_order_S1": 154,
+      "n_bars_order_S2": 146,
+      "unmatched_S1_orders_within_pm24h": 39,
+      "unmatched_S2_orders_within_pm24h": 31,
+      "unmatched_S1_orders_within_pm1h": 99,
+      "unmatched_S2_orders_within_pm1h": 96
+     },
+     "pocket_equity_range_S1": [
+      0.6236056497876169,
+      1.1451771276601894
+     ],
+     "pocket_equity_S2_range": [
+      0.6063296923246995,
+      1.1711327077090274
+     ],
+     "P_end_S1": 0.864703370013284,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.11868914118347677,
+      "half_size_thr": 0.15,
+      "flatten_thr": 0.25,
+      "hours_dd_above_half": 0,
+      "hours_dd_above_flatten": 0,
+      "flatten_would_trigger": false,
+      "freeze_thr": 0.03,
+      "hours_daily_loss_above_freeze": 0,
+      "n_freeze_episodes": 0
+     },
+     "porte1_threshold_flips_sharpe0p70": false,
+     "porte1_threshold_flips_pf1p15": false,
+     "porte1_threshold_flips_ntrades80": false,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    },
+    "a=0.60": {
+     "S2": {
+      "sharpe": 0.00718874153755288,
+      "max_drawdown": 0.41874397706524424,
+      "cagr": -0.029742677748729962,
+      "profit_factor": 0.8308232784528068,
+      "total_return": -0.13362297954593205,
+      "n_trades_closed": 83,
+      "annual_turnover_x_equity": 3.4941495229031063,
+      "cost_drag_per_year": 0.008735373807257769,
+      "cost_total_pocket_units": 0.035614419692124505,
+      "n_orders": 277,
+      "n_order_bars": 140,
+      "maxdd_over_bh_maxdd": 0.548052638478964
+     },
+     "S2b": {
+      "sharpe": -0.11940639898367192,
+      "max_drawdown": 0.5027218258343392,
+      "cagr": -0.06905563623172783,
+      "profit_factor": 0.8754862770182105,
+      "total_return": -0.2881745476159733,
+      "n_trades_closed": 138,
+      "annual_turnover_x_equity": 30.549370515122302,
+      "cost_drag_per_year": 0.07637342628780575,
+      "cost_total_pocket_units": 0.28239298851209765,
+      "n_orders": 228027,
+      "n_order_bars": 39042,
+      "maxdd_over_bh_maxdd": 0.6579629514922994
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.01834064268106409,
+      "max_drawdown": 0.008382591164658781,
+      "cagr": 0.0003948579050808698,
+      "profit_factor": 0.008894137640660604,
+      "annual_turnover_x_equity": 0.1330852854106408,
+      "cost_drag_per_year": 0.0003327132135266062,
+      "n_orders": -10,
+      "n_trades_closed": -2
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.08506965470947886,
+      0.1273660091342749
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.1798928387250865,
+      "band_wallet_frame_S2_minus_S2b": 0.1265951405212248,
+      "frame_S2b_minus_S3": 0.0716383408849258,
+      "total_S2_minus_S1": 0.01834064268106409
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.0437455042370809,
+      "band_wallet_frame_S2_minus_S2b": 0.03931295848299787,
+      "frame_S2b_minus_S3": 0.004827403659163898,
+      "total_S2_minus_S1": 0.0003948579050808698
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": -0.01115190114351121,
+        "max_drawdown": 0.41036138590058546,
+        "cagr": -0.030137535653810832,
+        "annual_turnover_x_equity": 3.3610642374924655,
+        "cost_drag_per_year": 0.008402660593731162,
+        "n_orders": 287,
+        "final_pocket_equity": 0.864703370013284
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.08533035909630493,
+        "max_drawdown": 0.3966597171798087,
+        "cagr": -0.008346240376030711,
+        "annual_turnover_x_equity": 3.510773260814037,
+        "cost_drag_per_year": 0.008776933152035093,
+        "n_orders": 308,
+        "final_pocket_equity": 0.9609673582317185
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.0367709571974875,
+        "max_drawdown": 0.4054347586911171,
+        "cagr": -0.02047965704782806,
+        "annual_turnover_x_equity": 3.660885912871218,
+        "cost_drag_per_year": 0.009152214782178045,
+        "n_orders": 314,
+        "final_pocket_equity": 0.9063789930684533
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.007188741537556484,
+        "max_drawdown": 0.41874397706524424,
+        "cagr": -0.029742677748730073,
+        "annual_turnover_x_equity": 3.4941495229031077,
+        "cost_drag_per_year": 0.008735373807257769,
+        "n_orders": 277,
+        "final_pocket_equity": 0.8663770204540675
+       },
+       "size=P|noband": {
+        "sharpe": -0.1910447398685977,
+        "max_drawdown": 0.46929637316454575,
+        "cagr": -0.07388303989089173,
+        "annual_turnover_x_equity": 26.543135531185957,
+        "cost_drag_per_year": 0.0663578388279649,
+        "n_orders": 230150,
+        "final_pocket_equity": 0.6944604339619166
+       },
+       "size=E|noband": {
+        "sharpe": -0.1200076978316557,
+        "max_drawdown": 0.5031607002928684,
+        "cagr": -0.06922569657010824,
+        "annual_turnover_x_equity": 30.624417830802443,
+        "cost_drag_per_year": 0.07656104457700609,
+        "n_orders": 230690,
+        "final_pocket_equity": 0.7112079489031877
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": 0.09648226023981614,
+       "dCAGR": 0.02179129527778012,
+       "dMaxDD": -0.013701668720776772,
+       "d_orders": 21
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": -0.029582215659931015,
+       "dCAGR": -0.009263020700902014
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": 0.04792285834099871,
+       "dCAGR": 0.009657878605982773,
+       "dMaxDD": -0.004926627209468348
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.07103704203694201
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.018340642681067693
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 265,
+      "orders_P_pocket": 287
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 237,
+      "n_s1_orders_ref": 287,
+      "n_active_cells": 239356,
+      "n_disagree_cells": 2233,
+      "share_disagree_of_active": 0.00932920002005381,
+      "n_bars_with_disagreement": 1316,
+      "n_s1_hold_s2_trade": 2185,
+      "n_s1_trade_s2_hold": 48,
+      "n_s1_orders": 287,
+      "disagree_per_s1_order": 7.780487804878049,
+      "n_disagree_cells_symmetric_on_S2_path": 2350,
+      "n_active_cells_S2_path": 239525,
+      "mean_abs_k_minus_1_when_invested": 0.07444095778397229
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 287,
+      "n_orders_S2": 277,
+      "n_xor_cells": 188,
+      "xor_per_S1_order": 0.6550522648083623,
+      "n_bars_with_xor": 173,
+      "n_bars_order_S1": 154,
+      "n_bars_order_S2": 140,
+      "unmatched_S1_orders_within_pm24h": 25,
+      "unmatched_S2_orders_within_pm24h": 14,
+      "unmatched_S1_orders_within_pm1h": 76,
+      "unmatched_S2_orders_within_pm1h": 67
+     },
+     "pocket_equity_range_S1": [
+      0.6236056497876169,
+      1.1451771276601894
+     ],
+     "pocket_equity_S2_range": [
+      0.621653495176781,
+      1.1300764332180986
+     ],
+     "P_end_S1": 0.864703370013284,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.26337248773283284,
+      "half_size_thr": 0.2,
+      "flatten_thr": 0.35,
+      "hours_dd_above_half": 4015,
+      "hours_dd_above_flatten": 0,
+      "flatten_would_trigger": false,
+      "freeze_thr": 0.05,
+      "hours_daily_loss_above_freeze": 9,
+      "n_freeze_episodes": 4
+     },
+     "porte1_threshold_flips_sharpe0p70": false,
+     "porte1_threshold_flips_pf1p15": false,
+     "porte1_threshold_flips_ntrades80": false,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    }
+   },
+   "S1": {
+    "sharpe": -0.01115190114351121,
+    "max_drawdown": 0.41036138590058546,
+    "cagr": -0.030137535653810832,
+    "profit_factor": 0.8219291408121462,
+    "total_return": -0.135296629986716,
+    "n_trades_closed": 85,
+    "annual_turnover_x_equity": 3.3610642374924655,
+    "cost_drag_per_year": 0.008402660593731162,
+    "cost_total_pocket_units": 0.03382813456210642,
+    "n_orders": 287,
+    "n_order_bars": 154,
+    "maxdd_over_bh_maxdd": 0.5370814927271389
+   },
+   "S3": {
+    "sharpe": -0.1910447398685977,
+    "max_drawdown": 0.46929637316454575,
+    "cagr": -0.07388303989089173,
+    "profit_factor": 0.8532107244525738,
+    "total_return": -0.3055395660380834,
+    "n_trades_closed": 138,
+    "annual_turnover_x_equity": 26.543135531185957,
+    "cost_drag_per_year": 0.0663578388279649,
+    "cost_total_pocket_units": 0.24361648062781133,
+    "n_orders": 230150,
+    "n_order_bars": 39042,
+    "maxdd_over_bh_maxdd": 0.6142156774266003
+   }
+  },
+  "C": {
+   "name": "C_bigweight_sma200_equal",
+   "first_active_bar": "2022-10-29 01:00:00",
+   "semantics": {
+    "a=0.25": {
+     "S2": {
+      "sharpe": 0.6248460994056889,
+      "max_drawdown": 0.6213941008676421,
+      "cagr": 0.20346566572156832,
+      "profit_factor": 1.2696608996341134,
+      "total_return": 1.0690289338199985,
+      "n_trades_closed": 115,
+      "annual_turnover_x_equity": 26.128543076970896,
+      "cost_drag_per_year": 0.06532135769242722,
+      "cost_total_pocket_units": 0.40291820774923826,
+      "n_orders": 676,
+      "n_order_bars": 332,
+      "maxdd_over_bh_maxdd": 0.8132813727914535
+     },
+     "S2b": {
+      "sharpe": 0.5540176799356542,
+      "max_drawdown": 0.6361953577720403,
+      "cagr": 0.1641090867962116,
+      "profit_factor": 1.148805197898119,
+      "total_return": 0.8158414512867713,
+      "n_trades_closed": 115,
+      "annual_turnover_x_equity": 47.852585956521764,
+      "cost_drag_per_year": 0.1196314648913044,
+      "cost_total_pocket_units": 0.6723132436506162,
+      "n_orders": 88467,
+      "n_order_bars": 24039,
+      "maxdd_over_bh_maxdd": 0.8326532762540709
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.13089850370644435,
+      "max_drawdown": -0.04124464360656532,
+      "cagr": 0.07981573498734318,
+      "profit_factor": 0.18605414978119406,
+      "annual_turnover_x_equity": -5.289244554002476,
+      "cost_drag_per_year": -0.013223111385006231,
+      "n_orders": 133,
+      "n_trades_closed": 0
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.16117446649026862,
+      0.3862611272693716
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.05862252114372818,
+      "band_wallet_frame_S2_minus_S2b": 0.07082841947003471,
+      "frame_S2b_minus_S3": 0.11869260538013782,
+      "total_S2_minus_S1": 0.13089850370644435
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.03984866932984876,
+      "band_wallet_frame_S2_minus_S2b": 0.03935657892535671,
+      "frame_S2b_minus_S3": 0.08030782539183523,
+      "total_S2_minus_S1": 0.07981573498734318
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": 0.49394759569924457,
+        "max_drawdown": 0.6626387444742075,
+        "cagr": 0.12364993073422514,
+        "annual_turnover_x_equity": 31.417787630973372,
+        "cost_drag_per_year": 0.07854446907743345,
+        "n_orders": 543,
+        "final_pocket_equity": 1.5804008289474636
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.46273260480406186,
+        "max_drawdown": 0.6761119123980374,
+        "cagr": 0.10357573702608769,
+        "annual_turnover_x_equity": 43.263312957718504,
+        "cost_drag_per_year": 0.10815828239429627,
+        "n_orders": 53472,
+        "final_pocket_equity": 1.4724230798837807
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.6614726459871001,
+        "max_drawdown": 0.6256484834658502,
+        "cagr": 0.22869296240079318,
+        "annual_turnover_x_equity": 33.87096573975483,
+        "cost_drag_per_year": 0.08467741434938707,
+        "n_orders": 50526,
+        "final_pocket_equity": 2.244588343741298
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.6248460994056961,
+        "max_drawdown": 0.6213941008676424,
+        "cagr": 0.20346566572156788,
+        "annual_turnover_x_equity": 26.128543076970907,
+        "cost_drag_per_year": 0.06532135769242725,
+        "n_orders": 676,
+        "final_pocket_equity": 2.069028933819996
+       },
+       "size=P|noband": {
+        "sharpe": 0.4353250745555164,
+        "max_drawdown": 0.6680280391662354,
+        "cagr": 0.08380126140437638,
+        "annual_turnover_x_equity": 50.923933230238,
+        "cost_drag_per_year": 0.12730983307559499,
+        "n_orders": 90830,
+        "final_pocket_equity": 1.3715300028959954
+       },
+       "size=E|noband": {
+        "sharpe": 0.5533171431254146,
+        "max_drawdown": 0.6362677977090845,
+        "cagr": 0.16370945916058233,
+        "annual_turnover_x_equity": 48.04942600831725,
+        "cost_drag_per_year": 0.12012356502079306,
+        "n_orders": 93946,
+        "final_pocket_equity": 1.813395489202967
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": -0.031214990895182704,
+       "dCAGR": -0.020074193708137456,
+       "dMaxDD": 0.01347316792382991,
+       "d_orders": 52929
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": -0.03662654658140396,
+       "dCAGR": -0.025227296679225297
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": 0.16752505028785553,
+       "dCAGR": 0.10504303166656803,
+       "dMaxDD": -0.03699026100835723
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.11799206856989819
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.13089850370645156
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 53139,
+      "orders_P_pocket": 543
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 666,
+      "n_s1_orders_ref": 543,
+      "n_active_cells": 96201,
+      "n_disagree_cells": 70143,
+      "share_disagree_of_active": 0.7291296348270808,
+      "n_bars_with_disagreement": 21387,
+      "n_s1_hold_s2_trade": 70033,
+      "n_s1_trade_s2_hold": 110,
+      "n_s1_orders": 543,
+      "disagree_per_s1_order": 129.1767955801105,
+      "n_disagree_cells_symmetric_on_S2_path": 68241,
+      "n_active_cells_S2_path": 96201,
+      "mean_abs_k_minus_1_when_invested": 0.3505051250902185
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 543,
+      "n_orders_S2": 676,
+      "n_xor_cells": 277,
+      "xor_per_S1_order": 0.5101289134438306,
+      "n_bars_with_xor": 229,
+      "n_bars_order_S1": 252,
+      "n_bars_order_S2": 332,
+      "unmatched_S1_orders_within_pm24h": 32,
+      "unmatched_S2_orders_within_pm24h": 119,
+      "unmatched_S1_orders_within_pm1h": 68,
+      "unmatched_S2_orders_within_pm1h": 199
+     },
+     "pocket_equity_range_S1": [
+      0.5605217031036567,
+      2.8637486531920664
+     ],
+     "pocket_equity_S2_range": [
+      0.5973547283771299,
+      2.539790703041792
+     ],
+     "P_end_S1": 1.5804008289474636,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.21416951875006346,
+      "half_size_thr": 0.15,
+      "flatten_thr": 0.25,
+      "hours_dd_above_half": 17034,
+      "hours_dd_above_flatten": 0,
+      "flatten_would_trigger": false,
+      "freeze_thr": 0.03,
+      "hours_daily_loss_above_freeze": 93,
+      "n_freeze_episodes": 18
+     },
+     "porte1_threshold_flips_sharpe0p70": false,
+     "porte1_threshold_flips_pf1p15": true,
+     "porte1_threshold_flips_ntrades80": false,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    },
+    "a=0.60": {
+     "S2": {
+      "sharpe": 0.5982483439160636,
+      "max_drawdown": 0.6382835628285719,
+      "cagr": 0.19377642332723255,
+      "profit_factor": 1.2036546171857188,
+      "total_return": 1.0043992576933114,
+      "n_trades_closed": 115,
+      "annual_turnover_x_equity": 28.832755427522883,
+      "cost_drag_per_year": 0.07208188856880719,
+      "cost_total_pocket_units": 0.4279292956591354,
+      "n_orders": 596,
+      "n_order_bars": 285,
+      "maxdd_over_bh_maxdd": 0.835386321631674
+     },
+     "S2b": {
+      "sharpe": 0.5121852250890473,
+      "max_drawdown": 0.6545507774129904,
+      "cagr": 0.13945039417213634,
+      "profit_factor": 1.1068748087699267,
+      "total_return": 0.6694554710847997,
+      "n_trades_closed": 115,
+      "annual_turnover_x_equity": 48.945278286878676,
+      "cost_drag_per_year": 0.12236319571719671,
+      "cost_total_pocket_units": 0.6459406142840955,
+      "n_orders": 92671,
+      "n_order_bars": 24111,
+      "maxdd_over_bh_maxdd": 0.8566768723308783
+     },
+     "delta_S2_minus_S1": {
+      "sharpe": 0.10430074821681906,
+      "max_drawdown": -0.02435518164563555,
+      "cagr": 0.0701264925930074,
+      "profit_factor": 0.12004786733279937,
+      "annual_turnover_x_equity": -2.5850322034504885,
+      "cost_drag_per_year": -0.006462580508626262,
+      "n_orders": 53,
+      "n_trades_closed": 0
+     },
+     "delta_Sharpe_S2_minus_S1_boot95": [
+      -0.049780239968561214,
+      0.23969144871818837
+     ],
+     "decomposition_sharpe": {
+      "band_pocket_frame_S1_minus_S3": 0.05862252114372818,
+      "band_wallet_frame_S2_minus_S2b": 0.08606311882701634,
+      "frame_S2b_minus_S3": 0.0768601505335309,
+      "total_S2_minus_S1": 0.10430074821681906
+     },
+     "decomposition_cagr": {
+      "band_pocket_frame_S1_minus_S3": 0.03984866932984876,
+      "band_wallet_frame_S2_minus_S2b": 0.05432602915509621,
+      "frame_S2b_minus_S3": 0.05564913276775996,
+      "total_S2_minus_S1": 0.0701264925930074
+     },
+     "diagnostic_mixed_cells_NOT_production_semantics_do_not_attribute": {
+      "cells": {
+       "size=P|bandarg=pocket": {
+        "sharpe": 0.49394759569924457,
+        "max_drawdown": 0.6626387444742075,
+        "cagr": 0.12364993073422514,
+        "annual_turnover_x_equity": 31.417787630973372,
+        "cost_drag_per_year": 0.07854446907743345,
+        "n_orders": 543,
+        "final_pocket_equity": 1.5804008289474636
+       },
+       "size=P|bandarg=wallet": {
+        "sharpe": 0.5006761438521702,
+        "max_drawdown": 0.6601174229452896,
+        "cagr": 0.13090787634399503,
+        "annual_turnover_x_equity": 32.95454690971815,
+        "cost_drag_per_year": 0.08238636727429538,
+        "n_orders": 8610,
+        "final_pocket_equity": 1.6208564961581569
+       },
+       "size=E|bandarg=pocket": {
+        "sharpe": 0.5766155590505878,
+        "max_drawdown": 0.6524970368614497,
+        "cagr": 0.18090686854995197,
+        "annual_turnover_x_equity": 30.890173353357564,
+        "cost_drag_per_year": 0.07722543338339392,
+        "n_orders": 13172,
+        "final_pocket_equity": 1.9208972171625074
+       },
+       "size=E|bandarg=wallet": {
+        "sharpe": 0.5982483439160674,
+        "max_drawdown": 0.6382835628285723,
+        "cagr": 0.19377642332723255,
+        "annual_turnover_x_equity": 28.832755427522883,
+        "cost_drag_per_year": 0.0720818885688072,
+        "n_orders": 596,
+        "final_pocket_equity": 2.004399257693311
+       },
+       "size=P|noband": {
+        "sharpe": 0.4353250745555164,
+        "max_drawdown": 0.6680280391662354,
+        "cagr": 0.08380126140437638,
+        "annual_turnover_x_equity": 50.923933230238,
+        "cost_drag_per_year": 0.12730983307559499,
+        "n_orders": 90830,
+        "final_pocket_equity": 1.3715300028959954
+       },
+       "size=E|noband": {
+        "sharpe": 0.5120885911723064,
+        "max_drawdown": 0.6545618241325649,
+        "cagr": 0.1393895401296279,
+        "annual_turnover_x_equity": 48.973335231088946,
+        "cost_drag_per_year": 0.12243333807772237,
+        "n_orders": 94062,
+        "final_pocket_equity": 1.669105475158848
+       }
+      },
+      "effect_of_band_argument_at_pocket_sizing": {
+       "dSharpe": 0.0067285481529256175,
+       "dCAGR": 0.007257945609769889,
+       "dMaxDD": -0.0025213215289178192,
+       "d_orders": 8067
+      },
+      "effect_of_band_argument_at_wallet_sizing": {
+       "dSharpe": 0.021632784865479593,
+       "dCAGR": 0.012869554777280579
+      },
+      "effect_of_sizing_base_at_pocket_bandarg": {
+       "dSharpe": 0.08266796335134324,
+       "dCAGR": 0.05725693781572683,
+       "dMaxDD": -0.010141707612757789
+      },
+      "effect_of_sizing_base_noband": {
+       "dSharpe": 0.07676351661679004
+      },
+      "total_S2_minus_S1": {
+       "dSharpe": 0.10430074821682284
+      },
+      "orders_xor_band_argument_only_at_pocket_sizing": 8269,
+      "orders_P_pocket": 543
+     },
+     "D1_same_state": {
+      "n_disagree_episodes": 661,
+      "n_s1_orders_ref": 543,
+      "n_active_cells": 96201,
+      "n_disagree_cells": 28874,
+      "share_disagree_of_active": 0.3001424101620565,
+      "n_bars_with_disagreement": 15962,
+      "n_s1_hold_s2_trade": 28793,
+      "n_s1_trade_s2_hold": 81,
+      "n_s1_orders": 543,
+      "disagree_per_s1_order": 53.17495395948435,
+      "n_disagree_cells_symmetric_on_S2_path": 29143,
+      "n_active_cells_S2_path": 96201,
+      "mean_abs_k_minus_1_when_invested": 0.159580671154767
+     },
+     "D2_independent_paths": {
+      "n_orders_S1": 543,
+      "n_orders_S2": 596,
+      "n_xor_cells": 193,
+      "xor_per_S1_order": 0.35543278084714547,
+      "n_bars_with_xor": 176,
+      "n_bars_order_S1": 252,
+      "n_bars_order_S2": 285,
+      "unmatched_S1_orders_within_pm24h": 32,
+      "unmatched_S2_orders_within_pm24h": 72,
+      "unmatched_S1_orders_within_pm1h": 65,
+      "unmatched_S2_orders_within_pm1h": 117
+     },
+     "pocket_equity_range_S1": [
+      0.5605217031036567,
+      2.8637486531920664
+     ],
+     "pocket_equity_S2_range": [
+      0.589559784650086,
+      2.7414346081093934
+     ],
+     "P_end_S1": 1.5804008289474636,
+     "cb_exposure_pocket_only": {
+      "max_wallet_dd": 0.4529968380733485,
+      "half_size_thr": 0.2,
+      "flatten_thr": 0.35,
+      "hours_dd_above_half": 25627,
+      "hours_dd_above_flatten": 14902,
+      "flatten_would_trigger": true,
+      "freeze_thr": 0.05,
+      "hours_daily_loss_above_freeze": 369,
+      "n_freeze_episodes": 92
+     },
+     "porte1_threshold_flips_sharpe0p70": false,
+     "porte1_threshold_flips_pf1p15": true,
+     "porte1_threshold_flips_ntrades80": false,
+     "porte1_threshold_flips_maxdd1p5xBH": false
+    }
+   },
+   "S1": {
+    "sharpe": 0.49394759569924457,
+    "max_drawdown": 0.6626387444742075,
+    "cagr": 0.12364993073422514,
+    "profit_factor": 1.0836067498529194,
+    "total_return": 0.5804008289474636,
+    "n_trades_closed": 115,
+    "annual_turnover_x_equity": 31.417787630973372,
+    "cost_drag_per_year": 0.07854446907743345,
+    "cost_total_pocket_units": 0.40179847833496557,
+    "n_orders": 543,
+    "n_order_bars": 252,
+    "maxdd_over_bh_maxdd": 0.8672624136893402
+   },
+   "S3": {
+    "sharpe": 0.4353250745555164,
+    "max_drawdown": 0.6680280391662354,
+    "cagr": 0.08380126140437638,
+    "profit_factor": 1.0506124176682883,
+    "total_return": 0.37153000289599536,
+    "n_trades_closed": 115,
+    "annual_turnover_x_equity": 50.923933230238,
+    "cost_drag_per_year": 0.12730983307559499,
+    "cost_total_pocket_units": 0.5952069545069407,
+    "n_orders": 90830,
+    "n_order_bars": 20320,
+    "maxdd_over_bh_maxdd": 0.87431592929142
+   }
+  }
+ },
+ "replica_vs_engine": {
+  "A/S1": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 1.3877787807814457e-17
+  },
+  "A/S3": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 4.718447854656915e-16
+  },
+  "A/S2/a=0.1": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 0.0
+  },
+  "A/S2b/a=0.1": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 2.42861286636753e-17
+  },
+  "A/S2/a=0.25": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 0.0
+  },
+  "A/S2b/a=0.25": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 3.608224830031759e-16
+  },
+  "A/S2/a=0.3": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 3.469446951953614e-18
+  },
+  "A/S2b/a=0.3": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 2.0816681711721685e-16
+  },
+  "A/S2/a=0.6": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 1.3877787807814457e-17
+  },
+  "A/S2b/a=0.6": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 3.885780586188048e-16
+  },
+  "B/S1": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 6.938893903907228e-18
+  },
+  "B/S3": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 6.106226635438361e-16
+  },
+  "B/S2/a=0.1": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 4.336808689942018e-19
+  },
+  "B/S2b/a=0.1": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 2.2898349882893854e-16
+  },
+  "B/S2/a=0.25": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 1.734723475976807e-18
+  },
+  "B/S2b/a=0.25": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 1.249000902703301e-16
+  },
+  "B/S2/a=0.6": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 3.469446951953614e-18
+  },
+  "B/S2b/a=0.6": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 1.4432899320127035e-15
+  },
+  "C/S1": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 0.0
+  },
+  "C/S3": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 2.220446049250313e-16
+  },
+  "C/S2/a=0.25": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 8.326672684688674e-17
+  },
+  "C/S2b/a=0.25": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 2.220446049250313e-16
+  },
+  "C/S2/a=0.6": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 5.551115123125783e-17
+  },
+  "C/S2b/a=0.6": {
+   "max_abs_equity_diff": 0.0,
+   "cost_diff": 1.9984014443252818e-15
+  }
+ }
+}
