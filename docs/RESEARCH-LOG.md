@@ -1269,3 +1269,198 @@ Suite de tests complète exécutée sur le dépôt corrigé au moment du push fi
 le commit). Leçon consignée (M1, récidive du motif « test tautologique » de la session #6e) :
 un journal append-only n'écrit JAMAIS un résultat avant qu'il n'existe, et une garde de
 non-régression doit exécuter le code qu'elle garde.
+
+---
+
+## 2026-10-12 — Session hebdomadaire #10 (a) : REVUE des stratégies actives et candidates + incidents
+
+- **Note de calendrier (honnêteté)** : aucune session hebdomadaire ne s'est tenue le
+  2026-10-05 — le déclencheur planifié n'a pas tourné cette semaine-là ; la présente session
+  (#10) couvre deux semaines de revue. Aucune décision n'était en attente (labo vide), aucun
+  effet au-delà du retard des chantiers #18/#19.
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56 j. **Zéro action requise, zéro action prise.** Labo 100 % cash (1 139,20 USD
+  constants ; l'équité en € ne bouge qu'au gré du change).
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-10-12 (81 j vécus) : **5 lignes OK**
+  (quasi_passif 0,91/1,64/1,55 vécus vs 0,81/0,28/0,07 attendus ; xs_momentum 1,27/1,29 vs
+  0,82 ; DD vécus ≤ 1,7 % partout, très loin des seuils 2×) ; 2 lignes **SURVEILLER** pour
+  `dual_momentum_etf`, raisons mécaniques connues (#22 : DD de référence absent du registre) +
+  Sharpe roulant 60 j négatif depuis 3 j sur la ligne prudente (sous le seuil d'alerte de
+  30 j consécutifs — à suivre, pas un signal §3.1 même si §3 s'appliquait). **Aucune règle de
+  mort ne serait déclenchée même si §3 s'appliquait. Aucune action.**
+- **Incident #18 CONFIRMÉ (occurrence-test prédite par la revue #9)** : maintenance du
+  dimanche 2026-10-05 → recalibrage SAUTÉ, 0/6 symboles, `missing_symbols_reasons` donnant
+  exactement le diagnostic attendu (« 1 mois manquant(s) (2026-09) » ×6 — archive mensuelle
+  de septembre pas encore publiée). L'instrumentation de la session #7 a fait son travail ;
+  le correctif pré-enregistré est livré cette session, cf. entrée (d).
+- Recalibrage du 2026-10-12 : exécuté normalement (rafraîchissement OK, 16 fenêtres,
+  200 optimal sur la grille) — 10e verdict consécutif « aucun changement », conforme.
+- Cron fetch-data du samedi 2026-10-10 : OK (491 s), 30 crypto (archives → 2026-09) + 30
+  funding + 30 perp + actions/ETF ; 19 anomalies connues, rien de neuf. Ticker **BK** :
+  **6e échec consécutif** (yfinance ET stooq) — #20 toujours ouvert, non traité cette
+  session (chantiers #19/#18 prioritaires ; l'investigation exige un run réel côté Actions,
+  le réseau du conteneur de session étant bloqué vers les sources marché).
+- **Gouvernance #14** : toujours aucune décision humaine enregistrée
+  (`GOVERNANCE-DOSSIER-2026-08-24-quasi-passif.md`, en attente depuis 7 semaines). Le
+  critère vécu de `SELECTION-FINALE.md` §5 arrive à échéance FIN OCTOBRE — c'est
+  vraisemblablement la DERNIÈRE session avant qu'il ne tranche de lui-même. Vécus toujours
+  au-dessus des références auditées : aucune pression à la bascule à ce jour. **Rappel
+  priorité haute maintenu à Mathieu.**
+- Wallets au cycle 2026-10-12T01 : 🛡️ 1 021 € | ⚖️ 1 047 € | 🔥 1 076 € | 🧪 1 017 € (labo
+  100 % cash, état attendu).
+
+---
+
+## 2026-10-12 — Session hebdomadaire #10 (b) : backlog #19 INSTRUIT — analyse dédiée de la bande de non-négociation (session DÉDIÉE, aucune candidate jugée)
+
+**Contexte.** Priorité n°1 pré-enregistrée par la revue de la session #9 : le dossier #19
+(3 pièces : F2 CRITIQUE de l'audit carry #6, écart « flatten sous la bande » #6, quantification
+sur candidate réelle #7) conditionnait la fidélité de toutes les futures SPEC.
+
+**Instruction.** Analyse quantitative par agent dédié sur copie isolée (remote neutralisé),
+données réelles `market-data` (6 majors horaires 2022-01→2026-09), chaque affirmation
+load-bearing revérifiée par l'orchestrateur puis re-démontrée par l'audit (entrée (c)).
+Livrable committé : `backtest/results/band_fidelity_analysis_2026-10-12/` (REPORT.md +
+14 scripts + 11 JSON de résultats, re-exécutables ; cache de runs moteur non committé).
+
+**Constats structurants** (détail chiffré au REPORT) : (i) écart (a) RÉEL — en walk-forward
+(le protocole), ΔSharpe S2−S1 ∈ [−0,220 ; +0,007] sur 21 configs, négatif 18/21 ; contenu sur
+les candidates passées ([−0,066 ; +0,007]) mais du même ordre que la valeur de la bande sur le
+signal quasi-passif (−0,11 vs 0,12) ; signe dépendant de l'horizon ET du P&L du reste du
+wallet (inconnaissable en poche-standalone) ; AUCUN verdict passé du registre ne bascule ;
+(ii) la formulation de l'écart (b) de la fiche était IMPRÉCISE — seul le flatten des CIRCUIT
+BREAKERS contourne la bande en production, un zéro stratégique sous la bande est conservé des
+deux côtés ; le vrai écart (b′) : le moteur ne modélise aucun CB — matériel aux seuils du LABO
+dès un profil à faible poids porté à a=0,60 (MaxDD wallet simulé 26,3 % > flatten 25 %) ;
+(iii) le piège « poids < bande ⇒ jamais d'entrée » existe AUSSI en production (δ nul à
+l'entrée depuis flat) — nuance datée versée à la fiche #16.
+
+**DÉCISION (pré-enregistrée dans `docs/BAND-FIDELITY-SPEC.md`, nouveau document de convention
+— même pattern que SIZING-FIDELITY ; `PROMOTION-RULES.md` reste GRAVÉ et intouché, le moteur
+reste bit-à-bit inchangé)** : **O2 renforcée + O4, option O1 (amendement du moteur) écartée.**
+- Porte 1 toujours jugée sur la sémantique moteur S1 (comparabilité avec les 16 entrées du
+  registre ; O1 écartée pour inconnaissabilité de R(t) — PAS au nom du pessimisme : en
+  walk-forward S2 est plus sévère 18/21, constat consigné honnêtement et versé à #12).
+- Toute SPEC de candidate déclare son `capital_alloc_pct` et fournit l'annexe `band_fidelity` :
+  run S2 apparié précisément défini (poids a·W, bande 0,05·a, mêmes fenêtres, sélection IS NON
+  rejouée, métriques reconverties en unités de poche P = 1 + (E−1)/a) + bloc CB aux seuils du
+  wallet LABO (0,15/0,25) + texture d'exécution pour les candidates à rampe/faible poids.
+- `band_fragile` = FLAG consigné (un seuil §1.2 bascule S1↔S2 — définition SANS nouveau seuil
+  chiffré), tranché en session selon la pratique d'ambiguïté conservatrice existante — AUCUNE
+  règle de rejet automatique nouvelle (ce serait un critère de Porte 1, domaine d'amendement
+  humain). Deux propositions versées à #12 : inscription de l'annexe dans §1.4, et critère
+  formel « S1 ET S2 ».
+- Mécanisation : `tools/verify_research.py --check` impose le bloc `band_fidelity` (clés
+  minimales typées) ou une exemption ≥ 30 caractères à toute entrée datée ≥ 2026-10-12, et un
+  `date_test` ISO à TOUTES les entrées (comparaisons lexicographiques sinon contournables) ;
+  limite documentée : l'antidatage n'est détectable que par l'audit, pas par la garde.
+  Tests : `tools/tests/test_verify_research.py` (33 tests).
+- Nouvel écart résiduel (c) — base d'équity du dimensionnement / P&L du reste du wallet —
+  ouvert en P3 (#23), limite STRUCTURELLE documentée, pas un correctif à faire.
+
+**Registre INCHANGÉ** (aucune stratégie testée cette session — prochaine candidate :
+K_total = 16 lignes + sa grille). Labo toujours vide (0/3).
+
+---
+
+## 2026-10-12 — Session hebdomadaire #10 (c) : audit adversarial du livrable #19 — verdict initial `isSound: false`, 5 MAJEURS corrigés, contre-audit `isSound: true`
+
+**Protocole.** Auditeur indépendant sur copie isolée (remote neutralisé), mandaté pour démolir
+l'analyse, la convention et la garde AVANT tout commit ; reproductions from scratch (sans les
+scripts de l'analyse) ; mutations de la garde ; vérification du périmètre du diff.
+
+**Ce qui tient (à charge de preuve exécutée par l'auditeur)** : tous les chiffres de l'analyse
+reproduits indépendamment (S1 0,6994 / S2 0,7382 / S3 0,3770 à ±0,001 ; walk-forward profil A
+ΔSharpe −0,103/−0,117/−0,111 identiques ; dérivation δ reconfirmée : 0 désaccord sur ~16 000
+états du vrai RiskManager) ; preuve par exécution que seul le flatten CB contourne la bande en
+production ; aucun fichier interdit touché, moteur bit-à-bit inchangé ; suite complète 891
+tests verts sur la copie d'audit.
+
+**Verdict initial `isSound: false` — 5 MAJEURS + 5 mineurs, tous corrigés avant commit :**
+- **M1 (récit inversé)** : la première rédaction minimisait l'écart (a) en citant la fenêtre
+  complète (« un ordre de grandeur sous la valeur de la bande ») là où le protocole réel est
+  le walk-forward — où l'écart est du MÊME ordre que la valeur de la bande sur le profil
+  quasi-passif (−0,11 vs 0,12) et où 3 configs ont un IC excluant zéro. **Corrigé** : SPEC,
+  REPORT et backlog citent le walk-forward d'abord, chiffres complets.
+- **M2 (argument de pessimisme intenable)** : O1 était écartée au motif que S2 « pourrait
+  rehausser les chiffres » — vrai seulement hors protocole ; en walk-forward S2 est PLUS
+  sévère 18/21. **Corrigé** : motifs réels (comparabilité + R(t) inconnaissable), constat
+  18/21 consigné et versé à l'amendement #12d.
+- **M3 (règle de rejet déguisée)** : « band-fragile » était initialement rédigé en règle de
+  rejet automatique avec un seuil neuf (|ΔSharpe| > 0,10) — un critère de Porte 1 déguisé,
+  contradictoire avec l'en-tête « aucun seuil ajouté », et le précédent invoqué
+  (xs_momentum_invvol) tranchait au cas par cas, sans pré-enregistrer de règle générale.
+  **Corrigé** : band_fragile est un FLAG sans seuil chiffré, tranché en session, proposition
+  de règle formelle versée à #12 (décision humaine).
+- **M4 (garde trop faible)** : la garde acceptait tout dict non vide ({"foo": null}), toute
+  chaîne (« n/a »), et les comparaisons lexicographiques étaient contournables par une date
+  non-ISO. **Corrigé** : clés minimales typées (a/sharpe numériques, band_fragile booléen,
+  cb dict non vide), exemption ≥ 30 caractères, regex ISO sur TOUTES les entrées ; limite
+  d'antidatage documentée. Mutations de la garde toutes tuées par les tests (vérifié par
+  l'auditeur sur 6 mutations, puis re-vérifié au contre-audit sur 5).
+- **M5 (S2 sous-spécifié, seuils CB du mauvais wallet)** : la convention ne disait ni la
+  reconversion en unités de poche ni le sort de la sélection IS ; l'analyse appliquait les
+  seuils « agressif » dès a ≥ 0,5 alors que la destination d'une Porte 1 est le LABO
+  (0,15/0,25) — sous lesquels le profil B à a=0,60 DÉPASSE le seuil de flatten (26,3 % >
+  25 %), contrairement au « aucun flatten » initial. **Corrigé** : SPEC §3.2 précise tout,
+  REPORT rectifié, erratum daté ajouté à `tables_generated.md` (artefact généré non
+  régénéré — les MaxDD sont exacts, seule la colonne de déclenchement était à relire).
+- Mineurs corrigés : affirmation prématurée de revue adversariale au passé (récidive M1 #9,
+  reformulée pour ne dire que l'advenu) ; chemins en dur des scripts t1/t2/t3d (paramétrés
+  `BAND19_REPO`/`BAND19_DATA_DIR`, ordre de reproduction documenté) ; message de succès et
+  docstrings de verify_research ; amendements #12c/#12d explicitement versés à la fiche #12
+  (le #21 de la session #9 ne l'avait jamais été — régularisé) ; en-têtes README nuancés.
+
+**Contre-audit (même auditeur, après corrections) : `isSound: true`** — les 5 points
+re-vérifiés par exécution (grep des formulations, registres malformés ×15 sur la garde via le
+point d'entrée réel, cohérence croisée des chiffres, 230 tests tools verts, aucun fichier
+interdit). Résidus mineurs du contre-audit soldés dans la foulée : validation de TYPE des
+clés du bloc (+2 tests), docstring de la garde, 4 formulations, erratum tables. La leçon M1
+de la session #9 a tenu : aucune entrée de ce journal n'a été écrite avant les faits qu'elle
+rapporte.
+
+---
+
+## 2026-10-12 — Session hebdomadaire #10 (d) : backlog #18 SOLDÉ — correctif début-de-mois du rafraîchissement crypto, audit `isSound: true`
+
+**Occurrence-test confirmée** (cf. entrée (a)) : le correctif pré-enregistré par la fiche #18
+est livré. `tools/fetch_data.py` : le complément API klines est étendu aux mois requis
+manquants EN QUEUE d'historique — suffixe contigu se terminant au dernier mois requis,
+plafonné à `CRYPTO_TAIL_COMPLETION_MAX_MONTHS = 3` (au-delà, ce n'est plus un retard de
+publication : exclusion comme avant, sans appel API) — JAMAIS aux trous anciens/du milieu
+(trace du biais du survivant, non-régression prouvée par test différentiel exhaustif
+ancien/nouveau : 0 divergence sur 201 cas hors queue). Critère « mois couvert » pessimiste :
+première bougie ≤ début+1h, dernière ≥ fin−1h, ET densité horaire complète (heures distinctes
+≥ heures du mois − 1). Traçabilité : champ `tail_months_completed_via_api` au MANIFEST
+(additif, seul lecteur `weekly_maintenance.load_crypto_exclusion_reasons` vérifié intact) +
+section dédiée du DATA_REPORT + raison d'inclusion explicite.
+
+**Audit adversarial indépendant : `isSound: true`** (aucun CRITIQUE/MAJEUR). 3 findings
+MINEURS, tous corrigés : (1) trou INTÉRIEUR d'un mois de queue non détecté (le scan
+d'anomalies ne couvre pas la crypto, contrairement à ce que disait le commentaire) → critère
+de densité horaire ajouté ; (2) KeyError possible sur colonne absente → garde pessimiste ;
+(3) une API qui renverrait des bougies antérieures à `startTime` aurait écrasé l'archive via
+`drop_duplicates(keep="last")` → complément borné strictement à [début de queue, +∞). INFO
+corrigées : libellé « non encore publiée » étendu au cas archive en erreur ; en-tête crypto
+du DATA_REPORT. INFO acceptée telle quelle (pré-existante) : mois courant tronqué toléré si
+la pagination s'interrompt après la queue. Les 13 tests d'attaque de l'auditeur sont intégrés
+au dépôt (`tools/tests/test_fetch_data_tail_completion_audit.py` — les 3 « rouges » qui
+documentaient les findings sont verts sur le code corrigé ; le test différentiel se skippe
+proprement hors contexte d'audit, son résultat fait foi ici). Suite tools : 232 verts.
+**Validation sur run réel attendue** à la prochaine maintenance en tout début de mois
+(occurrence candidate : dimanche 2026-11-01).
+
+---
+
+## 2026-10-12 — Session hebdomadaire #10 (e) : hygiène et passation
+
+- `RESEARCH-REGISTRY.json` : INCHANGÉ (aucune stratégie testée). `verify_research --check` :
+  16 entrées, OK (nouvelles vérifications band_fidelity + dates ISO actives).
+- `RESEARCH-BACKLOG.md` : #19 ✅ traitée (convention), #18 ✅ soldée (correctif), #16 nuancée
+  (note datée), #12 complétée ((c) convention #21, (d) annexe band_fidelity + critère
+  « S1 ET S2 »), #20 mis à jour (6e échec BK), #23 créée (écart (c), P3, fiche de mémoire),
+  priorités session #11 posées : 1) prochaine candidate OU sourcing de nouvelles idées (le
+  backlog technique P0/P1 est épuisé — 8 jugées, 0 incubée), 2) #14 (échéance fin octobre !),
+  3) vérification run réel #18 (2026-11-01), 4) #20, 5) #22/#15.
+- Suite de tests complète exécutée avant push (résultat dans le commit final).

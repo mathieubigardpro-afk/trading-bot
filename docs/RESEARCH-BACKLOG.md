@@ -465,7 +465,7 @@ titres large-cap, croisés avec un calendrier de corporate actions ou au minimum
 revue humaine). Complexité : faible. Risque : faux positifs sur vrais krachs idiosyncratiques
 (à journaliser, pas à corriger silencieusement).
 
-### 12. [P1 — gouvernance, session DÉDIÉE obligatoirement, jamais une session de jugement (§0)] Deux amendements à proposer pour PROMOTION-RULES.md
+### 12. [P1 — gouvernance, session DÉDIÉE obligatoirement, jamais une session de jugement (§0)] Amendements à proposer pour PROMOTION-RULES.md (quatre à ce jour : (a)-(d))
 
 (a) **Critère de valeur marginale vs incumbent** : la session #1 a rencontré le cas non prévu
 « tous les seuils Porte 1 passés mais candidate dominée par la version en production de la même
@@ -474,6 +474,15 @@ stratégie sur les mêmes fenêtres » — tranché conservativement (écartée)
 quasi automatiquement satisfait quel que soit K (constat chiffré de l'audit : DSR encore 0.89 à
 K=10 000). Pistes : seuil sur le DSR par fenêtre, ou PSR à SR* > 0 plus exigeant, ou seuil de
 significativité de l'écart vs benchmark (Jobson-Korkie déjà utilisé dans la vague 1).
+(c) **[AJOUTÉ 2026-10-12] Inscription dans §1.4 de la convention de sizing #21**
+(`docs/SIZING-FIDELITY-SPEC.md` : `apply_vol_targeting=False` par défaut, sizing interne via
+`profile["risque"]` sinon) — proposé par la session #9, formellement versé ici.
+(d) **[AJOUTÉ 2026-10-12] Inscription dans §1.4 de l'annexe `band_fidelity`**
+(`docs/BAND-FIDELITY-SPEC.md` §3 : run S2 apparié, bloc CB aux seuils labo, point d'audit) ET
+décision sur un critère formel « seuils §1.2 exigés sous S1 ET S2 » — motivation chiffrée : S2
+est plus sévère que S1 sur 18/21 configs walk-forward (jusqu'à −0,22 de Sharpe), un principe
+pessimiste strict pointerait vers la double exigence, mais c'est un NOUVEAU critère de Porte 1
+qui n'appartient qu'à un amendement humain de PROMOTION-RULES.md.
 
 ### 13. [P2 — dette de recherche] Retester `quasi_passif_crypto` avec le protocole complet — ✅ TRAITÉE 2026-08-10 : ÉCHEC 3/3
 
@@ -522,6 +531,14 @@ par la spec §5 est **RÉFUTÉE** en régime de compounding (relation affine, pa
 clause d'arrêt respectée, comportement de bande inchangé, statut NON RÉSOLU → **#19 ci-dessous**.
 Premier usage : Porte 1 de `btc_seasonality_2123utc` (portage structurellement neutre) ;
 re-run informatif de `funding_carry_6majors`, cf. RESEARCH-LOG 2026-09-07 (b).
+
+> **Nuance datée 2026-10-12 (analyse #19, session #10)** : le raisonnement de cette fiche
+> présentait le piège « poids vol-scalé sous la bande ⇒ aucune entrée » comme propre au moteur.
+> C'est inexact pour la composante BANDE : à l'entrée depuis flat, le décalage entre référentiels
+> poche/wallet est nul et la production bloque ces entrées à l'identique (bande par poche,
+> démontré cas C5/C5b de `backtest/results/band_fidelity_analysis_2026-10-12/`). L'artefact réel
+> traité par cette fiche — la remise à zéro de la position entre fenêtres OOS — reste, lui,
+> propre au moteur ; le verdict et le livrable de la fiche sont inchangés.
 
 Finding F1 (CRITIQUE) de l'audit de `funding_carry_6majors` : `backtest/engine.py` remet
 `shares`/`cash` à zéro à chaque fenêtre OOS (conception historique pour concaténer des fenêtres
@@ -598,7 +615,23 @@ production ACTUELLE — mais expose les candidates au régime de vol brut). **BL
 future Porte 1 de candidate sans sizing interne avant que ce point soit tranché** — sinon ses
 chiffres seraient produits sous une hypothèse de sizing connue pour être infidèle.
 
-### 18. [P2 — infrastructure données, AJOUTÉE 2026-09-07] Robustesse début-de-mois du rafraîchissement crypto de la maintenance — ⚙️ ÉTAPE DIAGNOSTIC LIVRÉE 2026-09-14
+### 18. [P2 — infrastructure données, AJOUTÉE 2026-09-07] Robustesse début-de-mois du rafraîchissement crypto de la maintenance — ✅ TRAITÉE 2026-10-12 : correctif livré (session #10)
+
+**VERDICT (session #10, cf. `RESEARCH-LOG.md` 2026-10-12)** : l'occurrence-test prédite a eu
+lieu — maintenance du dimanche 2026-10-05 (un 5 du mois) : recalibrage sauté, 0/6 symboles,
+`missing_symbols_reasons` donnant exactement le diagnostic attendu (« 1 mois manquant(s)
+(2026-09) » pour les 6 — archive mensuelle de septembre pas encore publiée sur Binance Vision).
+Correctif livré dans `tools/fetch_data.py` : le complément API est étendu aux mois requis
+manquants EN QUEUE d'historique (suffixe contigu, plafonné à 3 mois — au-delà ce n'est plus un
+retard de publication), JAMAIS aux trous anciens/du milieu (trace du biais du survivant,
+non-régression testée) ; critère « mois couvert » pessimiste (première bougie ≤ début+1h ET
+dernière ≥ fin−1h) ; traçabilité honnête (`tail_months_completed_via_api` au MANIFEST + section
+dédiée du DATA_REPORT — la revue humaine voit quelle donnée vient de l'API et non de l'archive).
+16 tests offline nouveaux (`tools/tests/test_fetch_data_tail_completion.py`). Validation sur
+run réel attendue à la prochaine maintenance tombant en tout début de mois (prochaine occurrence
+candidate : dimanche 2026-11-01).
+
+**Fiche d'origine (pour mémoire) : ⚙️ ÉTAPE DIAGNOSTIC LIVRÉE 2026-09-14**
 
 **AVANCEMENT (session #7)** : (a) le recalibrage du 2026-09-13 s'est exécuté normalement (15
 fenêtres, aucun changement) — l'incident ne se reproduit qu'en tout début de mois, comme
@@ -621,7 +654,37 @@ Correctif candidat : étendre le complément API aux mois requis manquants EN QU
 Diagnostic à confirmer au préalable sur un run réel (journaliser les `reason` d'exclusion par
 symbole dans DRIFT-REPORT.json — actuellement seuls les `missing_symbols` remontent).
 
-### 19. [P2 — fidélité moteur, analyse dédiée, AJOUTÉE 2026-09-07] Bande de non-négociation : deux écarts moteur/production documentés, non résolus
+### 19. [P2 — fidélité moteur, analyse dédiée, AJOUTÉE 2026-09-07] Bande de non-négociation : deux écarts moteur/production documentés — ✅ TRAITÉE 2026-10-12 (session #10, analyse dédiée)
+
+**VERDICT (session #10, cf. `RESEARCH-LOG.md` 2026-10-12 et
+`backtest/results/band_fidelity_analysis_2026-10-12/REPORT.md`)** : dossier instruit de bout en
+bout sur données réelles, convention adoptée dans `docs/BAND-FIDELITY-SPEC.md` (pattern
+SIZING-FIDELITY, `PROMOTION-RULES.md` intouché), AUCUN changement de moteur. Points clés :
+(1) l'écart (a) est réel et PAS toujours négligeable : en walk-forward (le protocole réel),
+ΔSharpe moteur→production-modélisée ∈ [−0,220 ; +0,007] sur 21 configs (médiane −0,052,
+négatif 18/21) — contenu sur les candidates passées ([−0,066 ; +0,007]) mais du même ordre que
+la valeur de la bande elle-même sur le signal quasi-passif (Δ ≈ −0,11 pour une valeur de bande
+walk-forward de 0,12) ; le SIGNE dépend de l'horizon (fenêtre complète : tous positifs) et du
+P&L du reste du wallet (inconnaissable en poche-standalone) — aucun verdict passé du registre
+ne bascule (rejeu T4) ; (2) la formulation de l'écart (b) était IMPRÉCISE : le seul contournement
+de bande en production est le flatten des CIRCUIT BREAKERS — un zéro stratégique sous la bande
+est conservé en production comme dans le moteur ; le vrai écart (b′) est que le moteur ne
+modélise aucun CB — matériel pour les candidates à brut élevé sans sizing interne et, aux
+seuils du LABO (flatten 25 %), déjà pour un profil à faible poids porté à a=0,60 (MaxDD wallet
+simulé 26,3 %) ; (3) convention : Porte 1 toujours jugée sur la sémantique moteur (S1), mais
+toute SPEC déclare son `capital_alloc_pct` et fournit l'annexe `band_fidelity` (run S2
+« production modélisée » apparié, sélection IS non rejouée, métriques reconverties en unités de
+poche + exposition CB aux seuils du labo) ; `band_fragile` = FLAG consigné (un seuil §1.2
+bascule S1↔S2), tranché au cas par cas selon la pratique d'ambiguïté conservatrice — PAS de
+règle de rejet automatique nouvelle ; garde mécanique dans `tools/verify_research.py --check`
+(bloc à clés minimales, exemption ≥ 30 caractères, dates ISO imposées). Audit adversarial
+indépendant du livrable : verdict initial `isSound: false` (5 MAJEURS de rédaction/garde — dont
+un récit qui minimisait l'écart en citant la fenêtre complète, et une règle band-fragile
+initialement rédigée en rejet automatique), tous corrigés ; chiffres reproduits indépendamment.
+Nouvel écart résiduel (c) ouvert en P3 (#23). Deux propositions versées aux amendements #12
+(décision humaine) : inscription de l'annexe dans §1.4, et critère formel « S1 ET S2 ».
+
+**Fiche d'origine (pour mémoire — la formulation de (b) y est celle d'AVANT la correction) :**
 
 (a) **Équivalence poche/wallet RÉFUTÉE en compounding** (audit F2 de l'extension carry,
 démonstration : `equity_wallet = 1 + alloc·(equity_pocket − 1)`, relation affine — décisions
@@ -654,6 +717,13 @@ les poches actives (BK absent des positions), mais BK fait partie de l'univers S
 102 titres pour tout futur backtest actions. À investiguer (mapping alternatif, source de repli
 supplémentaire, ou exclusion documentée de l'univers avec note au registre).
 
+> **Mise à jour 2026-10-12 (session #10)** : **6e échec consécutif** au run fetch-data du
+> 2026-10-10 (yfinance ET stooq, « réponse stooq vide/invalide »). Problème durable confirmé.
+> Toujours sans incidence sur les poches actives (BK absent des positions) ; reste un
+> rétrécissement silencieux 103 → 102 titres pour tout futur backtest actions. Investigation
+> mapping non menée cette session (chantiers #19 + #18 prioritaires et réseau du conteneur
+> bloqué vers les sources marché — l'investigation exige un run réel côté Actions) ; à traiter.
+
 ### 22. [P3 — hygiène monitoring, AJOUTÉE 2026-09-21] Référence MaxDD manquante pour `dual_momentum_multiclasse_etf` dans le DRIFT-REPORT
 
 Depuis que le Sharpe roulant 60 j est calculable (rapport du 2026-09-21), les 2 lignes
@@ -664,7 +734,50 @@ explicite dans `tools/weekly_maintenance.py` (le MaxDD OOS de la vague 1 existe 
 rapports d'origine : ~19,9 % — à re-sourcer proprement avant de l'inscrire), avec note au
 rendu. Purement informatif, aucune règle de décision en jeu.
 
-**Priorité de la prochaine session (revue 2026-09-28, session #9)** :
+### 23. [P3 — fidélité moteur, limite structurelle, AJOUTÉE 2026-10-12] Écart (c) : base d'équity du dimensionnement et P&L du reste du wallet
+
+Issu de l'analyse #19 (session #10) : même avec une bande parfaitement alignée, le moteur
+dimensionne (`target_dollars = scaled_w × equity`) sur l'équity de la POCHE simulée seule,
+alors que la production dimensionne sur l'équity TOTALE du wallet, dont le P&L des AUTRES
+poches (R(t)) est inconnaissable depuis un backtest poche-standalone. Mesuré (analyse « reste du wallet », résultats `results_t3_rest_of_wallet.json`, REPORT.md §2) :
+l'effet domine le choix de sémantique de bande et son signe dépend de la composition du reste
+du wallet (ΔSharpe +0,04 reste-en-cash vs −0,35 reste-crypto-B&H sur le même profil —
+`backtest/results/band_fidelity_analysis_2026-10-12/results_t3_rest_of_wallet.json`,
+REPORT.md §2). C'est une
+limite STRUCTURELLE du backtest de poche, pas un bug corrigeable : documentée dans
+`docs/BAND-FIDELITY-SPEC.md` §4 ; toute SPEC revendiquant une fidélité wallet-complète devrait
+simuler le wallet entier (grosse infra, non justifiée à ce jour). Aucune action attendue à
+court terme — fiche de mémoire pour empêcher une future re-revendication implicite.
+
+---
+
+**Priorité de la prochaine session (revue 2026-10-12, session #10)** :
+
+1. **Session de JUGEMENT possible à nouveau, mais backlog technique mince** : toutes les
+   idées P0/P1 sont traitées (8 candidates jugées, 0 incubée). Restent P2#7 (mid-caps
+   momentum — exige extension du pipeline de données + coûts à re-caler + biais du survivant
+   amplifié) et P2#8 (régime cross-asset — grosse infra d'allocation inter-poches). Toute
+   nouvelle candidate doit désormais déclarer `sizing_interne` (SIZING-FIDELITY-SPEC), son
+   `capital_alloc_pct` prévu et produire l'annexe `band_fidelity` (BAND-FIDELITY-SPEC §3).
+   Alternative raisonnable : sourcer de NOUVELLES idées de candidates (revue de littérature
+   practitioner) plutôt que forcer une candidate faible — le cimetière du registre montre le
+   coût en K_total de chaque essai.
+2. **#14 (gouvernance, décision HUMAINE — Mathieu, en attente depuis le 2026-08-24)** : le
+   critère vécu de `SELECTION-FINALE.md` §5 arrive à ÉCHÉANCE FIN OCTOBRE (~2-3 semaines).
+   C'est vraisemblablement la DERNIÈRE session avant l'échéance. Vécus toujours au-dessus des
+   références auditées au 2026-10-12 (aucune pression à la bascule), mais la décision reste
+   ouverte et tranchera de facto par défaut. Peut absorber #12a/#12b, le palier de coûts
+   perp, l'inscription de la convention #21 dans §1.4 et celle de la convention #19
+   (band_fidelity) dans §1.4.
+3. **#18 : vérifier la prochaine occurrence réelle début-de-mois** (dimanche 2026-11-01 — le
+   correctif livré cette session doit transformer « recalibrage sauté 0/6 » en « mois de
+   queue complété via API ») et surveiller le DATA_REPORT à la prochaine régénération.
+4. **#20 (ticker BK, 6 échecs)** : investigation mapping/source de repli à mener côté run
+   réel (Actions), ou exclusion documentée de l'univers avec note au registre.
+5. Revue : DRIFT-REPORT (verdicts 60 j) et #22 (référence MaxDD `dual_momentum_etf`,
+   mécanique, peut se traiter avec #15 — rapide).
+
+**Priorité de la session #10 (revue 2026-09-28, session #9 — conservée pour mémoire)** :
 
 1. **#19 (bande de non-négociation, session d'analyse dédiée)** : le dossier est mûr (3
    pièces : F2 carry, flatten sous la bande, quantification session #7) et conditionne la
