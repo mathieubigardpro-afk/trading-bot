@@ -130,6 +130,17 @@ YFINANCE_TICKER_OVERRIDES = {
 CRYPTO_ARCHIVE_START = (2022, 1)  # première année-mois de l'archive bulk téléchargée
 CRYPTO_FULL_COVERAGE_REQUIRED_FROM = (2023, 7)  # fenêtre de complétude obligatoire
 
+# Backlog #18 (robustesse début-de-mois) : l'archive mensuelle Binance Vision du mois qui
+# vient de se clore n'est publiée qu'avec quelques jours de retard. Les mois requis manquants
+# EN QUEUE d'historique (suffixe contigu de la fenêtre requise, juste avant le mois courant)
+# peuvent donc être complétés via l'API klines ; jamais les trous anciens/du milieu (trace du
+# biais du survivant). Plafond de la queue complétable : au-delà, ce n'est plus un simple
+# retard de publication mais un historique réellement défaillant (symbole récent, délisté,
+# archive durablement absente) -> exclusion comme avant, sans même interroger l'API.
+CRYPTO_TAIL_COMPLETION_MAX_MONTHS = 3
+# Tolérance (heures) du critère « mois couvert » par les bougies API : cf. `_month_covered_by_candles`.
+CRYPTO_TAIL_COVERAGE_TOLERANCE_HOURS = 1
+
 # Funding/perp (futures USDT-M) : même fenêtre d'archive que le spot (les perpétuels les
 # plus anciens de l'univers curaté existent depuis 2019-2020, largement avant 2022-01) --
 # PAS de règle de complétude obligatoire à la spot (idée #1 backlog : la tolérance aux perps
@@ -419,15 +430,23 @@ def download_binance_month(
 def fetch_binance_current_month_completion(
     session: requests.Session, pair: str, month_start: datetime, max_attempts: int
 ) -> pd.DataFrame:
-    """Complète le mois courant (non couvert par les archives bulk, qui ne publient que des
-    mois entièrement clos) via l'API klines publique, avec pagination par tranches de 1000
-    bougies. N'exclut que la bougie encore en formation à l'heure de l'appel (close_time
-    futur)."""
+    """Complète les bougies non couvertes par les archives bulk (qui ne publient que des mois
+    entièrement clos, avec un retard de publication) via l'API klines publique, avec
+    pagination par tranches de 1000 bougies, de `month_start` jusqu'à maintenant.
+    N'exclut que la bougie encore en formation à l'heure de l'appel (close_time futur).
+
+    `month_start` vaut le début du mois courant dans le cas nominal ; depuis le correctif #18
+    il peut aussi être le début du premier mois de la QUEUE d'historique dont l'archive n'est
+    pas encore publiée (cf. `process_crypto_symbol`). Le nom du paramètre est conservé pour
+    ne pas casser les appelants/monkeypatchs existants."""
     now = datetime.now(timezone.utc)
     all_records: List[dict] = []
     cursor_ms = int(month_start.timestamp() * 1000)
     end_ms = int(now.timestamp() * 1000)
-    max_pages = 10  # 10*1000h largement suffisant pour un seul mois en cours (~744h max)
+    # 10 pages = 10 000 bougies 1h ≈ 13,7 mois. Largement suffisant : le mois courant seul
+    # fait ~744 h max, et la queue complétable est plafonnée à
+    # `CRYPTO_TAIL_COMPLETION_MAX_MONTHS` (3) mois -> au plus 4 mois ≈ 2 976 h ≈ 3 pages.
+    max_pages = 10
 
     for _ in range(max_pages):
         if cursor_ms >= end_ms:
@@ -491,6 +510,68 @@ class CryptoSymbolResult:
     months_ok: List[str] = field(default_factory=list)
     months_missing: List[str] = field(default_factory=list)
     months_error: List[str] = field(default_factory=list)
+    # Backlog #18 : mois requis dont l'archive mensuelle était absente et qui ont été
+    # complétés via l'API klines (vide si aucun) -- permet à la revue humaine de savoir quelle
+    # donnée vient de l'API plutôt que de l'archive.
+    tail_months_completed_via_api: List[str] = field(default_factory=list)
+
+
+def _split_required_gaps(
+    required_months: List[Tuple[int, int]], missing_in_required: List[str]
+) -> Tuple[List[str], List[str]]:
+    """Sépare les mois requis manquants en (queue contiguë, trous anciens).
+
+    La « queue » est le plus long suffixe de `required_months` entièrement manquant (mois
+    consécutifs se terminant au DERNIER mois requis) ; tout autre mois manquant est un
+    « trou ancien » (début ou milieu d'historique). Un mois manquant isolé au milieu, même
+    suivi de mois présents, n'est JAMAIS en queue : c'est la trace du biais du survivant."""
+    missing = set(missing_in_required)
+    tail: List[str] = []
+    for (y, m) in reversed(required_months):
+        ym = _yyyymm(y, m)
+        if ym not in missing:
+            break
+        tail.append(ym)
+    tail.reverse()
+    tail_set = set(tail)
+    old_gaps = sorted(ym for ym in missing if ym not in tail_set)
+    return tail, old_gaps
+
+
+def _month_covered_by_candles(df: pd.DataFrame, year: int, month: int) -> bool:
+    """Vrai si les bougies 1h `df` (colonne `timestamp` = open_time UTC) couvrent le mois
+    ENTIER (year, month).
+
+    Sémantique (pessimiste, en cas de doute : non couvert), restreinte aux bougies dont
+    l'open_time tombe DANS le mois [début, fin) :
+      - au moins une bougie dans le mois ;
+      - première bougie du mois <= début du mois + 1h (la bougie de 00:00 peut manquer, pas
+        plus) ;
+      - dernière bougie du mois >= fin du mois - 1h, soit exactement la bougie 23:00 du
+        dernier jour (open_time) : aucune tolérance supplémentaire à la fin, car une bougie
+        manquante en fin de mois laisserait un trou au raccord avec le mois suivant ;
+      - DENSITÉ horaire complète (audit adversarial 2026-10-12, MINEUR-1) : le nombre
+        d'heures DISTINCTES couvertes doit valoir au moins (heures du mois − tolérance) —
+        sans ce critère, un trou INTÉRIEUR (API s'arrêtant puis reprenant) pouvait passer
+        pour un mois « complet » alors que le scan d'anomalies du dépôt ne couvre QUE
+        equities/etf, jamais les bougies crypto horaires."""
+    if df is None or df.empty or "timestamp" not in df.columns:
+        # Colonne absente = structure inattendue -> non couvert par prudence (audit
+        # adversarial 2026-10-12, MINEUR-2 : jamais de KeyError ici).
+        return False
+    start = pd.Timestamp(_month_start_utc(year, month))
+    ny, nm = _add_month(year, month, 1)
+    end = pd.Timestamp(_month_start_utc(ny, nm))
+    tol = pd.Timedelta(hours=CRYPTO_TAIL_COVERAGE_TOLERANCE_HOURS)
+    ts = pd.to_datetime(df["timestamp"], utc=True)
+    in_month = ts[(ts >= start) & (ts < end)]
+    if in_month.empty:
+        return False
+    if not (in_month.min() <= start + tol and in_month.max() >= end - tol):
+        return False
+    expected_hours = int((end - start) / pd.Timedelta(hours=1))
+    distinct_hours = int(in_month.dt.floor("h").nunique())
+    return distinct_hours >= expected_hours - CRYPTO_TAIL_COVERAGE_TOLERANCE_HOURS
 
 
 def process_crypto_symbol(
@@ -526,25 +607,65 @@ def process_crypto_symbol(
     covered_set = set(months_ok)
     missing_in_required = sorted(required_set - covered_set)
 
+    now = datetime.now(timezone.utc)
+    current_month_start = _month_start_utc(now.year, now.month)
+    completion_start = current_month_start
+    tail_months: List[str] = []
+
     if missing_in_required:
         reason = (
             f"historique incomplet sur la fenêtre de complétude requise "
             f"[{_yyyymm(*CRYPTO_FULL_COVERAGE_REQUIRED_FROM)} .. "
             f"{_yyyymm(*required_months[-1])}] : {len(missing_in_required)} mois manquant(s) "
             f"({', '.join(missing_in_required[:6])}{'…' if len(missing_in_required) > 6 else ''}) "
-            f"— exclu (trace du biais du survivant)"
         )
-        logger.warning("crypto %s : EXCLU — %s", symbol, reason)
-        return CryptoSymbolResult(
-            symbol=symbol, pair=pair, included=False, reason=reason,
-            months_ok=months_ok, months_missing=months_missing, months_error=months_error,
-        )
+        tail_months, old_gaps = _split_required_gaps(required_months, missing_in_required)
 
-    # Complément du mois courant (non couvert par les archives bulk, qui ne publient que
-    # des mois entièrement clos).
-    now = datetime.now(timezone.utc)
-    current_month_start = _month_start_utc(now.year, now.month)
-    completion_df = fetch_binance_current_month_completion(session, pair, current_month_start, max_attempts)
+        # Trou ancien/du milieu, ou queue trop longue pour être un simple retard de
+        # publication : exclusion IDENTIQUE au comportement historique (biais du survivant),
+        # sans appeler l'API.
+        if old_gaps or len(tail_months) > CRYPTO_TAIL_COMPLETION_MAX_MONTHS:
+            reason += "— exclu (trace du biais du survivant)"
+            logger.warning("crypto %s : EXCLU — %s", symbol, reason)
+            return CryptoSymbolResult(
+                symbol=symbol, pair=pair, included=False, reason=reason,
+                months_ok=months_ok, months_missing=months_missing, months_error=months_error,
+            )
+
+        # Uniquement des mois manquants en queue contiguë (archive du mois clos pas encore
+        # publiée) : on étend le complément API à partir du début du premier mois de la queue.
+        ty, tm = (int(x) for x in tail_months[0].split("-"))
+        completion_start = _month_start_utc(ty, tm)
+
+    # Complément API : mois courant (cas nominal, non couvert par les archives bulk qui ne
+    # publient que des mois entièrement clos) + éventuellement mois de queue manquants.
+    completion_df = fetch_binance_current_month_completion(session, pair, completion_start, max_attempts)
+    if completion_df is not None and not completion_df.empty:
+        # Défense en profondeur (audit adversarial 2026-10-12, MINEUR-3) : une API qui
+        # renverrait des bougies ANTÉRIEURES à `startTime` écraserait silencieusement la
+        # donnée d'archive via le drop_duplicates(keep="last") plus bas — on borne donc
+        # strictement le complément à [completion_start, +inf) : l'archive reste la source
+        # de vérité pour tout ce qui la précède.
+        _ts = pd.to_datetime(completion_df["timestamp"], utc=True)
+        completion_df = completion_df[_ts >= pd.Timestamp(completion_start)].reset_index(drop=True)
+
+    if tail_months:
+        uncovered = [
+            ym for ym in tail_months
+            if not _month_covered_by_candles(completion_df, *(int(x) for x in ym.split("-")))
+        ]
+        if uncovered:
+            n = 0 if completion_df is None else len(completion_df)
+            reason += (
+                f"— exclu (complément API en queue tenté : {n} bougies, "
+                f"mois {', '.join(uncovered)} non couvert{'s' if len(uncovered) > 1 else ''})"
+            )
+            logger.warning("crypto %s : EXCLU — %s", symbol, reason)
+            return CryptoSymbolResult(
+                symbol=symbol, pair=pair, included=False, reason=reason,
+                months_ok=months_ok, months_missing=months_missing, months_error=months_error,
+            )
+
     if not completion_df.empty:
         frames.append(completion_df)
 
@@ -560,14 +681,29 @@ def process_crypto_symbol(
     full_df = full_df.drop_duplicates(subset="timestamp", keep="last").sort_values("timestamp")
     full_df = full_df.reset_index(drop=True)
 
+    if tail_months:
+        reason_ok = (
+            f"historique complet (mois de queue {', '.join(tail_months)} complété"
+            f"{'s' if len(tail_months) > 1 else ''} via API — archive mensuelle indisponible : "
+            "non encore publiée, ou en erreur persistante)"
+        )
+        logger.warning(
+            "crypto %s : mois de queue %s complétés via l'API (archive mensuelle indisponible : "
+            "non encore publiée, ou en erreur persistante)",
+            symbol, ", ".join(tail_months),
+        )
+    else:
+        reason_ok = "historique complet depuis la fenêtre requise"
+
     logger.info(
         "crypto %s : INCLUS — %d bougies, %s -> %s (%d mois manquants hors fenêtre requise, %d erreurs)",
         symbol, len(full_df), full_df["timestamp"].iloc[0], full_df["timestamp"].iloc[-1],
         len(months_missing), len(months_error),
     )
     return CryptoSymbolResult(
-        symbol=symbol, pair=pair, included=True, reason="historique complet depuis la fenêtre requise",
+        symbol=symbol, pair=pair, included=True, reason=reason_ok,
         df=full_df, months_ok=months_ok, months_missing=months_missing, months_error=months_error,
+        tail_months_completed_via_api=list(tail_months),
     )
 
 
@@ -1377,7 +1513,10 @@ def run_crypto(session: requests.Session, staging_dir: str, max_attempts: int, w
                 res = fut.result()
             except Exception as exc:  # noqa: BLE001 — isolation stricte entre symboles
                 logger.error("crypto %s : exception non gérée, symbole exclu par prudence (%s)", sym, exc)
-                excluded[sym] = {"pair": f"{sym}USDT", "reason": f"exception interne: {exc}"}
+                excluded[sym] = {
+                    "pair": f"{sym}USDT", "reason": f"exception interne: {exc}",
+                    "tail_months_completed_via_api": [],
+                }
                 continue
 
             entry = {
@@ -1385,6 +1524,9 @@ def run_crypto(session: requests.Session, staging_dir: str, max_attempts: int, w
                 "months_ok": len(res.months_ok),
                 "months_missing": res.months_missing,
                 "months_error": res.months_error,
+                # Backlog #18 : liste vide si aucun ; sinon mois dont la donnée vient de l'API
+                # et non de l'archive mensuelle (champ additif, schéma existant inchangé).
+                "tail_months_completed_via_api": list(res.tail_months_completed_via_api),
             }
             if res.included and res.df is not None and not res.df.empty:
                 out_path = os.path.join(staging_dir, "data", "crypto", f"{sym}.csv.gz")
@@ -1795,7 +1937,7 @@ def build_report_md(manifest: dict) -> str:
         "## Crypto",
         "",
         f"- Fenêtre d'archive : {manifest['crypto']['archive_from']} → {manifest['crypto']['archive_to']} "
-        f"(+ complément mois courant via API).",
+        f"(+ complément mois courant — et mois de queue manquants, backlog #18 — via API).",
         f"- Fenêtre de complétude obligatoire (sinon exclusion) : depuis {manifest['crypto']['full_coverage_required_from']}.",
         f"- **{counts['crypto_included']} paire(s) incluse(s)**, **{counts['crypto_excluded']} exclue(s)**.",
         "",
@@ -1818,6 +1960,19 @@ def build_report_md(manifest: dict) -> str:
                 f"| {sym} | {info.get('pair')} | {info.get('rows')} | {info.get('first_ts')} | {info.get('last_ts')} |"
             )
         lines.append("")
+        # Backlog #18 : donnée de mois clos issue de l'API (archive pas encore publiée) --
+        # signalée pour la revue humaine, jamais silencieuse.
+        tail_completed = {
+            sym: info["tail_months_completed_via_api"]
+            for sym, info in manifest["crypto"]["included"].items()
+            if info.get("tail_months_completed_via_api")
+        }
+        if tail_completed:
+            lines.append("### Mois de queue complétés via l'API (archive mensuelle non encore publiée)")
+            lines.append("")
+            for sym, months in sorted(tail_completed.items()):
+                lines.append(f"- **{sym}** : {', '.join(months)}")
+            lines.append("")
 
     lines.append("## Actions (S&P 100)")
     lines.append("")
