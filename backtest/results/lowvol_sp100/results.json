@@ -1,0 +1,3769 @@
+{
+  "meta": {
+    "candidate_id": "lowvol_sp100",
+    "spec": "backtest/LOWVOL-SP100-SPEC.md (pré-enregistrée session #11, commit 35df9b5)",
+    "engine": "backtest/engine.py (docs/PROMOTION-RULES.md §1.1), portage inter-fenêtres ACTIF",
+    "data_dir": "/home/claude/mdata/data",
+    "smoke_run": false,
+    "universe_declared": "UNIVERSE_SP100 (103 titres, constituants ACTUELS — biais du survivant)",
+    "excluded_tickers": [
+      "BK"
+    ],
+    "excluded_tickers_actually_present_in_universe": [],
+    "universe_effective_n": 103,
+    "calendar_start": "1993-01-29",
+    "calendar_end": "2026-10-16",
+    "n_calendar_days": 8487,
+    "data_diagnostics": {
+      "n_calendar_days": 8487,
+      "n_missing_rows_after_first_listing_all_tickers": 0,
+      "n_nan_close_cells_after_first_listing_in_calendar": 0
+    },
+    "n_windows": 30,
+    "n_windows_expected_spec": 30,
+    "walkforward": "36m IS / 12m OOS / pas 12m",
+    "oos_start": "1996-01-29",
+    "oos_end": "2026-01-28",
+    "param_grid": [
+      {
+        "vol_window": 63,
+        "n_holdings": 20
+      },
+      {
+        "vol_window": 63,
+        "n_holdings": 30
+      },
+      {
+        "vol_window": 252,
+        "n_holdings": 20
+      },
+      {
+        "vol_window": 252,
+        "n_holdings": 30
+      }
+    ],
+    "is_selection_used": true,
+    "is_selection_criterion": "Sharpe IS (engine.select_params_via_is), IS simulé à plat, mêmes réglages overlay que l'OOS",
+    "carry_across_windows": true,
+    "overlay": {
+      "apply_vol_targeting": false,
+      "no_trade_band": 0.05,
+      "periods_per_year": 252
+    },
+    "cost_bps_equity_per_side": 5.0,
+    "cost_bps_benchmark_per_side": 3.0,
+    "capital_alloc_pct_planned": 0.3,
+    "sizing_interne": false,
+    "k_total": 166,
+    "k_total_detail": {
+      "registry_rows_spec": 16,
+      "registry_rows_actual_at_run": 16,
+      "n_windows": 30,
+      "n_grid_combos_candidate": 4,
+      "n_grid_combos_control": 1,
+      "formula": "K_total = 16 + n_windows×4 + n_windows×1 (SPEC §3, contrôle compté — option conservatrice)"
+    },
+    "runtime_seconds": 303.4
+  },
+  "anomalies": [
+    {
+      "id": "A1_BK_absent_de_UNIVERSE_SP100",
+      "texte": "La SPEC (§1) et la mission supposent BK (indisponible) à retirer de UNIVERSE_SP100 pour un univers de 102 titres. UNIVERSE_SP100 NE CONTIENT PAS de ticker 'BK' (103 titres, dont BKNG, tous 103 chargés avec succès) : l'exclusion est un no-op et l'univers effectif de ce run est de 103 titres, pas 102. Aucune substitution/ajout/retrait n'a été fait."
+    },
+    {
+      "id": "A2_interpretation_eligibilite_252_jours",
+      "texte": "« ≥ 252 jours de bourse d'historique réel » est implémenté comme ≥ 252 RENDEMENTS quotidiens réels (253 clôtures) : seule lecture rendant l'éligibilité identique pour L=63 et L=252 (vérifié : eligibility_independent_of_L). Écart d'un jour d'historique pour un titre à son entrée dans l'univers, sans effet matériel attendu."
+    },
+    {
+      "id": "A3_bande_de_non_negociation_vs_poids_1_sur_N",
+      "texte": "Avec no_trade_band=0,05 (SPEC §2, sémantique S1 du moteur) comparée PAR TITRE aux poids cibles : N=30 (1/30=0,033) et le contrôle (~1/100 = 0,01) sont SOUS la bande — le moteur ne passe JAMAIS d'ordre d'entrée depuis flat (hold = |cible-courant| < 0,05). Conséquences constatées : N=30 jamais investi (Sharpe IS NaN, jamais sélectionnable), CONTRÔLE APPARIÉ JAMAIS INVESTI (Sharpe/Sortino NaN, comparaison et domination NON évaluables). N=20 est exactement à la limite (1/20 = 0,05, ordre émis car inégalité stricte) ; mais les titres sortis du top-N dont le poids dérivé est < 0,05 ne sont jamais vendus (cible 0, |Δ| < 0,05 => hold) : des positions résiduelles s'accumulent et l'exposition brute dépasse 1 (levier implicite, cash négatif non financé). Corollaire : ces positions perdantes ne sont presque jamais RÉALISÉES (seules les lignes dont le poids dérivé est ≥ 0,05 sont vendues), ce qui gonfle mécaniquement le profit factor (gains réalisés / pertes rarement réalisées) et fausse le décompte de trades clos. Voir structural_diagnostics. AUCUN paramètre n'a été modifié : les chiffres officiels sont ceux de la SPEC à la lettre ; la SPEC n'avait pas anticipé ce mécanisme (cf. piège « poids sous 0,05 n'entre jamais », BAND-FIDELITY-SPEC §1.3)."
+    }
+  ],
+  "candidate_lowvol": {
+    "cost_bps": 5.0,
+    "carry_across_windows": true,
+    "per_window": [
+      {
+        "sharpe": 2.2717867476918507,
+        "sortino": 3.4370963715804908,
+        "profit_factor": 70.2543115990966,
+        "max_drawdown": 0.06877267901689033,
+        "cagr": 0.32692404122791063,
+        "average_exposure": 1.1579895855899043,
+        "n_trades_closed": 33,
+        "n_days": 254,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.332461791616504,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0025555280189722396,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 0,
+        "is_start": "1993-01-29",
+        "is_end": "1996-01-26",
+        "oos_start": "1996-01-29",
+        "oos_end": "1997-01-28",
+        "carry_in_used": false,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 2.362775864103995,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 2.362775864103995
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 2.13170726961686
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 2.0132045920997688,
+        "sortino": 2.9745587528682575,
+        "profit_factor": 2817.0517463155243,
+        "max_drawdown": 0.09818676504403856,
+        "cagr": 0.3867731033416124,
+        "average_exposure": 1.1521857286407156,
+        "n_trades_closed": 29,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.3886170717919384,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0018439684503228895,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 1,
+        "is_start": "1994-01-31",
+        "is_end": "1997-01-28",
+        "oos_start": "1997-01-29",
+        "oos_end": "1998-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 2.553337501230386,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 2.553337501230386
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 2.3851158249000224
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.121204583122828,
+        "sortino": 1.606636806400248,
+        "profit_factor": 19.289559539805254,
+        "max_drawdown": 0.21964260492665688,
+        "cagr": 0.24098324014123884,
+        "average_exposure": 1.284153862933098,
+        "n_trades_closed": 19,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2422334940126804,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.001250253871436274,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 2,
+        "is_start": "1995-01-30",
+        "is_end": "1998-01-28",
+        "oos_start": "1998-01-29",
+        "oos_end": "1999-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 2.5444371936902663,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 2.5444371936902663
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 2.5209762373391014
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.23701766454921752,
+        "sortino": 0.34930260036034005,
+        "profit_factor": 176.71279956802366,
+        "max_drawdown": 0.11938425847798906,
+        "cagr": 0.02489367424475275,
+        "average_exposure": 1.0663537065941053,
+        "n_trades_closed": 8,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.02532840570899616,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00033472268750975905,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 3,
+        "is_start": "1996-01-29",
+        "is_end": "1999-01-28",
+        "oos_start": "1999-01-29",
+        "oos_end": "2000-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.6872650257412996,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.6752914933806187
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.6872650257412996
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.343914507767739,
+        "sortino": 2.1928527195085583,
+        "profit_factor": 35.09090118646917,
+        "max_drawdown": 0.16058554049907947,
+        "cagr": 0.2810495723488786,
+        "average_exposure": 1.207988064637242,
+        "n_trades_closed": 22,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2813028207376423,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0015117171414836266,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 4,
+        "is_start": "1997-01-29",
+        "is_end": "2000-01-28",
+        "oos_start": "2000-01-31",
+        "oos_end": "2001-01-26",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.2076249756299844,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.2076249756299844
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.9860830189152453
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.09106313699176088,
+        "sortino": 0.12542770394429764,
+        "profit_factor": 3.619952149066239,
+        "max_drawdown": 0.23248115550647697,
+        "cagr": -0.0017720347053905572,
+        "average_exposure": 1.3998748698000447,
+        "n_trades_closed": 13,
+        "n_days": 248,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.0010005122996991998,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0007434194113192035,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 5,
+        "is_start": "1998-01-29",
+        "is_end": "2001-01-26",
+        "oos_start": "2001-01-29",
+        "oos_end": "2002-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.9566090541429241,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.9566090541429241
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.7561927020078708
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": -0.5605508212588586,
+        "sortino": -0.8165179853753384,
+        "profit_factor": 1.0005141576643626,
+        "max_drawdown": 0.37044810782033166,
+        "cagr": -0.21932289024698193,
+        "average_exposure": 1.5465079617534807,
+        "n_trades_closed": 23,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.21829371179163387,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0010291784553492596,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 6,
+        "is_start": "1999-01-29",
+        "is_end": "2002-01-28",
+        "oos_start": "2002-01-29",
+        "oos_end": "2003-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.6079787384892037,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.6079787384892037
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.6034563951842555
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.9336387317498511,
+        "sortino": 3.1388525615804457,
+        "profit_factor": 1.028112163455355,
+        "max_drawdown": 0.09593717477822372,
+        "cagr": 0.4446446440172036,
+        "average_exposure": 1.5253612773097154,
+        "n_trades_closed": 10,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.44519225688452196,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0005476128673215291,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 7,
+        "is_start": "2000-01-31",
+        "is_end": "2003-01-28",
+        "oos_start": "2003-01-29",
+        "oos_end": "2004-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.3316908531254148,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.1447932148273964
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.3316908531254148
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.0641575344639471,
+        "sortino": 1.5564594244365806,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.06457706126444451,
+        "cagr": 0.13239391761667885,
+        "average_exposure": 1.3221879880044762,
+        "n_trades_closed": 6,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.13317307918334373,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00022031357246412035,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 8,
+        "is_start": "2001-01-29",
+        "is_end": "2004-01-28",
+        "oos_start": "2004-01-29",
+        "oos_end": "2005-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.6090231014233624,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.42630490340899774
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.6090231014233624
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.820851237687546,
+        "sortino": 1.1964533820631087,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.08001108610952401,
+        "cagr": 0.09353757529217321,
+        "average_exposure": 1.2814956652261138,
+        "n_trades_closed": 5,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.09343281455584368,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00028319367870169743,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 9,
+        "is_start": "2002-01-29",
+        "is_end": "2005-01-28",
+        "oos_start": "2005-01-31",
+        "oos_end": "2006-01-27",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.6181490769202379,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.5897701127750132
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.6181490769202379
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 2.272960204423665,
+        "sortino": 3.6257544773859482,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.0355750664045299,
+        "cagr": 0.24314374489339197,
+        "average_exposure": 1.2393774177920458,
+        "n_trades_closed": 10,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.24169279775338032,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0006945175608354953,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 10,
+        "is_start": "2003-01-29",
+        "is_end": "2006-01-27",
+        "oos_start": "2006-01-30",
+        "oos_end": "2007-01-26",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.3529615182783674,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.3529615182783674
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.3364679213403754
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.19422423979401973,
+        "sortino": 0.2609448595080245,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.1548521920720104,
+        "cagr": 0.01903363993281859,
+        "average_exposure": 1.2334704328780965,
+        "n_trades_closed": 8,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.019464849136311344,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0004312092034835678,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 11,
+        "is_start": "2004-01-29",
+        "is_end": "2007-01-26",
+        "oos_start": "2007-01-29",
+        "oos_end": "2008-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.394732740193961,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.2206974894389169
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.394732740193961
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": -0.4803448288797786,
+        "sortino": -0.6759147308216692,
+        "profit_factor": 11.383431922668569,
+        "max_drawdown": 0.3585913601997641,
+        "cagr": -0.2321467294397357,
+        "average_exposure": 1.2141677692915611,
+        "n_trades_closed": 9,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.2326202866939875,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003309159643163565,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 12,
+        "is_start": "2005-01-31",
+        "is_end": "2008-01-28",
+        "oos_start": "2008-01-29",
+        "oos_end": "2009-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.7887565955553207,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.7508452517169052
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.7887565955553207
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.9740765190107102,
+        "sortino": 1.4230646791738806,
+        "profit_factor": 2.11407708521767,
+        "max_drawdown": 0.28635243455330883,
+        "cagr": 0.24856878845794972,
+        "average_exposure": 1.317541439004424,
+        "n_trades_closed": 16,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.24959039729068608,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0010216088327358744,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 13,
+        "is_start": "2006-01-30",
+        "is_end": "2009-01-28",
+        "oos_start": "2009-01-29",
+        "oos_end": "2010-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.01515423918821073,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.01515423918821073
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": -0.04086394717414571
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.154477815204198,
+        "sortino": 1.6764005559258144,
+        "profit_factor": 11.397207958909538,
+        "max_drawdown": 0.1350730060086035,
+        "cagr": 0.20394921794388265,
+        "average_exposure": 1.2472186004641421,
+        "n_trades_closed": 7,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2051520387190649,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00031574173145042163,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 14,
+        "is_start": "2007-01-29",
+        "is_end": "2010-01-28",
+        "oos_start": "2010-01-29",
+        "oos_end": "2011-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.01623239926376089,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": -0.0016969998184673725
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.01623239926376089
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.9543103564189118,
+        "sortino": 1.3381237217046245,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.15632637722955278,
+        "cagr": 0.18965270102911203,
+        "average_exposure": 1.1628733049884064,
+        "n_trades_closed": 3,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.1889981386375782,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0001649836539001388,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 15,
+        "is_start": "2008-01-29",
+        "is_end": "2011-01-28",
+        "oos_start": "2011-01-31",
+        "oos_end": "2012-01-27",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.2980284497435205,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.2457659173169325
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.2980284497435205
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.8683181553979271,
+        "sortino": 2.9910812509616735,
+        "profit_factor": 67.51532844884639,
+        "max_drawdown": 0.07542170212910682,
+        "cagr": 0.22386510511382474,
+        "average_exposure": 1.1282420563039972,
+        "n_trades_closed": 4,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2221616624786463,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00025719036330813,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 16,
+        "is_start": "2009-01-29",
+        "is_end": "2012-01-27",
+        "oos_start": "2012-01-30",
+        "oos_end": "2013-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.2098681030173397,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.049009038450473
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.2098681030173397
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.7080830080256317,
+        "sortino": 2.545945805726936,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.0675667531676234,
+        "cagr": 0.23339439964929642,
+        "average_exposure": 1.2288539497947382,
+        "n_trades_closed": 4,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.23374945812447695,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00035505847518168475,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 17,
+        "is_start": "2010-01-29",
+        "is_end": "2013-01-28",
+        "oos_start": "2013-01-29",
+        "oos_end": "2014-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.4799269421455115,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.3523525794723998
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.4799269421455115
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.7338117177252128,
+        "sortino": 2.5583892678997344,
+        "profit_factor": 1645.0318417073593,
+        "max_drawdown": 0.07723487625110637,
+        "cagr": 0.2662567623542955,
+        "average_exposure": 1.3895904355708435,
+        "n_trades_closed": 19,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.26744265116136284,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0011858888070544332,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 18,
+        "is_start": "2011-01-31",
+        "is_end": "2014-01-28",
+        "oos_start": "2014-01-29",
+        "oos_end": "2015-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.5626396924112749,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.5626396924112749
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.5306725307993554
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.0211987985867652,
+        "sortino": 0.029512878310280963,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.14423657114199695,
+        "cagr": -0.01635064729716751,
+        "average_exposure": 1.3766017371692618,
+        "n_trades_closed": 3,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.01624552812088228,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00010511917629498934,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 19,
+        "is_start": "2012-01-30",
+        "is_end": "2015-01-28",
+        "oos_start": "2015-01-29",
+        "oos_end": "2016-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.7251008904575134,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.7047077957625927
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.7251008904575134
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 2.240924497616912,
+        "sortino": 3.5701149943154022,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.06643603027621725,
+        "cagr": 0.3023469185044827,
+        "average_exposure": 1.2081046376222342,
+        "n_trades_closed": 2,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.3024278828988579,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 8.096439436242468e-05,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 20,
+        "is_start": "2013-01-29",
+        "is_end": "2016-01-28",
+        "oos_start": "2016-01-29",
+        "oos_end": "2017-01-27",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.8957234639305888,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.750637171412632
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.8957234639305888
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 3.701116411607101,
+        "sortino": 6.190293848914973,
+        "profit_factor": 534.5631251004133,
+        "max_drawdown": 0.04201415813401521,
+        "cagr": 0.3435070491478889,
+        "average_exposure": 1.2797899322794375,
+        "n_trades_closed": 20,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.3431262439330514,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0011925399723991296,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 21,
+        "is_start": "2014-01-29",
+        "is_end": "2017-01-27",
+        "oos_start": "2017-01-30",
+        "oos_end": "2018-01-26",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.0332752315008986,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.0332752315008986
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.0217650455163068
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": -0.36449722380319555,
+        "sortino": -0.4679093562436392,
+        "profit_factor": 5.261276853475971,
+        "max_drawdown": 0.18520571587987422,
+        "cagr": -0.07877435344814487,
+        "average_exposure": 1.2123586500576038,
+        "n_trades_closed": 18,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.07761426291696537,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0008600940203559989,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 22,
+        "is_start": "2015-01-29",
+        "is_end": "2018-01-26",
+        "oos_start": "2018-01-29",
+        "oos_end": "2019-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.5082866093737501,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.5082866093737501
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.3433832429574888
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 2.363967354674844,
+        "sortino": 3.3713987975528323,
+        "profit_factor": 43.599516411918124,
+        "max_drawdown": 0.07269790987625357,
+        "cagr": 0.3612323570235556,
+        "average_exposure": 1.303966322583581,
+        "n_trades_closed": 17,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.36246806613029625,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0012357091067340762,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 23,
+        "is_start": "2016-01-29",
+        "is_end": "2019-01-28",
+        "oos_start": "2019-01-29",
+        "oos_end": "2020-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.0979920594122545,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.0979920594122545
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.0050795945086377
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.486696617128889,
+        "sortino": 0.6744068448178474,
+        "profit_factor": 3.955076845170182,
+        "max_drawdown": 0.39287878623284034,
+        "cagr": 0.1208179703763721,
+        "average_exposure": 1.2618819891121964,
+        "n_trades_closed": 15,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.12195005033957301,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0006246671405653634,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 24,
+        "is_start": "2017-01-30",
+        "is_end": "2020-01-28",
+        "oos_start": "2020-01-29",
+        "oos_end": "2021-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 1.2242505632671299,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.199219484488994
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 1.2242505632671299
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.823124890338105,
+        "sortino": 2.7295676458770783,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.05815918407319276,
+        "cagr": 0.23464010749072894,
+        "average_exposure": 1.0815171651934337,
+        "n_trades_closed": 10,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.23615892505742386,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00048569966991453956,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 25,
+        "is_start": "2018-01-29",
+        "is_end": "2021-01-28",
+        "oos_start": "2021-01-29",
+        "oos_end": "2022-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.4956324613225927,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.462793547237434
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.4956324613225927
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.21842343715909035,
+        "sortino": 0.31043011847989804,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.16204772005458612,
+        "cagr": 0.023058964252321568,
+        "average_exposure": 1.001460789412242,
+        "n_trades_closed": 5,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.023157182460687046,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0002833030668831577,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 26,
+        "is_start": "2019-01-29",
+        "is_end": "2022-01-28",
+        "oos_start": "2022-01-31",
+        "oos_end": "2023-01-27",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.9123884807212898,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.8422923852421087
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.9123884807212898
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.8061784661040524,
+        "sortino": 1.1708910994854038,
+        "profit_factor": 4.666998540721059,
+        "max_drawdown": 0.11257993233714159,
+        "cagr": 0.10272191328138436,
+        "average_exposure": 1.2446488339607895,
+        "n_trades_closed": 13,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.10271543860632695,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0008489544833309928,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 27,
+        "is_start": "2020-01-29",
+        "is_end": "2023-01-27",
+        "oos_start": "2023-01-30",
+        "oos_end": "2024-01-26",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.6474997783996783,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.6474997783996783
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.5867023948000398
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 1.855904465757257,
+        "sortino": 2.8477940676916207,
+        "profit_factor": Infinity,
+        "max_drawdown": 0.08065614575050184,
+        "cagr": 0.23542696980444666,
+        "average_exposure": 1.1599327300503646,
+        "n_trades_closed": 6,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.23459785703636224,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.00020692008897669798,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 28,
+        "is_start": "2021-01-29",
+        "is_end": "2024-01-26",
+        "oos_start": "2024-01-29",
+        "oos_end": "2025-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 252,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.7585283898068689,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.7310835262127322
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.7585283898068689
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      },
+      {
+        "sharpe": 0.8150959060237867,
+        "sortino": 1.1485192845059269,
+        "profit_factor": 8.655127947996492,
+        "max_drawdown": 0.13862211035315408,
+        "cagr": 0.12899042250103765,
+        "average_exposure": 1.1927728798948016,
+        "n_trades_closed": 14,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.12923013128440392,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0007831232406650305,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 29,
+        "is_start": "2022-01-31",
+        "is_end": "2025-01-28",
+        "oos_start": "2025-01-29",
+        "oos_end": "2026-01-28",
+        "carry_in_used": true,
+        "chosen_params": {
+          "vol_window": 63,
+          "n_holdings": 20
+        },
+        "is_sharpe_chosen": 0.9259172335740945,
+        "is_candidates": [
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.9259172335740945
+          },
+          {
+            "params": {
+              "vol_window": 63,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 20
+            },
+            "is_sharpe": 0.8162401053857457
+          },
+          {
+            "params": {
+              "vol_window": 252,
+              "n_holdings": 30
+            },
+            "is_sharpe": NaN
+          }
+        ]
+      }
+    ],
+    "concatenated": {
+      "sharpe": 0.8127136874221905,
+      "sortino": 1.1670589575604182,
+      "profit_factor": 11.12447880195,
+      "max_drawdown": 0.5187988722489704,
+      "cagr": 0.14953124255594252,
+      "average_exposure": 1.2476035929308076,
+      "n_trades_closed": 371,
+      "n_days": 7549,
+      "n_liquidations": 0,
+      "pnl_breakdown": {
+        "spot_pnl": 4.880051203716792,
+        "perp_variation": 0.0,
+        "funding_received": 0.0,
+        "costs_spot": 0.021784117107629102,
+        "costs_perp": 0.0,
+        "liquidation_fees": 0.0
+      }
+    },
+    "carry_boundary_events": []
+  },
+  "control_equal_weight_all_eligible": {
+    "cost_bps": 5.0,
+    "carry_across_windows": true,
+    "description": "Univers éligible ENTIER équipondéré, mêmes dates de rebalance, même moteur/overlay/coûts/fenêtres/portage (SPEC §2).",
+    "per_window": [
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 254,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 0,
+        "is_start": "1993-01-29",
+        "is_end": "1996-01-26",
+        "oos_start": "1996-01-29",
+        "oos_end": "1997-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 1,
+        "is_start": "1994-01-31",
+        "is_end": "1997-01-28",
+        "oos_start": "1997-01-29",
+        "oos_end": "1998-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 2,
+        "is_start": "1995-01-30",
+        "is_end": "1998-01-28",
+        "oos_start": "1998-01-29",
+        "oos_end": "1999-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 3,
+        "is_start": "1996-01-29",
+        "is_end": "1999-01-28",
+        "oos_start": "1999-01-29",
+        "oos_end": "2000-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 4,
+        "is_start": "1997-01-29",
+        "is_end": "2000-01-28",
+        "oos_start": "2000-01-31",
+        "oos_end": "2001-01-26",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 248,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 5,
+        "is_start": "1998-01-29",
+        "is_end": "2001-01-26",
+        "oos_start": "2001-01-29",
+        "oos_end": "2002-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 6,
+        "is_start": "1999-01-29",
+        "is_end": "2002-01-28",
+        "oos_start": "2002-01-29",
+        "oos_end": "2003-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 7,
+        "is_start": "2000-01-31",
+        "is_end": "2003-01-28",
+        "oos_start": "2003-01-29",
+        "oos_end": "2004-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 8,
+        "is_start": "2001-01-29",
+        "is_end": "2004-01-28",
+        "oos_start": "2004-01-29",
+        "oos_end": "2005-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 9,
+        "is_start": "2002-01-29",
+        "is_end": "2005-01-28",
+        "oos_start": "2005-01-31",
+        "oos_end": "2006-01-27",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 10,
+        "is_start": "2003-01-29",
+        "is_end": "2006-01-27",
+        "oos_start": "2006-01-30",
+        "oos_end": "2007-01-26",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 11,
+        "is_start": "2004-01-29",
+        "is_end": "2007-01-26",
+        "oos_start": "2007-01-29",
+        "oos_end": "2008-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 12,
+        "is_start": "2005-01-31",
+        "is_end": "2008-01-28",
+        "oos_start": "2008-01-29",
+        "oos_end": "2009-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 13,
+        "is_start": "2006-01-30",
+        "is_end": "2009-01-28",
+        "oos_start": "2009-01-29",
+        "oos_end": "2010-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 14,
+        "is_start": "2007-01-29",
+        "is_end": "2010-01-28",
+        "oos_start": "2010-01-29",
+        "oos_end": "2011-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 15,
+        "is_start": "2008-01-29",
+        "is_end": "2011-01-28",
+        "oos_start": "2011-01-31",
+        "oos_end": "2012-01-27",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 16,
+        "is_start": "2009-01-29",
+        "is_end": "2012-01-27",
+        "oos_start": "2012-01-30",
+        "oos_end": "2013-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 17,
+        "is_start": "2010-01-29",
+        "is_end": "2013-01-28",
+        "oos_start": "2013-01-29",
+        "oos_end": "2014-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 18,
+        "is_start": "2011-01-31",
+        "is_end": "2014-01-28",
+        "oos_start": "2014-01-29",
+        "oos_end": "2015-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 19,
+        "is_start": "2012-01-30",
+        "is_end": "2015-01-28",
+        "oos_start": "2015-01-29",
+        "oos_end": "2016-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 20,
+        "is_start": "2013-01-29",
+        "is_end": "2016-01-28",
+        "oos_start": "2016-01-29",
+        "oos_end": "2017-01-27",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 21,
+        "is_start": "2014-01-29",
+        "is_end": "2017-01-27",
+        "oos_start": "2017-01-30",
+        "oos_end": "2018-01-26",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 22,
+        "is_start": "2015-01-29",
+        "is_end": "2018-01-26",
+        "oos_start": "2018-01-29",
+        "oos_end": "2019-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 23,
+        "is_start": "2016-01-29",
+        "is_end": "2019-01-28",
+        "oos_start": "2019-01-29",
+        "oos_end": "2020-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 24,
+        "is_start": "2017-01-30",
+        "is_end": "2020-01-28",
+        "oos_start": "2020-01-29",
+        "oos_end": "2021-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 25,
+        "is_start": "2018-01-29",
+        "is_end": "2021-01-28",
+        "oos_start": "2021-01-29",
+        "oos_end": "2022-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 26,
+        "is_start": "2019-01-29",
+        "is_end": "2022-01-28",
+        "oos_start": "2022-01-31",
+        "oos_end": "2023-01-27",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 27,
+        "is_start": "2020-01-29",
+        "is_end": "2023-01-27",
+        "oos_start": "2023-01-30",
+        "oos_end": "2024-01-26",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 28,
+        "is_start": "2021-01-29",
+        "is_end": "2024-01-26",
+        "oos_start": "2024-01-29",
+        "oos_end": "2025-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "profit_factor": NaN,
+        "max_drawdown": -0.0,
+        "cagr": 0.0,
+        "average_exposure": 0.0,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.0,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 29,
+        "is_start": "2022-01-31",
+        "is_end": "2025-01-28",
+        "oos_start": "2025-01-29",
+        "oos_end": "2026-01-28",
+        "carry_in_used": false
+      }
+    ],
+    "concatenated": {
+      "sharpe": NaN,
+      "sortino": NaN,
+      "profit_factor": NaN,
+      "max_drawdown": -0.0,
+      "cagr": 0.0,
+      "average_exposure": 0.0,
+      "n_trades_closed": 0,
+      "n_days": 7549,
+      "n_liquidations": 0,
+      "pnl_breakdown": {
+        "spot_pnl": 0.0,
+        "perp_variation": 0.0,
+        "funding_received": 0.0,
+        "costs_spot": 0.0,
+        "costs_perp": 0.0,
+        "liquidation_fees": 0.0
+      }
+    },
+    "carry_boundary_events": []
+  },
+  "benchmark_spy_buy_hold": {
+    "cost_bps": 3.0,
+    "per_window": [
+      {
+        "sharpe": 1.8037856091839763,
+        "sortino": 2.6077915223134167,
+        "profit_factor": NaN,
+        "max_drawdown": 0.07626973849269003,
+        "cagr": 0.25621408186326367,
+        "average_exposure": 1.0002715943324108,
+        "n_trades_closed": 0,
+        "n_days": 254,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2587903128343285,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 0,
+        "is_start": "1993-01-29",
+        "is_end": "1996-01-26",
+        "oos_start": "1996-01-29",
+        "oos_end": "1997-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.3452996951497183,
+        "sortino": 1.9434592453552135,
+        "profit_factor": NaN,
+        "max_drawdown": 0.1120567647267815,
+        "cagr": 0.29049035549366087,
+        "average_exposure": 1.000259409010523,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2907903554936637,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 1,
+        "is_start": "1994-01-31",
+        "is_end": "1997-01-28",
+        "oos_start": "1997-01-29",
+        "oos_end": "1998-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.3204046198473076,
+        "sortino": 1.9243968693897062,
+        "profit_factor": NaN,
+        "max_drawdown": 0.19034757038207295,
+        "cagr": 0.311291036682261,
+        "average_exposure": 1.0002645319180823,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.3115910366822602,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 2,
+        "is_start": "1995-01-30",
+        "is_end": "1998-01-28",
+        "oos_start": "1998-01-29",
+        "oos_end": "1999-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 0.4850830826446167,
+        "sortino": 0.7167381550593313,
+        "profit_factor": NaN,
+        "max_drawdown": 0.11698696803317643,
+        "cagr": 0.07785252683052635,
+        "average_exposure": 1.000283646125913,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.07847323848651037,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 3,
+        "is_start": "1996-01-29",
+        "is_end": "1999-01-28",
+        "oos_start": "1999-01-29",
+        "oos_end": "2000-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 0.16117081422353863,
+        "sortino": 0.23838240200865393,
+        "profit_factor": NaN,
+        "max_drawdown": 0.17136467768839314,
+        "cagr": 0.010724810794475736,
+        "average_exposure": 1.00028562538377,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.010982025521208296,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 4,
+        "is_start": "1997-01-29",
+        "is_end": "2000-01-28",
+        "oos_start": "2000-01-31",
+        "oos_end": "2001-01-26",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": -0.6635462585329175,
+        "sortino": -0.8852792081613984,
+        "profit_factor": NaN,
+        "max_drawdown": 0.2882281429577429,
+        "cagr": -0.15147340662761222,
+        "average_exposure": 1.0003428709822804,
+        "n_trades_closed": 0,
+        "n_days": 248,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.14895823824035076,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 5,
+        "is_start": "1998-01-29",
+        "is_end": "2001-01-26",
+        "oos_start": "2001-01-29",
+        "oos_end": "2002-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": -0.860008118855626,
+        "sortino": -1.2337994953036517,
+        "profit_factor": NaN,
+        "max_drawdown": 0.3298130621060221,
+        "cagr": -0.23446150472626215,
+        "average_exposure": 1.0003501449254808,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.23416150472626365,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 6,
+        "is_start": "1999-01-29",
+        "is_end": "2002-01-28",
+        "oos_start": "2002-01-29",
+        "oos_end": "2003-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.9838665629912187,
+        "sortino": 3.075808568100688,
+        "profit_factor": NaN,
+        "max_drawdown": 0.0689382269006894,
+        "cagr": 0.34854848722060927,
+        "average_exposure": 1.0002602679630945,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.34884848722060935,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 7,
+        "is_start": "2000-01-31",
+        "is_end": "2003-01-28",
+        "oos_start": "2003-01-29",
+        "oos_end": "2004-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 0.5246279711007633,
+        "sortino": 0.7317929788289419,
+        "profit_factor": NaN,
+        "max_drawdown": 0.07532711992678165,
+        "cagr": 0.053364198757764214,
+        "average_exposure": 1.000297350971407,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.053881536234084385,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 8,
+        "is_start": "2001-01-29",
+        "is_end": "2004-01-28",
+        "oos_start": "2004-01-29",
+        "oos_end": "2005-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.0476065447491538,
+        "sortino": 1.5073773962581918,
+        "profit_factor": NaN,
+        "max_drawdown": 0.06959396985838262,
+        "cagr": 0.1091596143276723,
+        "average_exposure": 1.0002891084710417,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.10900370865800778,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0002999999999999999,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 9,
+        "is_start": "2002-01-29",
+        "is_end": "2005-01-28",
+        "oos_start": "2005-01-31",
+        "oos_end": "2006-01-27",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.2784062170625348,
+        "sortino": 1.914110538921895,
+        "profit_factor": NaN,
+        "max_drawdown": 0.07595282908900136,
+        "cagr": 0.127826655338801,
+        "average_exposure": 1.0002898279076913,
+        "n_trades_closed": 0,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.12705043066046448,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 10,
+        "is_start": "2003-01-29",
+        "is_end": "2006-01-27",
+        "oos_start": "2006-01-30",
+        "oos_end": "2007-01-26",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": -0.10545228699937678,
+        "sortino": -0.13976131658695823,
+        "profit_factor": NaN,
+        "max_drawdown": 0.1602307189884178,
+        "cagr": -0.031626542408870084,
+        "average_exposure": 1.000287340150375,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.031326542408871574,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 11,
+        "is_start": "2004-01-29",
+        "is_end": "2007-01-26",
+        "oos_start": "2007-01-29",
+        "oos_end": "2008-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": -0.7838568932169152,
+        "sortino": -1.098116935367735,
+        "profit_factor": NaN,
+        "max_drawdown": 0.4669882745590651,
+        "cagr": -0.3416524294699981,
+        "average_exposure": 1.0003529802750806,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.34244360332585516,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 12,
+        "is_start": "2005-01-31",
+        "is_end": "2008-01-28",
+        "oos_start": "2008-01-29",
+        "oos_end": "2009-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.146263977145068,
+        "sortino": 1.719528007871763,
+        "profit_factor": NaN,
+        "max_drawdown": 0.21808999632398618,
+        "cagr": 0.2897172028165358,
+        "average_exposure": 1.000268417222775,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.29001720281653665,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0002999999999999999,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 13,
+        "is_start": "2006-01-30",
+        "is_end": "2009-01-28",
+        "oos_start": "2009-01-29",
+        "oos_end": "2010-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.092349141315343,
+        "sortino": 1.578483462115733,
+        "profit_factor": NaN,
+        "max_drawdown": 0.15703832496230985,
+        "cagr": 0.19317070168919726,
+        "average_exposure": 1.0002820501784417,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.1943072285709504,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 14,
+        "is_start": "2007-01-29",
+        "is_end": "2010-01-28",
+        "oos_start": "2010-01-29",
+        "oos_end": "2011-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 0.33028067787382476,
+        "sortino": 0.4510013578461201,
+        "profit_factor": NaN,
+        "max_drawdown": 0.18610649154658887,
+        "cagr": 0.05078128590890074,
+        "average_exposure": 1.0003003894371667,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.050874761096249575,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0002999999999999999,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 15,
+        "is_start": "2008-01-29",
+        "is_end": "2011-01-28",
+        "oos_start": "2011-01-31",
+        "oos_end": "2012-01-27",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.3318490903020173,
+        "sortino": 2.0561949512755873,
+        "profit_factor": NaN,
+        "max_drawdown": 0.09689604707217958,
+        "cagr": 0.17658899467814182,
+        "average_exposure": 1.0002786303770672,
+        "n_trades_closed": 0,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.17537143136872457,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 16,
+        "is_start": "2009-01-29",
+        "is_end": "2012-01-27",
+        "oos_start": "2012-01-30",
+        "oos_end": "2013-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.8210729862828665,
+        "sortino": 2.6206728523221376,
+        "profit_factor": NaN,
+        "max_drawdown": 0.05552086893616104,
+        "cagr": 0.2194768987357083,
+        "average_exposure": 1.0002676608898136,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.21977689873571166,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 17,
+        "is_start": "2010-01-29",
+        "is_end": "2013-01-28",
+        "oos_start": "2013-01-29",
+        "oos_end": "2014-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.2558254049158328,
+        "sortino": 1.7974083201844555,
+        "profit_factor": NaN,
+        "max_drawdown": 0.07275354384940658,
+        "cagr": 0.14876424814055622,
+        "average_exposure": 1.000271830121599,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.1490642481405604,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 18,
+        "is_start": "2011-01-31",
+        "is_end": "2014-01-28",
+        "oos_start": "2014-01-29",
+        "oos_end": "2015-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": -0.1566645467086189,
+        "sortino": -0.2138819259410204,
+        "profit_factor": NaN,
+        "max_drawdown": 0.11913590426312981,
+        "cagr": -0.03706815014431064,
+        "average_exposure": 1.0002903622919626,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.036768150144311174,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 19,
+        "is_start": "2012-01-30",
+        "is_end": "2015-01-28",
+        "oos_start": "2015-01-29",
+        "oos_end": "2016-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.8532229572972185,
+        "sortino": 2.800601694771646,
+        "profit_factor": NaN,
+        "max_drawdown": 0.056076522739642254,
+        "cagr": 0.23055413594430618,
+        "average_exposure": 1.0002669356480272,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.23085413594430634,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 20,
+        "is_start": "2013-01-29",
+        "is_end": "2016-01-28",
+        "oos_start": "2016-01-29",
+        "oos_end": "2017-01-27",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 3.646841098660912,
+        "sortino": 5.997390029497455,
+        "profit_factor": NaN,
+        "max_drawdown": 0.026108401842040885,
+        "cagr": 0.28137136882531766,
+        "average_exposure": 1.0002739917728187,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2804113080731011,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 21,
+        "is_start": "2014-01-29",
+        "is_end": "2017-01-27",
+        "oos_start": "2017-01-30",
+        "oos_end": "2018-01-26",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": -0.26645403610628715,
+        "sortino": -0.3551077173889799,
+        "profit_factor": NaN,
+        "max_drawdown": 0.19354524833269282,
+        "cagr": -0.06054738711441199,
+        "average_exposure": 1.0003121694067931,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.06001451604528771,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 22,
+        "is_start": "2015-01-29",
+        "is_end": "2018-01-26",
+        "oos_start": "2018-01-29",
+        "oos_end": "2019-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 2.027023218893287,
+        "sortino": 2.863776497382158,
+        "profit_factor": NaN,
+        "max_drawdown": 0.0662015919524972,
+        "cagr": 0.2617488562627397,
+        "average_exposure": 1.00026603782842,
+        "n_trades_closed": 0,
+        "n_days": 252,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2620488562627463,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 23,
+        "is_start": "2016-01-29",
+        "is_end": "2019-01-28",
+        "oos_start": "2019-01-29",
+        "oos_end": "2020-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 0.638073412465414,
+        "sortino": 0.8720854000107081,
+        "profit_factor": NaN,
+        "max_drawdown": 0.3372707909194933,
+        "cagr": 0.17042343827780404,
+        "average_exposure": 1.0003044256344307,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.17145455693999023,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 24,
+        "is_start": "2017-01-30",
+        "is_end": "2020-01-28",
+        "oos_start": "2020-01-29",
+        "oos_end": "2021-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.3839304931774916,
+        "sortino": 2.037660178712748,
+        "profit_factor": NaN,
+        "max_drawdown": 0.09729919438292978,
+        "cagr": 0.19111289275326038,
+        "average_exposure": 1.0002603482553196,
+        "n_trades_closed": 0,
+        "n_days": 253,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.19223981235904677,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 25,
+        "is_start": "2018-01-29",
+        "is_end": "2021-01-28",
+        "oos_start": "2021-01-29",
+        "oos_end": "2022-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": -0.16333807724550511,
+        "sortino": -0.22982636703318016,
+        "profit_factor": NaN,
+        "max_drawdown": 0.22101165114833177,
+        "cagr": -0.06648500270143076,
+        "average_exposure": 1.000326405257279,
+        "n_trades_closed": 0,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": -0.06567514765724218,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0002999999999999999,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 26,
+        "is_start": "2019-01-29",
+        "is_end": "2022-01-28",
+        "oos_start": "2022-01-31",
+        "oos_end": "2023-01-27",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.7114920758909955,
+        "sortino": 2.6303117471257833,
+        "profit_factor": NaN,
+        "max_drawdown": 0.09976938215196673,
+        "cagr": 0.230166552378954,
+        "average_exposure": 1.0002777952386732,
+        "n_trades_closed": 0,
+        "n_days": 250,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.22844576578519385,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0002999999999999999,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 27,
+        "is_start": "2020-01-29",
+        "is_end": "2023-01-27",
+        "oos_start": "2023-01-30",
+        "oos_end": "2024-01-26",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 1.8351983053431278,
+        "sortino": 2.647657823987242,
+        "profit_factor": NaN,
+        "max_drawdown": 0.08407780577822865,
+        "cagr": 0.25619152709500614,
+        "average_exposure": 1.0002657938052695,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.2553550657848911,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 28,
+        "is_start": "2021-01-29",
+        "is_end": "2024-01-26",
+        "oos_start": "2024-01-29",
+        "oos_end": "2025-01-28",
+        "carry_in_used": false
+      },
+      {
+        "sharpe": 0.8905816738835207,
+        "sortino": 1.341908165266989,
+        "profit_factor": NaN,
+        "max_drawdown": 0.18760786074678137,
+        "cagr": 0.16582811465246516,
+        "average_exposure": 1.000289330405062,
+        "n_trades_closed": 0,
+        "n_days": 251,
+        "n_liquidations": 0,
+        "pnl_breakdown": {
+          "spot_pnl": 0.1654185094843006,
+          "perp_variation": 0.0,
+          "funding_received": 0.0,
+          "costs_spot": 0.0003,
+          "costs_perp": 0.0,
+          "liquidation_fees": 0.0
+        },
+        "window_index": 29,
+        "is_start": "2022-01-31",
+        "is_end": "2025-01-28",
+        "oos_start": "2025-01-29",
+        "oos_end": "2026-01-28",
+        "carry_in_used": false
+      }
+    ],
+    "concatenated": {
+      "sharpe": 0.6074884095501759,
+      "sortino": 0.8634667507869597,
+      "profit_factor": NaN,
+      "max_drawdown": 0.5485024988459286,
+      "cagr": 0.10357045085697503,
+      "average_exposure": 1.0002878769865315,
+      "n_trades_closed": 0,
+      "n_days": 7549,
+      "n_liquidations": 0,
+      "pnl_breakdown": {
+        "spot_pnl": 3.5357032106052646,
+        "perp_variation": 0.0,
+        "funding_received": 0.0,
+        "costs_spot": 0.008999999999999998,
+        "costs_perp": 0.0,
+        "liquidation_fees": 0.0
+      }
+    }
+  },
+  "dsr_candidate": {
+    "sharpe_hat_period": 0.05119615009565234,
+    "n_obs": 7549,
+    "skew": -0.09259735450496975,
+    "kurtosis_excess": 11.372795659278191,
+    "trials_k": 166,
+    "sr0_benchmark_expected_max_sharpe": 0.03133359383591582,
+    "dsr": 0.9567456693688506
+  },
+  "cost_stress_test": {
+    "profit_factor_at_5bps_nominal": 11.12447880195,
+    "profit_factor_at_15bps_3x": 10.606686205248531,
+    "profit_factor_at_25bps_5x": 10.560939182156122,
+    "sharpe_at_5bps_nominal": 0.8127136874221905,
+    "sharpe_at_15bps_3x": 0.8063245761196247,
+    "sharpe_at_25bps_5x": 0.8080806892311958,
+    "note": "OOS re-simulé avec les combinaisons DÉJÀ choisies par la sélection IS nominale (jamais une nouvelle sélection), portage inter-fenêtres actif, seul cost_bps change."
+  },
+  "honesty_analyses": {
+    "subperiods_sharpe": {
+      "candidate": {
+        "avant_2010-01-01": {
+          "sharpe": 0.6549756253212231,
+          "n_days": 3507
+        },
+        "depuis_2010-01-01": {
+          "sharpe": 0.9884676298435213,
+          "n_days": 4042
+        },
+        "depuis_2020-01-01": {
+          "sharpe": 0.7406116045594321,
+          "n_days": 1526
+        }
+      },
+      "control": {
+        "avant_2010-01-01": {
+          "sharpe": NaN,
+          "n_days": 3507
+        },
+        "depuis_2010-01-01": {
+          "sharpe": NaN,
+          "n_days": 4042
+        },
+        "depuis_2020-01-01": {
+          "sharpe": NaN,
+          "n_days": 1526
+        }
+      },
+      "benchmark_spy": {
+        "avant_2010-01-01": {
+          "sharpe": 0.38022142175586304,
+          "n_days": 3507
+        },
+        "depuis_2010-01-01": {
+          "sharpe": 0.8615676724589021,
+          "n_days": 4042
+        },
+        "depuis_2020-01-01": {
+          "sharpe": 0.7965157391474172,
+          "n_days": 1526
+        }
+      }
+    },
+    "correlations": {
+      "candidate_vs_control": NaN,
+      "candidate_vs_spy": 0.8953052203163399,
+      "control_vs_spy": NaN,
+      "note": "Corrélation des rendements quotidiens OOS concaténés (mêmes dates). NaN = série constante (contrôle jamais investi)."
+    },
+    "turnover": {
+      "signal_monthly_one_way_mean_candidate": 0.1340277777777778,
+      "signal_monthly_one_way_mean_control": 0.0009498354349498541,
+      "n_decision_dates_oos": 360,
+      "realized_monthly_one_way_candidate": 0.060599610446444706,
+      "realized_monthly_one_way_control": 0.0,
+      "annual_cost_drag_candidate_pct_of_initial_capital_per_window": 0.0007271953253573366,
+      "note": "signal = fraction du portefeuille CIBLE remplacée à chaque rebalance mensuel (0,5·Σ|Δw|), avant bande de non-négociation. realized = Σ coûts spot / taux de coût / 2 / nb de mois OOS (turnover dollar réel exécuté par le moteur, en fraction du capital de base de chaque fenêtre)."
+    },
+    "paired_comparison_candidate_vs_control": {
+      "n_days_aligned": 7549,
+      "candidate": {
+        "sharpe": 0.8127136874221905,
+        "sortino": 1.1670589575604182,
+        "max_drawdown": 0.5187988722489704
+      },
+      "control": {
+        "sharpe": NaN,
+        "sortino": NaN,
+        "max_drawdown": -0.0
+      },
+      "information_ratio_candidate_vs_control": 0.8127136874221905,
+      "control_degenerate": true,
+      "candidate_dominated_by_control": null,
+      "note": "Dominée (SPEC §5) = Sharpe ET Sortino ET MaxDD TOUS moins bons pour la candidate que pour le contrôle. `null` = NON ÉVALUABLE parce que le contrôle est dégénéré (jamais investi, Sharpe/Sortino NaN) : ce n'est PAS une non-domination."
+    },
+    "structural_diagnostics": {
+      "candidate_realized_events": {
+        "n_events": 371,
+        "n_gains": 307,
+        "n_losses": 64,
+        "sum_gains": 2.9714815776829218,
+        "sum_losses": -0.26711198165635,
+        "note": "Évènements de réalisation de PnL (fermetures complètes ET partielles) alimentant le profit factor. Peu de pertes réalisées = les positions perdantes sous la bande ne sont jamais vendues."
+      },
+      "candidate": {
+        "mean_gross_exposure": 1.2476035929308076,
+        "max_gross_exposure": 1.7980091621026275,
+        "min_gross_exposure": 0.9225578452060667,
+        "share_days_gross_exposure_gt_1_05": 0.9190621274340972,
+        "share_days_zero_exposure": 0.0,
+        "note": "Exposition brute = Σ|shares|·close / equity en clôture. > 1 = position longue supérieure à l'équity (cash négatif : le moteur autorise ce levier implicite sans coût de financement) ; = 0 sur toute la période = jamais investi."
+      },
+      "control": {
+        "mean_gross_exposure": 0.0,
+        "max_gross_exposure": 0.0,
+        "min_gross_exposure": 0.0,
+        "share_days_gross_exposure_gt_1_05": 0.0,
+        "share_days_zero_exposure": 1.0,
+        "note": "Exposition brute = Σ|shares|·close / equity en clôture. > 1 = position longue supérieure à l'équity (cash négatif : le moteur autorise ce levier implicite sans coût de financement) ; = 0 sur toute la période = jamais investi."
+      },
+      "candidate_mean_number_of_held_names_S1_replica": 44.411577692409594,
+      "candidate_max_number_of_held_names_S1_replica": 62,
+      "eligible_universe_size_at_oos_decision_dates": {
+        "min": 73,
+        "median": 94.5,
+        "max": 103,
+        "n_decision_dates": 360,
+        "n_months_fewer_than_20_eligible": 0
+      },
+      "eligibility_independent_of_L": true,
+      "n_combos_with_nan_is_sharpe_windows": 60
+    }
+  },
+  "band_fidelity": {
+    "a": 0.3,
+    "sharpe_s1": 0.8127136874221905,
+    "sharpe_s2": 0.77028921187003,
+    "delta_sharpe_s2_minus_s1": -0.04242447555216056,
+    "band_fragile": false,
+    "band_fragile_definition": "true si au moins un des 5 seuils §1.2 bascule (passe <-> échoue) entre S1 et S2 (BAND-FIDELITY-SPEC §3.3) — FLAG, pas une règle de rejet.",
+    "s1": {
+      "sharpe": 0.8127136874221905,
+      "profit_factor": 11.12447880195,
+      "n_trades_closed": 371,
+      "max_drawdown": 0.5187988722489704,
+      "dsr": 0.9567456693688506,
+      "maxdd_relative_to_benchmark": 0.9458459593904205,
+      "thresholds_pass": {
+        "sharpe_oos": true,
+        "profit_factor_oos": true,
+        "n_trades_oos_closed": true,
+        "maxdd_relative_to_benchmark": true,
+        "dsr": true
+      }
+    },
+    "s2_pocket_units": {
+      "sharpe": 0.77028921187003,
+      "sortino": 1.120483560139843,
+      "profit_factor": 141.12638933358838,
+      "max_drawdown": 0.5740588175820613,
+      "cagr": 0.15563032051347636,
+      "n_trades_closed": 716,
+      "average_exposure_wallet": 0.4268184586615715,
+      "n_days": 7549,
+      "dsr": 0.9339462907414667,
+      "maxdd_relative_to_benchmark": 1.0465928939064166,
+      "thresholds_pass": {
+        "sharpe_oos": true,
+        "profit_factor_oos": true,
+        "n_trades_oos_closed": true,
+        "maxdd_relative_to_benchmark": true,
+        "dsr": true
+      }
+    },
+    "threshold_flips_s1_vs_s2": {
+      "sharpe_oos": false,
+      "profit_factor_oos": false,
+      "n_trades_oos_closed": false,
+      "maxdd_relative_to_benchmark": false,
+      "dsr": false
+    },
+    "decision_divergences": {
+      "n_decision_bars_divergent_same_state_D1": 2631,
+      "n_decision_cells_divergent_same_state_D1": 4941,
+      "n_active_cells_S1_path": 335634,
+      "n_decision_bars_divergent_independent_paths_D2": 619,
+      "n_decision_cells_divergent_independent_paths_D2": 1059,
+      "n_orders_S1": 801,
+      "n_orders_S2": 1468,
+      "n_bars_with_order_S1": 394,
+      "n_bars_with_order_S2": 543,
+      "n_bars_total_oos": 7549,
+      "definition": "D1 = barres où, SUR LA TRAJECTOIRE S1, la règle de bande S1 et la règle S2 (évaluée sur le MÊME état de détention via k(P,a) = P/(1+a(P−1))) donnent des décisions hold/trade différentes pour au moins un titre actif (mesure indépendante du chemin, retenue comme mesure principale) ; D2 = barres où le XOR des drapeaux « ordre émis » entre les runs S1 et S2 indépendants est non nul (dépendant du chemin).",
+      "replica_validation": {
+        "max_abs_equity_diff_vs_engine_S1": 1.3322676295501878e-15,
+        "max_abs_equity_diff_vs_engine_S2": 4.440892098500626e-16,
+        "replica_matches_engine": true
+      }
+    },
+    "cb": {
+      "wallet_target": "labo",
+      "thresholds_source": "bot/config.py WALLETS[labo]['risque'] (lecture seule)",
+      "a": 0.3,
+      "wallet_equity_formula_1_plus_a_P_minus_1": {
+        "max_wallet_drawdown": 0.45984843254475705,
+        "cb_dd_half_size_pct": 0.15,
+        "cb_dd_flatten_pct": 0.25,
+        "half_size_would_trigger": true,
+        "flatten_would_trigger": true,
+        "n_days_dd_above_half_size": 493,
+        "n_days_dd_above_flatten": 204,
+        "n_episodes_half_size": 35,
+        "n_episodes_flatten": 7,
+        "first_half_size_date": "2002-07-18",
+        "first_flatten_date": "2008-10-09",
+        "cb_daily_loss_freeze_pct": 0.03,
+        "n_days_daily_loss_above_freeze": 65,
+        "n_episodes_freeze_entries": 56
+      },
+      "alt_wallet_equity_rebalanced_each_window": {
+        "max_wallet_drawdown": 0.20720417584186102,
+        "cb_dd_half_size_pct": 0.15,
+        "cb_dd_flatten_pct": 0.25,
+        "half_size_would_trigger": true,
+        "flatten_would_trigger": false,
+        "n_days_dd_above_half_size": 53,
+        "n_days_dd_above_flatten": 0,
+        "n_episodes_half_size": 4,
+        "n_episodes_flatten": 0,
+        "first_half_size_date": "2008-11-20",
+        "first_flatten_date": null,
+        "cb_daily_loss_freeze_pct": 0.03,
+        "n_days_daily_loss_above_freeze": 2,
+        "n_episodes_freeze_entries": 2
+      },
+      "max_wallet_drawdown": 0.45984843254475705,
+      "pocket_maxdd_S1_for_reference": 0.5187988722489704,
+      "pocket_maxdd_S2_for_reference": 0.5740588175820613,
+      "a_times_pocket_maxdd_S1": 0.1556396616746911,
+      "a_times_pocket_maxdd_S2": 0.17221764527461839,
+      "spec_expectation_refuted_a_times_pocket_maxdd_above_half_size": true,
+      "spec_expectation": "MaxDD wallet ≈ a × MaxDD poche ≈ 11-14 %, sous le seuil half-size labo (15 %) — À VÉRIFIER (SPEC §1).",
+      "not_modelled": "Circuit breaker « pertes consécutives » (cooldown) non modélisé ; flatten production STICKY (une fois déclenché, revue manuelle) — n_episodes_flatten est un nombre de franchissements simulés, pas de flattens réels.",
+      "note": "Le moteur ne simule AUCUN circuit breaker : ces chiffres bornent ce que la production aurait déclenché (reste du wallet en cash). Deux lectures de l'équity wallet sont données : la formule SPEC E = 1 + a·(P−1) appliquée à l'équity de poche concaténée sur 30 ans (a fixé en part du capital INITIAL, le reste en cash), et la variante où a est ré-équilibré à 0,30 à chaque début de fenêtre OOS."
+    },
+    "s2_definition": "Run S2 apparié : même moteur, mêmes fenêtres, MÊME combinaison retenue par fenêtre que S1 (sélection IS non rejouée), poids décidés a·W (a=0.3), no_trade_band = 0,05·a = 0.0150, mêmes coûts, portage inter-fenêtres actif ; métriques reconverties en unités de poche par fenêtre via P = 1 + (E−1)/a puis concaténées. Hypothèse : reste du wallet en cash (borne documentée, BAND-FIDELITY-SPEC §4).",
+    "knife_edge_note": "Poids cible 1/N : N=20 donne exactement 0,05 = la bande (condition de hold stricte `|Δ|<bande` => ordre émis à la limite, en S1 comme en S2 puisque a·(1/20) et 0,05·a sont le même flottant) ; N=30 (0,033) et le contrôle (~0,01) sont SOUS la bande : aucun ordre d'entrée n'est jamais émis depuis flat (cf. structural_diagnostics)."
+  },
+  "promotion_rules_1_2_thresholds_verdict": {
+    "sharpe_oos": {
+      "value": 0.8127136874221905,
+      "threshold": 0.7,
+      "rule": ">= seuil",
+      "pass": true
+    },
+    "profit_factor_oos": {
+      "value": 11.12447880195,
+      "threshold": 1.15,
+      "rule": "> seuil",
+      "pass": true
+    },
+    "n_trades_oos_closed": {
+      "value": 371,
+      "threshold": 80,
+      "rule": ">= seuil",
+      "pass": true
+    },
+    "maxdd_relative_to_benchmark": {
+      "value": 0.9458459593904205,
+      "threshold": 1.5,
+      "rule": "<= seuil (maxdd_candidate / maxdd_benchmark_OOS_aligné)",
+      "pass": true
+    },
+    "dsr": {
+      "value": 0.9567456693688506,
+      "threshold": 0.5,
+      "rule": ">= seuil",
+      "k_total": 166,
+      "pass": true
+    }
+  },
+  "promotion_rules_1_2_all_pass": true,
+  "candidate_dominated_by_control": null,
+  "most_frequently_selected_is_combo": {
+    "counts": [
+      {
+        "params": {
+          "n_holdings": 20,
+          "vol_window": 252
+        },
+        "n_windows": 16
+      },
+      {
+        "params": {
+          "n_holdings": 20,
+          "vol_window": 63
+        },
+        "n_windows": 14
+      }
+    ],
+    "n_windows_total": 30
+  },
+  "gate1_verdict_automatic": {
+    "value": "indetermine_controle_degenere_domination_non_evaluable",
+    "note": "Verdict AUTOMATIQUE (SPEC §5) fondé UNIQUEMENT sur les 5 seuils §1.2 et la domination par le contrôle. NE remplace PAS l'audit adversarial indépendant §1.4 (isSound), ni l'arbitrage de band_fragile (BAND-FIDELITY-SPEC §3.3)."
+  },
+  "adversarial_audit_1_4": {
+    "isSound": null,
+    "note": "Non exécuté ici (hors périmètre du script d'implémentation) ; obligatoire avant toute décision de statut."
+  }
+}
