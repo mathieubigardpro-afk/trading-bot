@@ -297,6 +297,43 @@ def test_registry_entry_lookup_real_registry_file():
     assert entry_missing is None
 
 
+def test_registry_entry_alias_dual_momentum_etf():
+    """Backlog #22 (session #11) : le strategy_ref des poches (`dual_momentum_etf`) doit
+    résoudre vers l'entrée du registre `dual_momentum_multiclasse_etf` via l'alias explicite.
+    Test non tautologique : un id direct prime toujours sur l'alias, et un id inconnu sans
+    alias reste None."""
+    registry = {
+        "strategies": [
+            {"id": "dual_momentum_multiclasse_etf", "sharpe_oos": 0.6538,
+             "max_drawdown_oos_pct": 27.57},
+        ]
+    }
+    entry = wm.registry_entry(registry, "dual_momentum_etf")
+    assert entry is not None and entry["id"] == "dual_momentum_multiclasse_etf"
+    # L'alias alimente bien la référence de dérive générique (plus de n/d mécanique) :
+    ref = wm.reference_metrics_for("dual_momentum_etf", "prudent", entry, registry)
+    assert ref["sharpe_ref"] == 0.6538
+    assert ref["dd_ref_pct"] == 27.57
+    # Un id direct homonyme primerait sur l'alias :
+    registry_direct = {
+        "strategies": [
+            {"id": "dual_momentum_etf", "sharpe_oos": 9.9, "max_drawdown_oos_pct": 1.0},
+            {"id": "dual_momentum_multiclasse_etf", "sharpe_oos": 0.6538,
+             "max_drawdown_oos_pct": 27.57},
+        ]
+    }
+    assert wm.registry_entry(registry_direct, "dual_momentum_etf")["sharpe_oos"] == 9.9
+    # Id inconnu sans alias : toujours None.
+    assert wm.registry_entry(registry, "inconnue_sans_alias") is None
+
+
+def test_registry_entry_alias_resolves_on_real_registry_file():
+    registry = wm.load_registry(wm._REPO_ROOT)
+    entry = wm.registry_entry(registry, "dual_momentum_etf")
+    assert entry is not None and entry["id"] == "dual_momentum_multiclasse_etf"
+    assert entry.get("max_drawdown_oos_pct") == 27.57
+
+
 # ============================================================================================
 # --- Redirection dérive quasi_passif_crypto -> retest audité (backlog #15, session #6) ---
 # ============================================================================================

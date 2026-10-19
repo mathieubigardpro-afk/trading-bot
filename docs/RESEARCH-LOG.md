@@ -1464,3 +1464,118 @@ proprement hors contexte d'audit, son résultat fait foi ici). Suite tools : 232
   backlog technique P0/P1 est épuisé — 8 jugées, 0 incubée), 2) #14 (échéance fin octobre !),
   3) vérification run réel #18 (2026-11-01), 4) #20, 5) #22/#15.
 - Suite de tests complète exécutée avant push (résultat dans le commit final).
+
+---
+
+## 2026-10-19 — Session hebdomadaire #11 (a) : REVUE des stratégies actives et candidates
+
+- **Candidates labo** : `INCUBATING_STRATEGIES` toujours vide — aucune Porte 2 à évaluer,
+  aucun kill 56 j. **Zéro action requise, zéro action prise.** Labo 100 % cash (1 139,20 USD
+  constants).
+- **Stratégies actives** : les 3 stratégies de production restent l'antécédent HORS cadre §3
+  (`PROMOTION-RULES.md` §5). `DRIFT-REPORT.md` du 2026-10-19 (88 j vécus) : **5 lignes OK**
+  (quasi_passif 0,83/1,34/0,82 vécus vs 0,81/0,28/0,07 attendus ; xs_momentum 0,88/0,50 vs
+  0,82 ; DD vécus ≤ 2,5 % partout, très loin des seuils 2×) ; 2 lignes **SURVEILLER** pour
+  `dual_momentum_etf` : (i) référence de dérive indisponible — cause réelle identifiée et
+  corrigée cette session (décalage d'identifiant, backlog #22, cf. entrée (c)) ; (ii) Sharpe
+  roulant 60 j négatif depuis 6 j sur la ligne prudente — sous le seuil d'alerte §3.1 de 30 j
+  consécutifs, à suivre. **Aucune règle de mort ne serait déclenchée même si §3 s'appliquait.
+  Aucune action.**
+- Recalibrage du 2026-10-19 : exécuté normalement (rafraîchissement OK, 16 fenêtres,
+  `REGIME_SMA_DAYS=200` optimal sur la grille, IS le plus souvent 175 — informatif) — 11e
+  verdict consécutif « aucun changement », conforme.
+- Cron fetch-data du samedi 2026-10-17 : OK (394 s), 30 crypto (archives → 2026-09 +
+  complément API) + 30 funding + 30 perp + actions/ETF → 2026-10-16 ; 19 anomalies connues,
+  rien de neuf. Ticker **BK** : 7e échec consécutif — mais la fiche #20 est CORRIGÉE cette
+  session : BK ne fait PAS partie de `UNIVERSE_SP100` (vérifié par exécution — seule la liste
+  de `tools/fetch_data.py` le contient), aucun impact backtest/stratégie, priorité déclassée
+  P3.
+- **Gouvernance #14** : toujours aucune décision humaine enregistrée (8 semaines). Le critère
+  vécu de `SELECTION-FINALE.md` §5 arrive à échéance FIN OCTOBRE (~1-2 semaines) — vécus
+  toujours au-dessus des références auditées, aucune pression à la bascule, mais sans décision
+  le statu quo tranchera de facto. **Rappel priorité haute maintenu à Mathieu.**
+- Wallets au cycle 2026-10-19T01 : 🛡️ 1 014 € | ⚖️ 1 037 € | 🔥 1 038 € | 🧪 1 012 € (labo
+  100 % cash, état attendu ; repli ~-25 à -38 € sur la semaine, pullback crypto/actions
+  mi-octobre, aucun breaker actif).
+
+---
+
+## 2026-10-19 — Session hebdomadaire #11 (b) : sourcing de nouvelles idées + Porte 1 de `lowvol_sp100` — REJETÉE (rejet AUTOMATIQUE §1.4, audit `isSound: false`)
+
+**Contexte.** Priorité n°1 de la revue #10 : le backlog technique P0/P1 est épuisé (8
+candidates jugées, 0 incubée) — « prochaine candidate OU sourcing de nouvelles idées ».
+Sourcing mené en début de session (revue de littérature practitioner) : 2 pistes retenues et
+documentées AVANT tout test — (i) low-volatility défensif S&P100 (anomalie documentée depuis
+~35 ans, données en place, coûts 5 bps, famille structurellement neuve pour le projet) ;
+(ii) tilt cross-sectionnel par funding rate (nouvelle fiche #27, prior honnêtement FAIBLE :
+l'étude practitioner la plus directe — Presto Research 2024 — trouve un pouvoir prédictif T+1
+NUL en série temporelle et un alpha xs à turnover extrême sans coûts). La piste (i), au prior
+le plus fort et au régime de coûts le plus favorable, est retenue pour la Porte 1.
+
+**Protocole.** SPEC pré-enregistrée `backtest/LOWVOL-SP100-SPEC.md` committée AVANT exécution
+(commit 35df9b5) : grille figée L∈{63,252}×N∈{20,30} (bottom-N par vol réalisée, équipondéré,
+rebalance mensuel, AUCUN filtre de régime), walk-forward 36m/12m (30 fenêtres, OOS 1996→2026,
+7 549 j), coûts 5 bps/côté, benchmark SPY aligné, contrôle apparié équipondéré compté dans
+K_total = 16 + 30×4 + 30×1 = 166, `sizing_interne: false` ⇒ `apply_vol_targeting=False`
+(SIZING-FIDELITY), annexe `band_fidelity` complète (a=0,30, S2, bloc CB labo), portage
+inter-fenêtres actif. Implémentation et run par agent délégué ; moteur, risque, config :
+INTOUCHÉS.
+
+**Résultat brut.** Les 5 seuils §1.2 passent nominalement : Sharpe OOS 0,813 ≥ 0,70 ;
+PF 11,12 ; 371 trades ; MaxDD relatif 0,95× ; DSR 0,957 (K=166). L'implémenteur signale
+LUI-MÊME l'anomalie A3 avant tout verdict — honnêteté conforme au protocole.
+
+**Audit adversarial indépendant (copie isolée, remote neutralisé) : `isSound: FALSE`.**
+Ce qui tient : zéro look-ahead (perturbation bit-exacte, 378/378), reproduction indépendante
+sans le code de la candidate à 1e-15, DSR recalculé from scratch identique, S2 reproduit,
+grille conforme à la SPEC. Ce qui tombe :
+- **C1 (CRITIQUE)** : le moteur n'a pas exécuté la stratégie déclarée. Bande plate 0,05 vs
+  poids 1/N : entrées à 0,05 pile (égalité flottante 1/20 == 0.05), sorties d'un titre sorti
+  du bottom-20 JAMAIS exécutées (poids dérivé < bande) → 44 titres détenus en moyenne (max
+  62), brut moyen 1,25 (max 1,80), **cash négatif 98 % des jours (min −0,80 de l'équity)** —
+  un levier implicite non financé que la production interdit (`bot/sim` `Ledger` :
+  `ValueError` sur achat sans cash). Le moteur a donc appliqué un sizing PLUS GÉNÉREUX que la
+  production — l'interdit exact de §1.4. PF 11 = artefact (307 gains réalisés / 64 pertes —
+  les pertes sous la bande ne sont jamais vendues ; à rebalance réellement exécuté, PF ~2,7).
+- **C2 (CRITIQUE)** : contrôle apparié INERTE (poids ~1/100 sous la bande, 0 ordre sur 30
+  fenêtres, 100 % cash) — la branche « domination » de la SPEC §5 est inévaluable. Défaut de
+  la SPEC pré-enregistrée elle-même (bande non anticipée), pas de l'implémentation.
+- **M1-M4** : N=30 inentrable (grille de facto 2 combos) ; fidélité sizing (le vrai
+  `RiskManager` reproduit la bande à l'identique mais pas le cash négatif) ; biais du
+  survivant quantifié (contrôle équipondéré CAGR 17,1 % vs SPY 10,4 %) ; lecture pertinente
+  du bloc CB = équity wallet S2 chaînée (MaxDD ~20,7 %, 4 épisodes half-size labo, 0 flatten
+  — la prédiction a priori de la SPEC, 11-14 %, est RÉFUTÉE).
+
+**DÉCISION (sémantique SPEC §5, figée avant exécution)** : `isSound: false` ⇒ **REJET
+AUTOMATIQUE** (§1.4), statut `rejetee` au registre (17e entrée), **rejet de PROCÉDURE — pas un
+verdict sur l'anomalie low-vol** (contrefactuel indicatif de l'auditeur, hors protocole :
+candidate ~0,83 vs contrôle équipondéré ~0,92, IR −0,58, candidate meilleure uniquement sur le
+MaxDD). Aucun re-run, aucune variante dans cette session (§3.3). Conditions de tout retest
+consignées dans la fiche #24. `band_fragile: false` (aucun seuil ne bascule S1↔S2).
+
+**Retombées structurelles (nouvelles fiches)** : #25 (P0 — gardes de financement du moteur :
+`cash >= 0`/brut ≤ 1 + métriques `min_cash`/`max_gross`, BLOQUANT de fait pour toute future
+Porte 1) ; #26 (P2 — incompatibilité structurelle bande × équipondéré N ≥ 20, prouvée en
+production aussi, versée à #12e — question d'architecture humaine §4.3) ; #27 (P2 — funding
+tilt, prior faible documenté). Checklist immédiate pour toute future SPEC : poids cibles
+strictement > bande ET contrôle qui émet ≥ 1 ordre (smoke run) AVANT commit de la SPEC.
+
+---
+
+## 2026-10-19 — Session hebdomadaire #11 (c) : hygiène
+
+- **Backlog #22 SOLDÉ** : la cause réelle du « DD de référence indisponible » des 2 lignes
+  `dual_momentum_etf` du DRIFT-REPORT n'était pas un MaxDD absent du registre (l'entrée
+  `dual_momentum_multiclasse_etf` porte 0,6538/27,57 %) mais un décalage d'identifiant
+  (`strategy_ref` court vs id long du registre). Correctif : table d'alias explicite
+  `STRATEGY_REGISTRY_ALIASES` dans `tools/weekly_maintenance.py` (un id direct prime toujours),
+  +2 tests non tautologiques. Purement informatif, aucune règle de décision touchée.
+- **Backlog #20 CORRIGÉ et déclassé P3** : BK n'est pas dans `UNIVERSE_SP100` (vérifié par
+  exécution) — les 7 échecs de fetch n'affectent que la liste de téléchargement.
+- `RESEARCH-REGISTRY.json` : +1 entrée (`lowvol_sp100`, `rejetee`, bloc `band_fidelity`
+  complet) — 17 entrées, `verify_research --check` OK. Toute prochaine candidate : K_total =
+  17 lignes + sa grille.
+- `RESEARCH-BACKLOG.md` : #24-#27 créées, #12e versée, priorités session #12 posées
+  (1. #25 gardes moteur ; 2. #14 — ÉCHÉANCE fin octobre ; 3. vérif run réel #18 le
+  2026-11-01 ; 4. prochaine candidate après #25 ; 5. #20 P3).
+- Suite de tests complète exécutée avant push (résultat dans le commit final).

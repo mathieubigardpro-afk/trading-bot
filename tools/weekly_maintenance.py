@@ -208,10 +208,30 @@ def load_registry(repo_dir: str) -> dict:
         return json.load(f)
 
 
+# --- Alias strategy_ref (config/état) -> id du registre (backlog #22, session #11) ---
+#
+# Les poches de `bot/config.py:WALLETS` référencent `dual_momentum_etf` (nom court historique)
+# alors que l'entrée du registre s'appelle `dual_momentum_multiclasse_etf` (registre
+# append-only : jamais réécrit). Sans cet alias, `registry_entry()` retournait None et les
+# 2 lignes dual_momentum du DRIFT-REPORT restaient « SURVEILLER » pour une raison purement
+# mécanique (« DD de référence indisponible ») alors que l'entrée du registre porte bien
+# `sharpe_oos=0.6538` et `max_drawdown_oos_pct=27.57` (vague 1, auditée). Même choix de table
+# EXPLICITE que `DRIFT_REFERENCE_OVERRIDES` : une correspondance nommée, facile à auditer,
+# jamais une heuristique. Purement informatif (moniteur), aucune règle de décision touchée.
+STRATEGY_REGISTRY_ALIASES: Dict[str, str] = {
+    "dual_momentum_etf": "dual_momentum_multiclasse_etf",
+}
+
+
 def registry_entry(registry: dict, strategy_id: str) -> Optional[dict]:
     for entry in registry.get("strategies", []):
         if entry.get("id") == strategy_id:
             return entry
+    alias = STRATEGY_REGISTRY_ALIASES.get(strategy_id)
+    if alias is not None:
+        for entry in registry.get("strategies", []):
+            if entry.get("id") == alias:
+                return entry
     return None
 
 

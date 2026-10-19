@@ -477,6 +477,13 @@ significativité de l'écart vs benchmark (Jobson-Korkie déjà utilisé dans la
 (c) **[AJOUTÉ 2026-10-12] Inscription dans §1.4 de la convention de sizing #21**
 (`docs/SIZING-FIDELITY-SPEC.md` : `apply_vol_targeting=False` par défaut, sizing interne via
 `profile["risque"]` sinon) — proposé par la session #9, formellement versé ici.
+(e) **[AJOUTÉ 2026-10-19, session #11]** Sémantique de SORTIE sous la bande de non-négociation
+(prouvé sur le vrai `RiskManager`, audit `lowvol_sp100`) : un titre dont le poids cible tombe à
+0 mais dont le poids courant est sous la bande n'est JAMAIS vendu, en production comme au
+moteur — structurellement bloquant pour toute candidate équipondérée N ≥ 20 (poids 1/N ≤ 0,05 ;
+cf. fiche #26). La bande est du ressort du cadre de risque (§4.3) : toute évolution (ex. bande
+asymétrique entrée/sortie, ou sortie vers 0 toujours exécutée) est une décision d'ARCHITECTURE
+humaine, versée ici pour mémoire — jamais un choix de session de recherche.
 (d) **[AJOUTÉ 2026-10-12] Inscription dans §1.4 de l'annexe `band_fidelity`**
 (`docs/BAND-FIDELITY-SPEC.md` §3 : run S2 apparié, bloc CB aux seuils labo, point d'audit) ET
 décision sur un critère formel « seuils §1.2 exigés sous S1 ET S2 » — motivation chiffrée : S2
@@ -724,7 +731,30 @@ supplémentaire, ou exclusion documentée de l'univers avec note au registre).
 > mapping non menée cette session (chantiers #19 + #18 prioritaires et réseau du conteneur
 > bloqué vers les sources marché — l'investigation exige un run réel côté Actions) ; à traiter.
 
-### 22. [P3 — hygiène monitoring, AJOUTÉE 2026-09-21] Référence MaxDD manquante pour `dual_momentum_multiclasse_etf` dans le DRIFT-REPORT
+> **CORRECTION 2026-10-19 (session #11, constat vérifié par exécution)** : la prémisse de
+> cette fiche est FAUSSE — **BK ne fait PAS partie de `UNIVERSE_SP100`**
+> (`bot/strategies/xs_momentum_sp100.py` : 103 titres, BKNG y est, BK non). Seule la liste de
+> téléchargement de `tools/fetch_data.py` contient BK. Les échecs BK (7e consécutif au run du
+> 2026-10-17) n'ont donc AUCUNE incidence sur les backtests actions ni sur les stratégies —
+> c'est du bruit de pipeline uniquement. Priorité déclassée P3 ; résolution candidate : retirer
+> BK de la liste de `fetch_data.py` avec note documentée (ou corriger le mapping si un jour
+> utile). L'univers effectif des backtests actions est bien 103 titres (cf. registre
+> `lowvol_sp100`).
+
+### 22. [P3 — hygiène monitoring, AJOUTÉE 2026-09-21] Référence MaxDD manquante pour `dual_momentum_multiclasse_etf` dans le DRIFT-REPORT — ✅ TRAITÉE 2026-10-19 (session #11)
+
+**VERDICT (session #11)** : la cause réelle n'était pas un MaxDD absent du registre (l'entrée
+`dual_momentum_multiclasse_etf` porte bien `sharpe_oos=0.6538` et `max_drawdown_oos_pct=27.57`,
+vague 1 auditée — le « ~19,9 % » de la fiche d'origine était une piste non sourcée, abandonnée)
+mais un **décalage d'identifiant** : les poches de `bot/config.py` référencent
+`dual_momentum_etf` (nom court) et `registry_entry()` ne le trouvait pas. Correctif livré :
+table d'alias EXPLICITE `STRATEGY_REGISTRY_ALIASES` dans `tools/weekly_maintenance.py` (même
+pattern nommé que `DRIFT_REFERENCE_OVERRIDES`, un id direct prime toujours sur l'alias), tests
+non tautologiques ajoutés. Purement informatif, aucune règle de décision touchée. Au prochain
+rapport de dérive, les 2 lignes dual_momentum auront une vraie référence (0.6538 / 27.57 %) au
+lieu de « n/d ».
+
+**Fiche d'origine (pour mémoire) :**
 
 Depuis que le Sharpe roulant 60 j est calculable (rapport du 2026-09-21), les 2 lignes
 `dual_momentum_etf` restent « SURVEILLER » pour une raison purement mécanique : l'entrée
@@ -751,7 +781,101 @@ court terme — fiche de mémoire pour empêcher une future re-revendication imp
 
 ---
 
-**Priorité de la prochaine session (revue 2026-10-12, session #10)** :
+## Idées ajoutées par la session hebdomadaire #11 (2026-10-19)
+
+### 24. Low-volatility défensif S&P100 — ✅ TRAITÉE 2026-10-19 : REJETÉE (rejet de PROCÉDURE §1.4, audit `isSound: false`)
+
+**VERDICT (session #11, cf. `RESEARCH-LOG.md` 2026-10-19 (b) et
+`RESEARCH-REGISTRY.json:lowvol_sp100`)** : idée sourcée en début de session (littérature
+factorielle — Haugen & Baker 1991, Baker/Bradley/Wurgler 2011), SPEC pré-enregistrée (commit
+35df9b5, grille 4 combos L∈{63,252}×N∈{20,30}, contrôle apparié équipondéré compté,
+K_total=166). Les 5 seuils §1.2 passent nominalement (Sharpe OOS 0,813 ; DSR 0,957) mais
+l'audit adversarial indépendant démontre que **le moteur n'a pas exécuté la stratégie
+déclarée** : bande plate 0,05 vs poids 1/N → sorties jamais exécutées, accumulation (44 titres
+moy., brut 1,25 moy./1,80 max), **cash négatif 98 % des jours** (levier non financé que le
+`Ledger` de production interdit) ; contrôle apparié inerte (poids ~0,01 sous la bande, 0 ordre
+en 30 fenêtres). Rejet automatique §1.4 — **qui ne dit RIEN de l'anomalie low-vol elle-même**
+(contrefactuel indicatif de l'auditeur à rebalance forcé, hors protocole : candidate Sharpe
+~0,83 vs contrôle équipondéré ~0,92, IR −0,58, candidate meilleure uniquement sur le MaxDD
+37,7 % vs 50,5 %). **Conditions de tout retest (nouvel id, nouvelle ligne K_total, §3.3)** :
+(a) #25 soldée (gardes moteur) ; (b) conception compatible bande — poids cibles STRICTEMENT
+> 0,05 (ex. N ≤ 15, attention à l'égalité flottante 1/20 == 0.05) ou sizing interne ; (c) un
+contrôle apparié qui émet réellement des ordres ; (d) l'adversaire à battre reste l'équipondéré
+large (leçon xs_momentum_invvol confirmée une 2e fois).
+
+### 25. [P0 — infrastructure moteur] Gardes de financement du moteur commun : `cash >= 0` / brut <= 1 en spot long-only + métriques `min_cash`/`max_gross`
+
+Finding CRITIQUE C1 + MAJEUR M2 de l'audit `lowvol_sp100` (session #11), démontré par
+exécution : `backtest/engine.py:simulate_segment` autorise des achats sans cash (cash négatif
+98 % des jours sur ce backtest, min −0,80 de l'équity ; brut max 1,80) là où la production
+(`bot/sim/` `Ledger`) lève `ValueError` sur tout achat non financé. Le moteur peut donc être
+PLUS GÉNÉREUX que la production (interdit §1.4) sans que rien ne l'affiche. À faire (SPEC
+pré-enregistrée + audit adversarial AVANT toute future candidate, pattern #16) : (1) publier
+`min_cash`/`max_gross` dans les métriques de CHAQUE run (diagnostic visible, zéro changement
+de comportement, rétro-compat bit-à-bit) ; (2) décider du comportement (plafonner les achats au
+cash disponible, pessimiste, comme la production) en préservant la reproduction bit-à-bit des
+archives par défaut (opt-in, comme le portage #16) ; (3) checklist de SPEC : toute SPEC avec
+contrôle apparié doit vérifier (smoke run) que le contrôle émet ≥ 1 ordre AVANT d'être
+committée. Complexité : faible à modérée. Risque : aucun verdict passé ne semble affecté
+(les 16 candidates précédentes avaient des poids cibles sommant ≤ 1 et un vol-targeting qui
+réduisait l'exposition — à vérifier par le re-run informatif habituel).
+
+### 26. [P2 — limite structurelle production, versée à #12e] Bande de non-négociation : les candidates équipondérées N ≥ 20 sont structurellement incompatibles (moteur ET production)
+
+Prouvé sur le vrai `RiskManager` (audit session #11) : avec la bande par poche 0,05 ×
+`capital_alloc_pct` par symbole, les poids cibles 1/N ≤ 0,05 sont inentrables (N > 20) ou sur
+le fil de l'égalité flottante (N = 20), et un titre à cible 0 dont le poids courant est sous la
+bande n'est JAMAIS vendu — en production comme au moteur. Ce n'est PAS un bug du moteur : c'est
+une propriété du cadre de risque (§4.3, hors de portée de la recherche — proposition versée au
+dossier d'amendements #12e, décision humaine). Conséquence opérationnelle pour les sessions de
+recherche, dès maintenant : toute SPEC doit vérifier que les poids cibles de la candidate ET de
+son contrôle sont STRICTEMENT au-dessus de la bande applicable, sinon re-concevoir avant de
+committer la SPEC. S'atténue sans disparaître pour N < 20 — l'exposition de `xs_momentum_sp100`
+(top 10, poids 0,10) à l'effet « sortie sous bande » n'a jamais été quantifiée : à vérifier à
+l'occasion du prochain chantier moteur (#25).
+
+### 27. [P2 — nouvelle idée candidate] Tilt cross-sectionnel par funding rate (crypto, long-only spot)
+
+**Hypothèse** : le funding rate des perpétuels est un proxy de positionnement/sentiment ;
+sur-pondérer (long-only, spot) les majors au funding bas/négatif et sous-pondérer celles au
+funding extrême positif. Données DÉJÀ en place (`market-data:data/funding/`, 30 paires,
+2022→, pipeline #1/session #4) — première idée à exploiter la dimension non-prix du dépôt.
+**Prior HONNÊTEMENT FAIBLE, documenté avant tout test** (revue de littérature session #11) :
+l'étude practitioner la plus directe trouvée (Presto Research 2024, « Can Funding Rate Predict
+Price Change? ») mesure une corrélation funding/prix CONTEMPORAINE (R²=12,5 % sur BTC 7 j) mais
+un pouvoir prédictif T+1 NUL en série temporelle ; son alpha cross-sectionnel (niveau lissé de
+funding, 50 actifs) est revendiqué « favorable » mais à turnover « extrêmement élevé » et SANS
+coûts — exactement le profil qui meurt sur le périmètre de coûts de ce projet (leçon
+btc_seasonality : hurdle ~30 bps/round-trip). Conditions avant SPEC : formuler UNE hypothèse
+directionnelle unique (contrarian sur extrêmes), cadence lente (rebalance quotidien ou plus
+lent, détention multi-jours), corrélation au quasi-passif à mesurer, et poids cibles au-dessus
+de la bande (#26). Risques : funding fortement corrélé au momentum de prix récent (redondance
+possible avec SMA200) ; 5 candidates crypto de suite ont déjà échoué sur motif « edge
+pré-2024 ».
+
+---
+
+**Priorité de la prochaine session (revue 2026-10-19, session #11)** :
+
+1. **#25 (P0 infrastructure moteur, session dédiée)** : gardes de financement
+   `cash >= 0`/brut <= 1 + métriques `min_cash`/`max_gross` + re-run informatif des archives —
+   BLOQUANT de fait pour toute future Porte 1 (un moteur qui peut financer des achats sans
+   cash n'est plus présumé fidèle §1.4 tant que ce n'est pas instrumenté). SPEC pré-enregistrée
+   + audit adversarial, pattern #16.
+2. **#14 (gouvernance, décision HUMAINE — Mathieu, en attente depuis le 2026-08-24)** : le
+   critère vécu de `SELECTION-FINALE.md` §5 arrive à ÉCHÉANCE (fin octobre, ~1-2 semaines).
+   Vécus toujours au-dessus des références auditées au 2026-10-19 — sans décision, le statu quo
+   tranchera de facto. Peut absorber #12a-#12e et le palier de coûts perp.
+3. **Vérification run réel #18** : maintenance du dimanche 2026-11-01 (tout début de mois) —
+   le correctif session #10 doit transformer « recalibrage sauté 0/6 » en « mois de queue
+   complété via API ».
+4. **Prochaine candidate de jugement** (après #25) : #27 (funding tilt, prior faible documenté)
+   ou un retest low-vol compatible bande (#24, nouvel id) — dans les deux cas, checklist #26
+   (poids > bande, contrôle qui trade) AVANT de committer la SPEC.
+5. #20 déclassée P3 (BK hors univers — correction session #11) : résolution simple côté
+   `fetch_data.py` à l'occasion ; #22 ✅ traitée.
+
+**Priorité de la session #11 (revue 2026-10-12, session #10 — conservée pour mémoire)** :
 
 1. **Session de JUGEMENT possible à nouveau, mais backlog technique mince** : toutes les
    idées P0/P1 sont traitées (8 candidates jugées, 0 incubée). Restent P2#7 (mid-caps
