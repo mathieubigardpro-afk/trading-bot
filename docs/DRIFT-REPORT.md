@@ -1,6 +1,6 @@
 # DRIFT-REPORT.md — Moniteur de dérive (backtest vs vécu)
 
-*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-10-12T01:07:41.474776+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
+*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-10-19T00:02:35.753462+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
 
 ## 1. Moniteur de dérive par stratégie
 
@@ -8,19 +8,19 @@ Compare les métriques VÉCUES (journaux `state/wallets/*/`) aux métriques OOS 
 
 | Stratégie | Wallet | Statut | Jours observés | Sharpe vécu | Sharpe attendu | DD vécu | DD attendu | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| dual_momentum_etf | prudent | active | 81 | -0.14 | n/d | 2.3% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | prudent | active | 81 | 0.91 | 0.81 | 0.3% | 8.4% | **OK** |
-| xs_momentum_sp100 | equilibre | active | 81 | 1.27 | 0.82 | 1.5% | 50.3% | **OK** |
-| dual_momentum_etf | equilibre | active | 81 | 0.71 | n/d | 1.0% | n/d | **SURVEILLER** |
-| quasi_passif_crypto | equilibre | active | 81 | 1.64 | 0.28 | 0.4% | 27.3% | **OK** |
-| xs_momentum_sp100 | agressif | active | 81 | 1.29 | 0.82 | 1.7% | 50.3% | **OK** |
-| quasi_passif_crypto | agressif | active | 81 | 1.55 | 0.07 | 1.7% | 56.4% | **OK** |
+| dual_momentum_etf | prudent | active | 88 | -0.20 | n/d | 2.5% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | prudent | active | 88 | 0.83 | 0.81 | 0.3% | 8.4% | **OK** |
+| xs_momentum_sp100 | equilibre | active | 88 | 0.88 | 0.82 | 1.6% | 50.3% | **OK** |
+| dual_momentum_etf | equilibre | active | 88 | 0.38 | n/d | 1.2% | n/d | **SURVEILLER** |
+| quasi_passif_crypto | equilibre | active | 88 | 1.34 | 0.28 | 0.4% | 27.3% | **OK** |
+| xs_momentum_sp100 | agressif | active | 88 | 0.50 | 0.82 | 1.9% | 50.3% | **OK** |
+| quasi_passif_crypto | agressif | active | 88 | 0.82 | 0.07 | 2.2% | 56.4% | **OK** |
 
 ### Détail des raisons
 
 - **dual_momentum_etf** (prudent, active) — **SURVEILLER**
   - DD de référence indisponible dans le registre — comparaison impossible
-  - Sharpe roulant 60j négatif depuis 3j (sous le seuil d'alerte 30j)
+  - Sharpe roulant 60j négatif depuis 6j (sous le seuil d'alerte 30j)
 - **quasi_passif_crypto** (prudent, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
   - aucun signal de dérive détecté
 - **xs_momentum_sp100** (equilibre, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
