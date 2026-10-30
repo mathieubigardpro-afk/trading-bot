@@ -1,15 +1,11 @@
 {
-  "cash_usd": 458.96272068649273,
+  "cash_usd": 589.7029331001727,
   "circuit_breakers": {
-    "consecutive_losses": 6,
-    "cooldown_until": "2026-10-30T20:57:55.332734+00:00",
+    "consecutive_losses": 9,
+    "cooldown_until": "2026-10-31T00:42:06.795787+00:00",
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1148.267573087208,
-        "ts": "2026-10-28T23:27:49.929914+00:00"
-      },
       {
         "equity": 1136.2932122872076,
         "ts": "2026-10-29T02:43:30.519618+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1124.5860012872079,
         "ts": "2026-10-29T20:57:55.332734+00:00"
+      },
+      {
+        "equity": 1114.6861592872078,
+        "ts": "2026-10-30T00:42:06.795787+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,11 +37,11 @@
     "last_rate": 1.113,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-10-29T20:58:15.707017+00:00"
+    "last_rate_ts": "2026-10-30T00:42:26.565944+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-10-29T20:57:55.332734+00:00",
-  "last_run_id": "2026-10-29T20",
+  "last_run_completed_at": "2026-10-30T00:42:06.795787+00:00",
+  "last_run_id": "2026-10-30T00",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -66,14 +66,6 @@
     "ETH": {
       "prix_moyen": 2362.0916244155837,
       "qty": 0.0159
-    },
-    "FIL": {
-      "prix_moyen": 0.9455874,
-      "qty": 43.9
-    },
-    "ICP": {
-      "prix_moyen": 2.56941505945946,
-      "qty": 25.9
     },
     "INTC": {
       "prix_moyen": 91.31124402692413,
@@ -106,20 +98,16 @@
     "UNI": {
       "prix_moyen": 5.3691086428571415,
       "qty": 9.8
-    },
-    "XRP": {
-      "prix_moyen": 1.411025502051282,
-      "qty": 29.8
     }
   },
-  "realized_pnl_cumulative_usd": -11.894765756628068,
+  "realized_pnl_cumulative_usd": -31.262250204076278,
   "schema_version": 1,
-  "state_hash_prev": "56f652949888cc9e53bde6a908ce183e7b3b9f48d3c81c7ecc7612eded23e23d",
+  "state_hash_prev": "6b4c67d09e5a2285a39202f69ef7c9c4e63ae966fb9177486b4e4a57a897dbc4",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "BNB": 14
+        "BNB": 15
       }
     },
     "xs_momentum_sp100": {
@@ -128,21 +116,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": -3.762119744459157,
-      "symbol": "CAT",
-      "ts": "2026-09-02T17:14:05.859400+00:00"
-    },
-    {
-      "realized_pnl_usd": 4.311996258855674,
-      "symbol": "DE",
-      "ts": "2026-09-02T17:14:05.859400+00:00"
-    },
-    {
-      "realized_pnl_usd": 0.8181662674677767,
-      "symbol": "FDX",
-      "ts": "2026-09-02T17:14:05.859400+00:00"
-    },
     {
       "realized_pnl_usd": -2.475677136375007,
       "symbol": "XLM",
@@ -227,6 +200,21 @@
       "realized_pnl_usd": -1.6445635540050003,
       "symbol": "BNB",
       "ts": "2026-10-26T21:49:50.790709+00:00"
+    },
+    {
+      "realized_pnl_usd": -6.872551014299997,
+      "symbol": "FIL",
+      "ts": "2026-10-30T00:42:06.795787+00:00"
+    },
+    {
+      "realized_pnl_usd": -6.38186727675001,
+      "symbol": "ICP",
+      "ts": "2026-10-30T00:42:06.795787+00:00"
+    },
+    {
+      "realized_pnl_usd": -6.113066156398202,
+      "symbol": "XRP",
+      "ts": "2026-10-30T00:42:06.795787+00:00"
     }
   ],
   "wallet_id": "agressif"
