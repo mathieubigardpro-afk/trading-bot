@@ -1,15 +1,11 @@
 {
-  "cash_usd": 301.10556299631827,
+  "cash_usd": 305.2884804890868,
   "circuit_breakers": {
-    "consecutive_losses": 3,
-    "cooldown_until": null,
+    "consecutive_losses": 6,
+    "cooldown_until": "2026-11-03T18:45:08.987714+00:00",
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1156.6478938253024,
-        "ts": "2026-11-01T14:08:38.682356+00:00"
-      },
       {
         "equity": 1155.6027081253023,
         "ts": "2026-11-01T18:56:44.341881+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1155.1355047253026,
         "ts": "2026-11-02T08:26:59.956607+00:00"
+      },
+      {
+        "equity": 1133.4793834126544,
+        "ts": "2026-11-02T18:45:08.987714+00:00"
       }
     ],
     "flatten_mode": false,
@@ -34,14 +34,14 @@
   "equity_peak_usd": 1225.3131011600465,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1172,
+    "last_rate": 1.1216,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-02T08:27:18.702508+00:00"
+    "last_rate_ts": "2026-11-02T18:45:28.688419+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-02T08:26:59.956607+00:00",
-  "last_run_id": "2026-11-02T08",
+  "last_run_completed_at": "2026-11-02T18:45:08.987714+00:00",
+  "last_run_id": "2026-11-02T18",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -51,17 +51,9 @@
       "prix_moyen": 8.497649265091862,
       "qty": 3.81
     },
-    "BAC": {
-      "prix_moyen": 53.658617943028446,
-      "qty": 0.7962
-    },
     "BTC": {
       "prix_moyen": 69393.4794,
       "qty": 0.00043
-    },
-    "CRM": {
-      "prix_moyen": 234.30413584904477,
-      "qty": 0.1823
     },
     "CSCO": {
       "prix_moyen": 114.2741922057724,
@@ -91,13 +83,13 @@
       "prix_moyen": 96.70163251154136,
       "qty": 0.4259
     },
-    "MS": {
-      "prix_moyen": 190.93578779855346,
-      "qty": 0.2237
-    },
     "MSFT": {
       "prix_moyen": 515.2354303158875,
       "qty": 0.0829
+    },
+    "QCOM": {
+      "prix_moyen": 165.58545952211378,
+      "qty": 0.2398
     },
     "QQQ": {
       "prix_moyen": 755.6441232657622,
@@ -111,14 +103,22 @@
       "prix_moyen": 139.6745735495224,
       "qty": 0.2862
     },
+    "TMO": {
+      "prix_moyen": 685.6951910278931,
+      "qty": 0.0579
+    },
+    "TXN": {
+      "prix_moyen": 308.50828926924135,
+      "qty": 0.1287
+    },
     "UNH": {
       "prix_moyen": 415.72791632812505,
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": 8.575796247782364,
+  "realized_pnl_cumulative_usd": 3.8430181829465315,
   "schema_version": 1,
-  "state_hash_prev": "b95f9d47e1e04eff590e894be221a1b0ed582b9d60d7c13d81e3b0d668cb3d7e",
+  "state_hash_prev": "cd2e669c6939eb05e6ea28e194650c8db273b7e7376e59c6193c3116a3bbb8dd",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -134,21 +134,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": 3.0753273464900013,
-      "symbol": "LINK",
-      "ts": "2026-08-19T21:12:04.812166+00:00"
-    },
-    {
-      "realized_pnl_usd": 8.256574149530016,
-      "symbol": "LINK",
-      "ts": "2026-08-20T01:23:03.142924+00:00"
-    },
-    {
-      "realized_pnl_usd": 0.391414750210845,
-      "symbol": "EFA",
-      "ts": "2026-08-21T13:35:45.887123+00:00"
-    },
     {
       "realized_pnl_usd": -1.429069279679997,
       "symbol": "DOGE",
@@ -233,6 +218,21 @@
       "realized_pnl_usd": -3.1201342005599995,
       "symbol": "DOGE",
       "ts": "2026-10-09T06:21:07.730614+00:00"
+    },
+    {
+      "realized_pnl_usd": -2.940913386242278,
+      "symbol": "BAC",
+      "ts": "2026-11-02T18:45:08.987714+00:00"
+    },
+    {
+      "realized_pnl_usd": -0.6246564894898511,
+      "symbol": "CRM",
+      "ts": "2026-11-02T18:45:08.987714+00:00"
+    },
+    {
+      "realized_pnl_usd": -1.1672081891037036,
+      "symbol": "MS",
+      "ts": "2026-11-02T18:45:08.987714+00:00"
     }
   ],
   "wallet_id": "equilibre"
