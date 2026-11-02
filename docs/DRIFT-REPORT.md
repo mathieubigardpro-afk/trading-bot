@@ -1,6 +1,6 @@
 # DRIFT-REPORT.md — Moniteur de dérive (backtest vs vécu)
 
-*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-10-26T00:00:26.922612+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
+*Généré automatiquement par `tools/weekly_maintenance.py` le 2026-11-02T01:25:25.600746+00:00. Ce document NE PREND AUCUNE DÉCISION — il signale. Les décisions de promotion, rétrogradation ou mort appartiennent exclusivement à une session de recherche hebdomadaire humaine, suivant `docs/PROMOTION-RULES.md`.*
 
 ## 1. Moniteur de dérive par stratégie
 
@@ -8,28 +8,28 @@ Compare les métriques VÉCUES (journaux `state/wallets/*/`) aux métriques OOS 
 
 | Stratégie | Wallet | Statut | Jours observés | Sharpe vécu | Sharpe attendu | DD vécu | DD attendu | Verdict |
 |---|---|---|---|---|---|---|---|---|
-| dual_momentum_etf | prudent | active | 95 | -0.25 | 0.65 | 2.6% | 27.6% | **SURVEILLER** |
-| quasi_passif_crypto | prudent | active | 95 | 0.81 | 0.81 | 0.3% | 8.4% | **OK** |
-| xs_momentum_sp100 | equilibre | active | 95 | 0.75 | 0.82 | 1.7% | 50.3% | **OK** |
-| dual_momentum_etf | equilibre | active | 95 | 0.25 | 0.65 | 1.3% | 27.6% | **SURVEILLER** |
-| quasi_passif_crypto | equilibre | active | 95 | 1.21 | 0.28 | 0.4% | 27.3% | **OK** |
-| xs_momentum_sp100 | agressif | active | 95 | 0.13 | 0.82 | 2.5% | 50.3% | **OK** |
-| quasi_passif_crypto | agressif | active | 95 | 0.49 | 0.07 | 2.7% | 56.4% | **OK** |
+| dual_momentum_etf | prudent | active | 102 | -0.31 | 0.65 | 2.8% | 27.6% | **SURVEILLER** |
+| quasi_passif_crypto | prudent | active | 102 | 0.75 | 0.81 | 0.3% | 8.4% | **OK** |
+| xs_momentum_sp100 | equilibre | active | 102 | 0.56 | 0.82 | 1.9% | 50.3% | **SURVEILLER** |
+| dual_momentum_etf | equilibre | active | 102 | 0.08 | 0.65 | 1.4% | 27.6% | **SURVEILLER** |
+| quasi_passif_crypto | equilibre | active | 102 | 0.91 | 0.28 | 0.5% | 27.3% | **OK** |
+| xs_momentum_sp100 | agressif | active | 102 | -0.20 | 0.82 | 3.0% | 50.3% | **SURVEILLER** |
+| quasi_passif_crypto | agressif | active | 102 | 0.17 | 0.07 | 3.3% | 56.4% | **OK** |
 
 ### Détail des raisons
 
 - **dual_momentum_etf** (prudent, active) — **SURVEILLER**
-  - Sharpe roulant 60j négatif depuis 13j (sous le seuil d'alerte 30j)
+  - Sharpe roulant 60j négatif depuis 20j (sous le seuil d'alerte 30j)
 - **quasi_passif_crypto** (prudent, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
   - aucun signal de dérive détecté
-- **xs_momentum_sp100** (equilibre, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - aucun signal de dérive détecté
+- **xs_momentum_sp100** (equilibre, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
+  - Sharpe roulant 60j négatif depuis 4j (sous le seuil d'alerte 30j)
 - **dual_momentum_etf** (equilibre, active) — **SURVEILLER**
-  - Sharpe roulant 60j négatif depuis 7j (sous le seuil d'alerte 30j)
+  - Sharpe roulant 60j négatif depuis 14j (sous le seuil d'alerte 30j)
 - **quasi_passif_crypto** (equilibre, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
   - aucun signal de dérive détecté
-- **xs_momentum_sp100** (agressif, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
-  - aucun signal de dérive détecté
+- **xs_momentum_sp100** (agressif, active) — **SURVEILLER** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
+  - Sharpe roulant 60j négatif depuis 4j (sous le seuil d'alerte 30j)
 - **quasi_passif_crypto** (agressif, active) — **OK** _(antécédent hors §3, cf. PROMOTION-RULES.md §5 — informatif)_
   - aucun signal de dérive détecté
 
@@ -43,10 +43,5 @@ Rafraîchissement des données de marché (`tools/fetch_data.py --only crypto`) 
 
 Grille pré-enregistrée (`docs/RECALIBRATION-SPEC.md`) : `REGIME_SMA_DAYS ∈ [150, 175, 200, 225, 250]` (seuil de changement : amélioration OOS relative > 10%).
 
-- Fenêtres walk-forward (9m IS / 3m OOS) : **16**
-- Valeur en production : `REGIME_SMA_DAYS = 200` (Sharpe OOS concaténé : 0.599)
-- Meilleure valeur de la grille : `REGIME_SMA_DAYS = 200` (Sharpe OOS concaténé : 0.599)
-- Valeur la plus souvent sélectionnée en IS (informatif) : `175`
-- Amélioration relative : n/d
-- **Décision : aucun changement**
-  - la valeur actuellement en production reste optimale sur la grille — aucun changement
+_Recalibrage SAUTÉ : données insuffisantes ou indisponibles ce cycle (['AVAX', 'BTC', 'DOGE', 'ETH', 'LINK', 'SOL'])._
+_Raison d'exclusion par symbole (`tools/fetch_data.py`) : AVAX : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert); BTC : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert); DOGE : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert); ETH : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert); LINK : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert); SOL : historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert)._
