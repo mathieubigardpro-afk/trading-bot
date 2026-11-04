@@ -1,15 +1,11 @@
 {
-  "cash_usd": 305.2884804890868,
+  "cash_usd": 490.0503682883435,
   "circuit_breakers": {
-    "consecutive_losses": 6,
-    "cooldown_until": "2026-11-05T08:11:46.484527+00:00",
+    "consecutive_losses": 8,
+    "cooldown_until": "2026-11-05T16:20:36.410794+00:00",
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1135.7271537628599,
-        "ts": "2026-11-03T16:13:42.459512+00:00"
-      },
       {
         "equity": 1149.4631003988834,
         "ts": "2026-11-03T21:55:02.261998+00:00"
@@ -21,6 +17,10 @@
       {
         "equity": 1150.3198503988835,
         "ts": "2026-11-04T08:11:46.484527+00:00"
+      },
+      {
+        "equity": 1145.7660434046327,
+        "ts": "2026-11-04T16:20:36.410794+00:00"
       }
     ],
     "flatten_mode": false,
@@ -30,14 +30,14 @@
   "equity_peak_usd": 1225.3131011600465,
   "fx": {
     "initial_rate": 1.141079,
-    "last_rate": 1.1179,
+    "last_rate": 1.1267,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-04T08:12:04.474962+00:00"
+    "last_rate_ts": "2026-11-04T16:20:56.927712+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-04T08:11:46.484527+00:00",
-  "last_run_id": "2026-11-04T08",
+  "last_run_completed_at": "2026-11-04T16:20:36.410794+00:00",
+  "last_run_id": "2026-11-04T16",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -58,10 +58,6 @@
     "DBC": {
       "prix_moyen": 28.412715647660065,
       "qty": 2.8987000000000003
-    },
-    "EEM": {
-      "prix_moyen": 63.81602095391006,
-      "qty": 1.4912
     },
     "ETH": {
       "prix_moyen": 2259.2890799999996,
@@ -87,10 +83,6 @@
       "prix_moyen": 165.58545952211378,
       "qty": 0.2398
     },
-    "QQQ": {
-      "prix_moyen": 755.6441232657622,
-      "qty": 0.1347
-    },
     "SOL": {
       "prix_moyen": 93.48282600852272,
       "qty": 0.352
@@ -112,9 +104,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": 3.8430181829465315,
+  "realized_pnl_cumulative_usd": -8.342807868165583,
   "schema_version": 1,
-  "state_hash_prev": "e8d3f3ad600995ee6027bd0c47baaca48798285e37f84c8f4fd9ec8b6c60610f",
+  "state_hash_prev": "8143634143c94801d836da27c643790695417c968583ed9378395be5d060bef0",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -130,16 +122,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": -1.429069279679997,
-      "symbol": "DOGE",
-      "ts": "2026-08-26T00:07:36.973943+00:00"
-    },
-    {
-      "realized_pnl_usd": -4.402067948413555,
-      "symbol": "CAT",
-      "ts": "2026-09-02T17:14:05.859400+00:00"
-    },
     {
       "realized_pnl_usd": 5.021662906109203,
       "symbol": "DE",
@@ -229,6 +211,16 @@
       "realized_pnl_usd": -1.1672081891037036,
       "symbol": "MS",
       "ts": "2026-11-02T18:45:08.987714+00:00"
+    },
+    {
+      "realized_pnl_usd": -3.5069992469872298,
+      "symbol": "EEM",
+      "ts": "2026-11-04T16:20:36.410794+00:00"
+    },
+    {
+      "realized_pnl_usd": -8.678826804124885,
+      "symbol": "QQQ",
+      "ts": "2026-11-04T16:20:36.410794+00:00"
     }
   ],
   "wallet_id": "equilibre"
