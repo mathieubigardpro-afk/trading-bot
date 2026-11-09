@@ -1,37 +1,39 @@
 {
   "data_refresh_status": "OK",
-  "generated_at": "2026-11-02T01:25:25.600746+00:00",
+  "generated_at": "2026-11-09T01:33:56.718845+00:00",
   "recalibration": {
-    "missing_symbols": [
-      "AVAX",
-      "BTC",
-      "DOGE",
-      "ETH",
-      "LINK",
-      "SOL"
-    ],
-    "missing_symbols_reasons": {
-      "AVAX": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert)",
-      "BTC": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert)",
-      "DOGE": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert)",
-      "ETH": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert)",
-      "LINK": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert)",
-      "SOL": "historique incomplet sur la fenêtre de complétude requise [2023-07 .. 2026-10] : 1 mois manquant(s) (2026-10) — exclu (complément API en queue tenté : 0 bougies, mois 2026-10 non couvert)"
+    "best_oos_sharpe": 0.5991803961481879,
+    "best_value": 200,
+    "changed": false,
+    "current_oos_sharpe": 0.5991803961481879,
+    "current_value": 200,
+    "modal_value": 175,
+    "param_name": "regime_sma_days",
+    "reason": "la valeur actuellement en production reste optimale sur la grille — aucun changement",
+    "relative_improvement": null,
+    "status": "OK",
+    "strategy_id": "quasi_passif_crypto",
+    "votes": {
+      "150": 4,
+      "175": 5,
+      "200": 1,
+      "225": 2,
+      "250": 4
     },
-    "status": "DONNEES_INSUFFISANTES"
+    "windows": 16
   },
   "rows": [
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 2.842810084029621,
+      "dd_live_pct": 4.27506039398672,
       "dd_ref_pct": 27.57,
-      "n_days_observed": 102,
-      "negative_rolling_streak_days": 20,
+      "n_days_observed": 110,
+      "negative_rolling_streak_days": 28,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 20j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 28j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": -0.30618154541794756,
+      "sharpe_live": -0.8579347246944309,
       "sharpe_ref": 0.6538,
       "source": "walk-forward OOS audité",
       "strategy_id": "dual_momentum_etf",
@@ -41,31 +43,31 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.2890142327271533,
+      "dd_live_pct": 0.465213631358608,
       "dd_ref_pct": 8.4,
-      "n_days_observed": 102,
-      "negative_rolling_streak_days": 0,
+      "n_days_observed": 110,
+      "negative_rolling_streak_days": 1,
       "reasons": [
-        "aucun signal de dérive détecté"
+        "Sharpe roulant 60j négatif depuis 1j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": 0.7538439451625775,
+      "sharpe_live": 0.08512326795288694,
       "sharpe_ref": 0.808,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante prudent_btc_eth) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
-      "verdict": "OK",
+      "verdict": "SURVEILLER",
       "wallet_id": "prudent"
     },
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 1.8837262757889919,
+      "dd_live_pct": 2.7788033974846127,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 102,
-      "negative_rolling_streak_days": 4,
+      "n_days_observed": 110,
+      "negative_rolling_streak_days": 12,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 4j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 12j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": 0.5646104968079187,
+      "sharpe_live": -0.11962045479440675,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -75,14 +77,14 @@
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 1.4110543632092936,
+      "dd_live_pct": 1.8423195977351,
       "dd_ref_pct": 27.57,
-      "n_days_observed": 102,
-      "negative_rolling_streak_days": 14,
+      "n_days_observed": 110,
+      "negative_rolling_streak_days": 22,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 14j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 22j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": 0.08423985588903067,
+      "sharpe_live": -0.1802849335493209,
       "sharpe_ref": 0.6538,
       "source": "walk-forward OOS audité",
       "strategy_id": "dual_momentum_etf",
@@ -92,31 +94,31 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 0.5463302630162131,
+      "dd_live_pct": 0.8878969733102676,
       "dd_ref_pct": 27.3,
-      "n_days_observed": 102,
-      "negative_rolling_streak_days": 0,
+      "n_days_observed": 110,
+      "negative_rolling_streak_days": 6,
       "reasons": [
-        "aucun signal de dérive détecté"
+        "Sharpe roulant 60j négatif depuis 6j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": 0.9099470398418305,
+      "sharpe_live": 0.0911183614417764,
       "sharpe_ref": 0.283,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante equilibre_6majors) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
-      "verdict": "OK",
+      "verdict": "SURVEILLER",
       "wallet_id": "equilibre"
     },
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 3.0301884412544484,
+      "dd_live_pct": 3.465199252418078,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 102,
-      "negative_rolling_streak_days": 4,
+      "n_days_observed": 110,
+      "negative_rolling_streak_days": 12,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 4j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 12j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": -0.19749044603874918,
+      "sharpe_live": -0.440838605954414,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -126,18 +128,18 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 3.346142791360572,
+      "dd_live_pct": 3.5709023088196554,
       "dd_ref_pct": 56.4,
-      "n_days_observed": 102,
-      "negative_rolling_streak_days": 0,
+      "n_days_observed": 110,
+      "negative_rolling_streak_days": 8,
       "reasons": [
-        "aucun signal de dérive détecté"
+        "Sharpe roulant 60j négatif depuis 8j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": 0.16987544750287428,
+      "sharpe_live": 0.07281910505504471,
       "sharpe_ref": 0.069,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante agressif_11diversifie) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
-      "verdict": "OK",
+      "verdict": "SURVEILLER",
       "wallet_id": "agressif"
     }
   ],
