@@ -1,15 +1,11 @@
 {
-  "cash_usd": 417.314894783637,
+  "cash_usd": 435.8569948865088,
   "circuit_breakers": {
-    "consecutive_losses": 3,
+    "consecutive_losses": 4,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1106.9241213482896,
-        "ts": "2026-11-07T23:09:02.460039+00:00"
-      },
       {
         "equity": 1106.90161004829,
         "ts": "2026-11-08T02:28:03.805103+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1106.80601184829,
         "ts": "2026-11-08T20:39:08.499533+00:00"
+      },
+      {
+        "equity": 1104.1784003482899,
+        "ts": "2026-11-09T00:02:05.514315+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,15 +37,15 @@
     "last_rate": 1.1165,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-08T20:39:29.988559+00:00"
+    "last_rate_ts": "2026-11-09T00:02:26.086344+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-08T20:39:08.499533+00:00",
-  "last_run_id": "2026-11-08T20",
+  "last_run_completed_at": "2026-11-09T00:02:05.514315+00:00",
+  "last_run_id": "2026-11-09T00",
   "positions": {
     "BTC": {
-      "prix_moyen": 74754.53655508473,
-      "qty": 0.00059
+      "prix_moyen": 74715.29511443182,
+      "qty": 0.00088
     },
     "DBC": {
       "prix_moyen": 28.412715647660065,
@@ -55,18 +55,14 @@
       "prix_moyen": 105.34422592693976,
       "qty": 1.9803
     },
-    "ETH": {
-      "prix_moyen": 2370.462954947368,
-      "qty": 0.019
-    },
     "IWM": {
       "prix_moyen": 282.5659106859604,
       "qty": 0.7382
     }
   },
-  "realized_pnl_cumulative_usd": -29.820573493016106,
+  "realized_pnl_cumulative_usd": -34.6513421178111,
   "schema_version": 1,
-  "state_hash_prev": "fa7d5eae30287b2689fd0e8f21277eb6bdaed021b6d7c4ec47d55a39bdf94ff9",
+  "state_hash_prev": "cf10898fbe8419a01ad9e9f60190767e6da5ef99576b7d4371f57d4cee2537af",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -117,6 +113,11 @@
       "realized_pnl_usd": -18.64626931784515,
       "symbol": "QQQ",
       "ts": "2026-11-04T16:20:36.410794+00:00"
+    },
+    {
+      "realized_pnl_usd": -4.830768624794993,
+      "symbol": "ETH",
+      "ts": "2026-11-09T00:02:05.514315+00:00"
     }
   ],
   "wallet_id": "prudent"

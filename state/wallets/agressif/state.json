@@ -1,15 +1,11 @@
 {
-  "cash_usd": 697.0334842457014,
+  "cash_usd": 730.6812546433518,
   "circuit_breakers": {
-    "consecutive_losses": 12,
-    "cooldown_until": "2026-11-09T20:39:08.499533+00:00",
+    "consecutive_losses": 13,
+    "cooldown_until": "2026-11-10T00:02:05.514315+00:00",
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1116.2318019449915,
-        "ts": "2026-11-07T23:09:02.460039+00:00"
-      },
       {
         "equity": 1116.0183165449914,
         "ts": "2026-11-08T02:28:03.805103+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1114.3774609449915,
         "ts": "2026-11-08T20:39:08.499533+00:00"
+      },
+      {
+        "equity": 1109.1146469449914,
+        "ts": "2026-11-09T00:02:05.514315+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,11 +37,11 @@
     "last_rate": 1.1165,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-08T20:39:29.988559+00:00"
+    "last_rate_ts": "2026-11-09T00:02:26.086344+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-08T20:39:08.499533+00:00",
-  "last_run_id": "2026-11-08T20",
+  "last_run_completed_at": "2026-11-09T00:02:05.514315+00:00",
+  "last_run_id": "2026-11-09T00",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -54,10 +54,6 @@
     "CSCO": {
       "prix_moyen": 114.27419220577238,
       "qty": 0.2991
-    },
-    "ETH": {
-      "prix_moyen": 2362.0916244155837,
-      "qty": 0.0159
     },
     "INTC": {
       "prix_moyen": 91.31124402692413,
@@ -88,14 +84,14 @@
       "qty": 9.8
     }
   },
-  "realized_pnl_cumulative_usd": -35.37823595997254,
+  "realized_pnl_cumulative_usd": -39.28772239052982,
   "schema_version": 1,
-  "state_hash_prev": "b8841819b94eccf687c7659fe28c606229911f5a4ff3f8271ce87998965cbdd8",
+  "state_hash_prev": "d2e8c0349ec46b2059f75a68f29e6427f8baf47f650e3b06c1c8bab61cfb73bf",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "BNB": 4
+        "BNB": 5
       }
     },
     "xs_momentum_sp100": {
@@ -104,11 +100,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": 3.6576884503083043,
-      "symbol": "ETH",
-      "ts": "2026-09-18T23:59:55.648007+00:00"
-    },
     {
       "realized_pnl_usd": 8.04948432803875,
       "symbol": "SOL",
@@ -203,6 +194,11 @@
       "realized_pnl_usd": -1.015371987481362,
       "symbol": "MS",
       "ts": "2026-11-02T18:45:08.987714+00:00"
+    },
+    {
+      "realized_pnl_usd": -3.9094864305572825,
+      "symbol": "ETH",
+      "ts": "2026-11-09T00:02:05.514315+00:00"
     }
   ],
   "wallet_id": "agressif"

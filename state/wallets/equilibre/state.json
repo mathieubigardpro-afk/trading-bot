@@ -1,15 +1,11 @@
 {
-  "cash_usd": 490.0503682883435,
+  "cash_usd": 578.3478137530475,
   "circuit_breakers": {
-    "consecutive_losses": 8,
-    "cooldown_until": "2026-11-09T20:39:08.499533+00:00",
+    "consecutive_losses": 11,
+    "cooldown_until": "2026-11-10T00:02:05.514315+00:00",
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1131.8071423477716,
-        "ts": "2026-11-07T23:09:02.460039+00:00"
-      },
       {
         "equity": 1131.4707802477717,
         "ts": "2026-11-08T02:28:03.805103+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1131.0422108477717,
         "ts": "2026-11-08T20:39:08.499533+00:00"
+      },
+      {
+        "equity": 1126.4458193477715,
+        "ts": "2026-11-09T00:02:05.514315+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,19 +37,15 @@
     "last_rate": 1.1165,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-08T20:39:29.988559+00:00"
+    "last_rate_ts": "2026-11-09T00:02:26.086344+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-08T20:39:08.499533+00:00",
-  "last_run_id": "2026-11-08T20",
+  "last_run_completed_at": "2026-11-09T00:02:05.514315+00:00",
+  "last_run_id": "2026-11-09T00",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
       "qty": 0.0787
-    },
-    "AVAX": {
-      "prix_moyen": 8.497649265091862,
-      "qty": 3.81
     },
     "BTC": {
       "prix_moyen": 69393.4794,
@@ -62,10 +58,6 @@
     "DBC": {
       "prix_moyen": 28.412715647660065,
       "qty": 2.8987000000000003
-    },
-    "ETH": {
-      "prix_moyen": 2259.2890799999996,
-      "qty": 0.0132
     },
     "INTC": {
       "prix_moyen": 91.31124402692413,
@@ -87,10 +79,6 @@
       "prix_moyen": 165.58545952211378,
       "qty": 0.2398
     },
-    "SOL": {
-      "prix_moyen": 93.48282600852272,
-      "qty": 0.352
-    },
     "TGT": {
       "prix_moyen": 139.6745735495224,
       "qty": 0.2862
@@ -108,9 +96,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": -8.342807868165583,
+  "realized_pnl_cumulative_usd": -15.149976714461568,
   "schema_version": 1,
-  "state_hash_prev": "1bb06cd728b16ea05d4857a05e7242076d770eaf6f303889343c087606a80c4c",
+  "state_hash_prev": "3f6a901dfef0f71d67be658f649e6c71c1b2d4bd327586917b65d057d0758de4",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -126,21 +114,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": 5.021662906109203,
-      "symbol": "DE",
-      "ts": "2026-09-02T17:14:05.859400+00:00"
-    },
-    {
-      "realized_pnl_usd": 0.9571568638695571,
-      "symbol": "FDX",
-      "ts": "2026-09-02T17:14:05.859400+00:00"
-    },
-    {
-      "realized_pnl_usd": -0.25997653302939533,
-      "symbol": "IWM",
-      "ts": "2026-09-03T13:56:21.391412+00:00"
-    },
     {
       "realized_pnl_usd": -0.6763353480799995,
       "symbol": "AVAX",
@@ -225,6 +198,21 @@
       "realized_pnl_usd": -8.678826804124885,
       "symbol": "QQQ",
       "ts": "2026-11-04T16:20:36.410794+00:00"
+    },
+    {
+      "realized_pnl_usd": -2.3446450900699936,
+      "symbol": "AVAX",
+      "ts": "2026-11-09T00:02:05.514315+00:00"
+    },
+    {
+      "realized_pnl_usd": -1.8886177900259946,
+      "symbol": "ETH",
+      "ts": "2026-11-09T00:02:05.514315+00:00"
+    },
+    {
+      "realized_pnl_usd": -2.5739059661999977,
+      "symbol": "SOL",
+      "ts": "2026-11-09T00:02:05.514315+00:00"
     }
   ],
   "wallet_id": "equilibre"
