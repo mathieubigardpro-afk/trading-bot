@@ -1,15 +1,11 @@
 {
-  "cash_usd": 578.3478137530475,
+  "cash_usd": 608.8788723784519,
   "circuit_breakers": {
-    "consecutive_losses": 11,
-    "cooldown_until": "2026-11-13T19:15:05.704146+00:00",
+    "consecutive_losses": 0,
+    "cooldown_until": "2026-11-14T00:35:30.432444+00:00",
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1125.4294672124756,
-        "ts": "2026-11-11T22:42:25.745125+00:00"
-      },
       {
         "equity": 1125.0514407124756,
         "ts": "2026-11-12T03:26:49.086960+00:00"
@@ -21,6 +17,10 @@
       {
         "equity": 1132.1873058109759,
         "ts": "2026-11-12T19:15:05.704146+00:00"
+      },
+      {
+        "equity": 1123.9684050124754,
+        "ts": "2026-11-13T00:35:30.432444+00:00"
       }
     ],
     "flatten_mode": false,
@@ -33,19 +33,15 @@
     "last_rate": 1.1081,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-12T19:15:25.120256+00:00"
+    "last_rate_ts": "2026-11-13T00:35:51.332619+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-12T19:15:05.704146+00:00",
-  "last_run_id": "2026-11-12T19",
+  "last_run_completed_at": "2026-11-13T00:35:30.432444+00:00",
+  "last_run_id": "2026-11-13T00",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
       "qty": 0.0787
-    },
-    "BTC": {
-      "prix_moyen": 69393.4794,
-      "qty": 0.00043
     },
     "CSCO": {
       "prix_moyen": 114.2741922057724,
@@ -92,9 +88,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": -15.149976714461568,
+  "realized_pnl_cumulative_usd": -14.458114231057214,
   "schema_version": 1,
-  "state_hash_prev": "9a01aca71c5f9d986cd1e8c87e204e0501e6cff41a96e4e7afe334105290784f",
+  "state_hash_prev": "2c9f92643c445b0b862903237f7d46055d78b83085e97152c3b8b994ae9590f9",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -110,11 +106,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": -0.6763353480799995,
-      "symbol": "AVAX",
-      "ts": "2026-09-09T01:32:37.067864+00:00"
-    },
     {
       "realized_pnl_usd": -1.2434373373299952,
       "symbol": "DOGE",
@@ -209,6 +200,11 @@
       "realized_pnl_usd": -2.5739059661999977,
       "symbol": "SOL",
       "ts": "2026-11-09T00:02:05.514315+00:00"
+    },
+    {
+      "realized_pnl_usd": 0.6918624834043535,
+      "symbol": "BTC",
+      "ts": "2026-11-13T00:35:30.432444+00:00"
     }
   ],
   "wallet_id": "equilibre"

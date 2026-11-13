@@ -1,15 +1,11 @@
 {
-  "cash_usd": 435.8569948865088,
+  "cash_usd": 498.3391613757084,
   "circuit_breakers": {
-    "consecutive_losses": 4,
-    "cooldown_until": null,
+    "consecutive_losses": 5,
+    "cooldown_until": "2026-11-14T00:35:30.432444+00:00",
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1103.5508428011617,
-        "ts": "2026-11-11T22:42:25.745125+00:00"
-      },
       {
         "equity": 1103.2837188011617,
         "ts": "2026-11-12T03:26:49.086960+00:00"
@@ -21,6 +17,10 @@
       {
         "equity": 1112.8692660199988,
         "ts": "2026-11-12T19:15:05.704146+00:00"
+      },
+      {
+        "equity": 1101.0150876011617,
+        "ts": "2026-11-13T00:35:30.432444+00:00"
       }
     ],
     "flatten_mode": false,
@@ -33,16 +33,12 @@
     "last_rate": 1.1081,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-12T19:15:25.120256+00:00"
+    "last_rate_ts": "2026-11-13T00:35:51.332619+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-12T19:15:05.704146+00:00",
-  "last_run_id": "2026-11-12T19",
+  "last_run_completed_at": "2026-11-13T00:35:30.432444+00:00",
+  "last_run_id": "2026-11-13T00",
   "positions": {
-    "BTC": {
-      "prix_moyen": 74715.29511443182,
-      "qty": 0.00088
-    },
     "DBC": {
       "prix_moyen": 28.412715647660065,
       "qty": 6.5245
@@ -56,9 +52,9 @@
       "qty": 0.7382
     }
   },
-  "realized_pnl_cumulative_usd": -34.6513421178111,
+  "realized_pnl_cumulative_usd": -37.9186353293115,
   "schema_version": 1,
-  "state_hash_prev": "a5a9a0b1eaa008a324fcddf2feb5e602d30a98fc566724067f8aac49b657fb95",
+  "state_hash_prev": "f50754d114272d4440685b8ad47a350017f27df1f98721abe325579629dff9d9",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -114,6 +110,11 @@
       "realized_pnl_usd": -4.830768624794993,
       "symbol": "ETH",
       "ts": "2026-11-09T00:02:05.514315+00:00"
+    },
+    {
+      "realized_pnl_usd": -3.2672932115003985,
+      "symbol": "BTC",
+      "ts": "2026-11-13T00:35:30.432444+00:00"
     }
   ],
   "wallet_id": "prudent"
