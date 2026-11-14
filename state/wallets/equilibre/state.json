@@ -1,15 +1,11 @@
 {
-  "cash_usd": 608.8788723784519,
+  "cash_usd": 557.0729195831518,
   "circuit_breakers": {
-    "consecutive_losses": 0,
-    "cooldown_until": "2026-11-14T00:35:30.432444+00:00",
+    "consecutive_losses": 1,
+    "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1123.9684050124754,
-        "ts": "2026-11-13T00:35:30.432444+00:00"
-      },
       {
         "equity": 1123.3780527878798,
         "ts": "2026-11-13T07:19:01.946730+00:00"
@@ -21,6 +17,10 @@
       {
         "equity": 1123.15455278788,
         "ts": "2026-11-13T21:36:11.824647+00:00"
+      },
+      {
+        "equity": 1122.9475527878799,
+        "ts": "2026-11-14T01:48:11.219904+00:00"
       }
     ],
     "flatten_mode": false,
@@ -33,15 +33,19 @@
     "last_rate": 1.1052,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-13T21:36:33.865968+00:00"
+    "last_rate_ts": "2026-11-14T01:48:31.625273+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-13T21:36:11.824647+00:00",
-  "last_run_id": "2026-11-13T21",
+  "last_run_completed_at": "2026-11-14T01:48:11.219904+00:00",
+  "last_run_id": "2026-11-14T01",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
       "qty": 0.0787
+    },
+    "AVAX": {
+      "prix_moyen": 8.18818,
+      "qty": 9.89
     },
     "CSCO": {
       "prix_moyen": 114.2741922057724,
@@ -54,10 +58,6 @@
     "INTC": {
       "prix_moyen": 91.31124402692413,
       "qty": 0.4378
-    },
-    "LINK": {
-      "prix_moyen": 10.291244296666665,
-      "qty": 3.000000000000001
     },
     "MET": {
       "prix_moyen": 96.70163251154136,
@@ -88,9 +88,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": -14.458114231057214,
+  "realized_pnl_cumulative_usd": -16.035228066057215,
   "schema_version": 1,
-  "state_hash_prev": "cc4fcb5b662d3e5f47d854c0ab95e6dde7c2a2b06a844538f8286e32ba6ff01b",
+  "state_hash_prev": "b1082a317cff61c7d32daabe6254a158dd4700a70994eab50445ab3934dd99ec",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -106,11 +106,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": -1.2434373373299952,
-      "symbol": "DOGE",
-      "ts": "2026-09-10T01:27:40.857257+00:00"
-    },
     {
       "realized_pnl_usd": 2.499722936098141,
       "symbol": "DBC",
@@ -205,6 +200,11 @@
       "realized_pnl_usd": 0.6918624834043535,
       "symbol": "BTC",
       "ts": "2026-11-13T00:35:30.432444+00:00"
+    },
+    {
+      "realized_pnl_usd": -1.5771138350000002,
+      "symbol": "LINK",
+      "ts": "2026-11-14T01:48:11.219904+00:00"
     }
   ],
   "wallet_id": "equilibre"
