@@ -1,15 +1,11 @@
 {
-  "cash_usd": 767.6025348415153,
+  "cash_usd": 817.0343800250054,
   "circuit_breakers": {
-    "consecutive_losses": 14,
-    "cooldown_until": "2026-11-15T23:44:56.076526+00:00",
+    "consecutive_losses": 15,
+    "cooldown_until": "2026-11-16T03:12:28.643639+00:00",
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1093.7435264408052,
-        "ts": "2026-11-14T01:48:11.219904+00:00"
-      },
       {
         "equity": 1090.8494864408053,
         "ts": "2026-11-14T08:08:59.104091+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1081.8438964408056,
         "ts": "2026-11-14T23:44:56.076526+00:00"
+      },
+      {
+        "equity": 1085.2129064408052,
+        "ts": "2026-11-15T03:12:28.643639+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,11 +37,11 @@
     "last_rate": 1.1052,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-14T23:45:13.002182+00:00"
+    "last_rate_ts": "2026-11-15T03:12:49.492167+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-14T23:44:56.076526+00:00",
-  "last_run_id": "2026-11-14T23",
+  "last_run_completed_at": "2026-11-15T03:12:28.643639+00:00",
+  "last_run_id": "2026-11-15T03",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
@@ -74,20 +74,16 @@
     "UNH": {
       "prix_moyen": 415.727916328125,
       "qty": 0.0815
-    },
-    "UNI": {
-      "prix_moyen": 5.3691086428571415,
-      "qty": 9.8
     }
   },
-  "realized_pnl_cumulative_usd": -40.501831513046014,
+  "realized_pnl_cumulative_usd": -43.687251029555995,
   "schema_version": 1,
-  "state_hash_prev": "ad50a535312132a4040b57c3455805779d27b1847ec671d3675d7687750c671e",
+  "state_hash_prev": "ae197714d1981aa788d1c7ad98bed28de4cb3d1c70c1c4e74ab37cc3d50baf46",
   "strategy_state": {
     "quasi_passif_crypto": {
       "liquidated_by_missing_data_this_cycle": {},
       "missing_data_cycles": {
-        "BNB": 3
+        "BNB": 4
       }
     },
     "xs_momentum_sp100": {
@@ -96,11 +92,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": 21.233875793599996,
-      "symbol": "UNI",
-      "ts": "2026-09-18T23:59:55.648007+00:00"
-    },
     {
       "realized_pnl_usd": -0.49130967627179434,
       "symbol": "XRP",
@@ -195,6 +186,11 @@
       "realized_pnl_usd": -1.2141091225161937,
       "symbol": "BTC",
       "ts": "2026-11-13T00:35:30.432444+00:00"
+    },
+    {
+      "realized_pnl_usd": -3.1854195165099846,
+      "symbol": "UNI",
+      "ts": "2026-11-15T03:12:28.643639+00:00"
     }
   ],
   "wallet_id": "agressif"

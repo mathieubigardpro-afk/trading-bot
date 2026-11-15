@@ -1,15 +1,11 @@
 {
-  "cash_usd": 557.0729195831518,
+  "cash_usd": 627.5998766135668,
   "circuit_breakers": {
-    "consecutive_losses": 1,
+    "consecutive_losses": 2,
     "cooldown_until": null,
     "daily_loss_freeze_until": null,
     "dd_half_size_active": false,
     "equity_window_24h": [
-      {
-        "equity": 1122.9475527878799,
-        "ts": "2026-11-14T01:48:11.219904+00:00"
-      },
       {
         "equity": 1121.3039799925798,
         "ts": "2026-11-14T08:08:59.104091+00:00"
@@ -25,6 +21,10 @@
       {
         "equity": 1111.3002449925798,
         "ts": "2026-11-14T23:44:56.076526+00:00"
+      },
+      {
+        "equity": 1112.4870449925797,
+        "ts": "2026-11-15T03:12:28.643639+00:00"
       }
     ],
     "flatten_mode": false,
@@ -37,19 +37,15 @@
     "last_rate": 1.1052,
     "last_rate_source": "frankfurter",
     "last_rate_stale": false,
-    "last_rate_ts": "2026-11-14T23:45:13.002182+00:00"
+    "last_rate_ts": "2026-11-15T03:12:49.492167+00:00"
   },
   "initial_eur": 1000.0,
-  "last_run_completed_at": "2026-11-14T23:44:56.076526+00:00",
-  "last_run_id": "2026-11-14T23",
+  "last_run_completed_at": "2026-11-15T03:12:28.643639+00:00",
+  "last_run_id": "2026-11-15T03",
   "positions": {
     "AMD": {
       "prix_moyen": 507.5822139879913,
       "qty": 0.0787
-    },
-    "AVAX": {
-      "prix_moyen": 8.18818,
-      "qty": 9.89
     },
     "CSCO": {
       "prix_moyen": 114.2741922057724,
@@ -92,9 +88,9 @@
       "qty": 0.0949
     }
   },
-  "realized_pnl_cumulative_usd": -16.035228066057215,
+  "realized_pnl_cumulative_usd": -26.48937123564221,
   "schema_version": 1,
-  "state_hash_prev": "3d9518939faa1cd9110c29d43501b632c08f1fea094cbea97d0a3f34a1e5e68f",
+  "state_hash_prev": "b950122349fbdb52a0a0a25af2ea6853051e0827b2de3dd1d229ed461f14747e",
   "strategy_state": {
     "dual_momentum_etf": {
       "liquidated_by_missing_data_this_cycle": {},
@@ -110,11 +106,6 @@
     }
   },
   "trade_history_for_breakers": [
-    {
-      "realized_pnl_usd": 2.499722936098141,
-      "symbol": "DBC",
-      "ts": "2026-09-15T17:10:22.591396+00:00"
-    },
     {
       "realized_pnl_usd": 5.707912982640002,
       "symbol": "SOL",
@@ -209,6 +200,11 @@
       "realized_pnl_usd": -1.5771138350000002,
       "symbol": "LINK",
       "ts": "2026-11-14T01:48:11.219904+00:00"
+    },
+    {
+      "realized_pnl_usd": -10.454143169584993,
+      "symbol": "AVAX",
+      "ts": "2026-11-15T03:12:28.643639+00:00"
     }
   ],
   "wallet_id": "equilibre"
