@@ -1,6 +1,6 @@
 {
   "data_refresh_status": "OK",
-  "generated_at": "2026-11-16T01:43:55.338995+00:00",
+  "generated_at": "2026-11-23T02:27:29.304818+00:00",
   "recalibration": {
     "best_oos_sharpe": 0.5991803961481879,
     "best_value": 200,
@@ -26,14 +26,14 @@
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 4.437518243304068,
+      "dd_live_pct": 4.920330432898061,
       "dd_ref_pct": 27.57,
-      "n_days_observed": 116,
-      "negative_rolling_streak_days": 34,
+      "n_days_observed": 122,
+      "negative_rolling_streak_days": 40,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 34j consécutifs (seuil §3.1 : 30j) — seuil de rétrogradation dépassé"
+        "Sharpe roulant 60j négatif depuis 40j consécutifs (seuil §3.1 : 30j) — seuil de rétrogradation dépassé"
       ],
-      "sharpe_live": -0.8663426548053512,
+      "sharpe_live": -0.8401078998604501,
       "sharpe_ref": 0.6538,
       "source": "walk-forward OOS audité",
       "strategy_id": "dual_momentum_etf",
@@ -45,12 +45,12 @@
       "categorie": "active",
       "dd_live_pct": 0.47468692852815325,
       "dd_ref_pct": 8.4,
-      "n_days_observed": 116,
-      "negative_rolling_streak_days": 3,
+      "n_days_observed": 122,
+      "negative_rolling_streak_days": 9,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 3j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 9j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": 0.0566793766505772,
+      "sharpe_live": 0.05527985485058985,
       "sharpe_ref": 0.808,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante prudent_btc_eth) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
@@ -60,14 +60,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 3.2456907646519157,
+      "dd_live_pct": 3.9110109915397393,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 116,
-      "negative_rolling_streak_days": 18,
+      "n_days_observed": 122,
+      "negative_rolling_streak_days": 24,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 18j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 24j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": -0.40735780668915234,
+      "sharpe_live": -0.4226373096946495,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -77,18 +77,18 @@
     {
       "antecedent_hors_promotion_rules": false,
       "categorie": "active",
-      "dd_live_pct": 1.8423195977351,
+      "dd_live_pct": 2.047504560444392,
       "dd_ref_pct": 27.57,
-      "n_days_observed": 116,
-      "negative_rolling_streak_days": 28,
+      "n_days_observed": 122,
+      "negative_rolling_streak_days": 34,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 28j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 34j consécutifs (seuil §3.1 : 30j) — seuil de rétrogradation dépassé"
       ],
-      "sharpe_live": -0.2649768899729227,
+      "sharpe_live": -0.04801706719149474,
       "sharpe_ref": 0.6538,
       "source": "walk-forward OOS audité",
       "strategy_id": "dual_momentum_etf",
-      "verdict": "SURVEILLER",
+      "verdict": "ALERTE",
       "wallet_id": "equilibre"
     },
     {
@@ -96,12 +96,12 @@
       "categorie": "active",
       "dd_live_pct": 0.9709467278903783,
       "dd_ref_pct": 27.3,
-      "n_days_observed": 116,
-      "negative_rolling_streak_days": 12,
+      "n_days_observed": 122,
+      "negative_rolling_streak_days": 18,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 12j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 18j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": -0.06560699722824116,
+      "sharpe_live": -0.06398703071934689,
       "sharpe_ref": 0.283,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante equilibre_6majors) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
@@ -111,14 +111,14 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 3.9793037176984356,
+      "dd_live_pct": 4.283843273491806,
       "dd_ref_pct": 50.29,
-      "n_days_observed": 116,
-      "negative_rolling_streak_days": 18,
+      "n_days_observed": 122,
+      "negative_rolling_streak_days": 24,
       "reasons": [
-        "Sharpe roulant 60j négatif depuis 18j (sous le seuil d'alerte 30j)"
+        "Sharpe roulant 60j négatif depuis 24j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": -0.6858396241441849,
+      "sharpe_live": -0.709774262557755,
       "sharpe_ref": 0.8227,
       "source": "walk-forward OOS audité",
       "strategy_id": "xs_momentum_sp100",
@@ -128,18 +128,18 @@
     {
       "antecedent_hors_promotion_rules": true,
       "categorie": "active",
-      "dd_live_pct": 3.7389369447192413,
+      "dd_live_pct": 3.758749981533466,
       "dd_ref_pct": 56.4,
-      "n_days_observed": 116,
-      "negative_rolling_streak_days": 0,
+      "n_days_observed": 122,
+      "negative_rolling_streak_days": 6,
       "reasons": [
-        "aucun signal de dérive détecté"
+        "Sharpe roulant 60j négatif depuis 6j (sous le seuil d'alerte 30j)"
       ],
-      "sharpe_live": -0.019980404646344707,
+      "sharpe_live": -0.019093939219209898,
       "sharpe_ref": 0.069,
       "source": "retest walk-forward AUDITÉ du 2026-08-10 (quasi_passif_crypto_wf_retest, variante agressif_11diversifie) -- référence d'origine non auditée discréditée, cf. note_retest_2026-08-10 (backlog #15, session #6)",
       "strategy_id": "quasi_passif_crypto",
-      "verdict": "OK",
+      "verdict": "SURVEILLER",
       "wallet_id": "agressif"
     }
   ],
